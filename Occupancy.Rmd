@@ -1,7 +1,7 @@
 ---
 title: "Combining automated monitering and bayesian occupancy models for detecting rare plant-animal interactions"
 author: "Ben Weinstein"
-date: "Tuesday, February 24, 2015"
+date: "Tuesday, February months, 2015"
 output: html_document
 ---
 
@@ -13,34 +13,44 @@ library(R2jags)
 library(dplyr)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=TRUE,cache=TRUE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
 
-setwd("C:/Users/Ben/Documents/Maquipicuna/")
+setwd("C:/Users/Ben/Documents/Occupy/")
 
-set.seed(3)
+set.seed(4)
 ```
 
 #Aim
 
-To estimate the frequency of interactions among plants and hummingbirds given that detection is low.
+Network ecology is a rapidly developing field that uses graph theory to represents interactions among plants and pollinators, hosts and parasites, and herbivores and hosts. One aim of network ecology is to quantify the rate of interaction among partners, their relative specialization, and the robustness of these interactions to perturbation. Considerable work has focused on the effect sampling on network structure and how best to measure network properties (Bluthgen, Bascompte, Jordano). Considerably less work has focused on a more fundamental problem of network ecology: Our ability to detect interactions is imperfect in time and space. This limitation is a fundamental assumption in wildlife ecology, where occupancy models are common(). In occupancy modeling, repeated surveys of the same site are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species ecology? The goal of this paper is to use a large dataset on plant-hummingbird interactins from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions and network properties. We will then seperate estimate environmental and morphological covariates to both the probability of interaction ($\psi$) as well as the probability of detection (p).
+
+#Background
+
+  Collecting network data is time consuming and few studies have the resources to adopt a repeated measures sampling design. The hummingbird dataset in this paper was collected using time-lapse cameras which turn on at dawn and dusk automatically. In addition, more traditional hummingbird transects were used to survey flower visitation. Combining these sampling types, we have a very large network with over 3,000 interactions (Weinstein XXXX).
+
+#Similiar work
+
+Unfortunately someone already did this:
+http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0069200
+
+How can i take it a step further to actually make ecological inference?
+
+#Approach
 
 Potential comparisons
 
 * Transects versus cameras
+* Corrected versus uncorrected network statistics
+* Simulations - networks with imperfect detection - what are the biases?
 
-##Background
-
-We used camera traps to moniter flower visitation by hummingbirds in Ecuador tropical montane cloud forest.
-
-This is an extension of classic site occupancy models, but each of the 'sites' is a flower species within the forest.
 
 **In this study we want to estimate three quantitites:**
 
-$$ Y_{i,j} = \text{Detection  of  Hummingbird i  at  Flower j }$$ 
+$$\hat{Y}_{i,j} = \text{Detection  of  Hummingbird i  at  Flower j}$$
 
 $$ \psi_{i,j} = \text{the probability a flower is visited by a hummigbird}  $$
 
 $$ p = \text{the probability of detecting a species as present} $$
 
-##Simulated example
+#Simulations
 
 Consider a matrix of interactions, where we assume interactions among plants and hummingbirds are independent.
 
@@ -49,13 +59,19 @@ Simulation parameters
   * 1 hummingbird
   * Ten plants
   * Known occupancy $\psi = .6$ for all species
-  * Imperfect detection $p = .1$ for all species
-  * 12 replicates (1 per month)
+  * Imperfect detection $p = .4$ for all species
+  * 24 Months replicates
+
+** Can we recover these parameters? **
 
 ```{r}
 #Number of hummingbird species
 h_species=1
-dat<-replicate(h_species,rbinom(10,1,.6))
+plant_species=10
+months=24
+detection=.4
+occupancy=.6
+dat<-replicate(h_species,rbinom(plant_species,1,occupancy))
 ```
 
 True Interaction Matrix
@@ -76,11 +92,6 @@ ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_
 
 ##Simulate detection 
 
-* Detection rate $p = .1$
-* Twelve replicates
-
-Assuming a closed system throughout the year (can be relaxed)
-
 ```{r}
 
 #for each species loop through and create a replicate dataframe
@@ -90,17 +101,17 @@ for (x in 1:h_species){
   #How many detections?
   size<-nrow(mdat[mdat$True_State==1,])
   
-  #Simualte detections
-obs[[x]]<-replicate(12,rbinom(size,1,.1))
+  #Simualte detections for species with presences
+  pres<-replicate(months,rbinom(size,1,detection))
+  #fill in 0's for species with absences
+  ab<-replicate(months,rep(0,plant_species-size))
+  obs[[x]]<-rbind(pres,ab)
 }
 
 mobs<-melt(obs)
 colnames(mobs)<-c("Plants","Month","Detection","Hummingbird")
 
 mobs<-dcast(mobs,Plants~Month,value.var="Detection")
-#Write data to file
-write.csv(mdat,"Bayesian/True_State.csv")
-write.csv(mobs,"Bayesian/Detection.csv",row.names=F)
 ```
 
 So let's look at example. 
@@ -110,20 +121,20 @@ Hummingbird 1 on Plant 1 - True State is Present
 dat[1,1]
 ```
 
-Observed State - We only found the bird feeding on the plant once. In December
+Observed state from transect data
 ```{r}
 obs[[1]][1,]
 ```
 
 ##Hierarchical model for the interaction of each hummingbird on each plant species
 
-$$ Y_{i,j} \sim \[i,j]} * p[i,j]$$
-$$p[i,j] = \beta$$
-$$\text{True_State} \sim dbern(psi[i,j]) $$
-$$logit(psi) = \alpha$$
+$$ Y_{i,j} \sim Bern(sightp_{i,j})$$
+$$sightp_{i,j} = present_i * detect$$
+$$present_i \sim Bern(presentp) $$
+$$presentp_{i,j}<-occ $$
 
 ```{r,echo=FALSE,eval=TRUE}
-setwd("C:/Users/Ben/Documents/Maquipicuna/Bayesian")
+setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
 #Source model
 source("Simulation.R")
@@ -133,17 +144,22 @@ print.noquote(readLines("Simulation.R"))
 
 #Input Data
 Dat <- list(
-  Y=obs[[1]][1,],
-  Months=ncol(obs[[1]]))
+  Y=obs[[1]],
+  Plants=plant_species,
+  Months=months
+  )
+
+#A blank Y matrix - all present
+initY<-as.numeric(matrix(nrow=plant_species,ncol=1,data=1))
 
 #Inits
-InitStage <- function() {list(occ=.5,detect=.5)}
+InitStage <- function() {list(occ=.5,detect=.5,present=initY)}
 
 #Parameters to track
 ParsStage <- c("occ","detect")
 
 #MCMC options
-ni <- 100000  # number of draws from the posterior
+ni <- 200000  # number of draws from the posterior
 nt <- 2    #thinning rate
 nb <- 0  # number to discard for burn-in
 nc <- 2  # number of chains
@@ -163,27 +179,37 @@ m = jags(inits=InitStage,
 ```
 
 
-```{r}
+```{r,cache=FALSE}
 DIC_BRUTE<-m$BUGSoutput$DIC
 
 #Remove Burnin
 parsO<-melt(m$BUGSoutput$sims.array)
 colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-parsO<-parsO[!parsO$Draw %in% 1:1000,]
+parsO<-parsO[!parsO$Draw %in% 1:20000,]
 #take out deviance
 pars<-parsO[parsO$parameter %in% c("detect","occ"),]
 ```
 
-```{r,cache=FALSE,eval=TRUE}
-###Posterior Distributions
 
-ggplot(pars,aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~parameter,scale="free") + theme_bw() 
-```
-
+###Assess Convergence
 ```{r,cache=FALSE,eval=TRUE}
 ###Chains
-ggplot(pars,aes(x=Draw,col=as.factor(Chain),y=estimate)) + geom_line() + facet_wrap(~parameter,scale="free") + theme_bw() + labs(col="Chain")
+ggplot(pars,aes(x=Draw,col=as.factor(Chain),y=estimate)) + geom_line() + facet_wrap(~parameter,scale="free") + theme_bw() + labs(col="Chain") 
+
+
 ```
+
+###Posteriors
+```{r,cache=FALSE,eval=TRUE}
+###Posterior Distributions
+p<-ggplot(pars,aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~parameter,scale="free") + theme_bw() 
+
+#Add true values
+tr<-data.frame(parameter=c('detect','occ'),value=c(detection,occupancy))
+p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed')
+```
+
+**True values are given in the red dashed lines.**
 
 ```{r}
 parG<-group_by(pars,parameter)
@@ -191,4 +217,7 @@ out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upp
 out_brute
 ```
 
+##Conclusion
+
+We were able to recover the true data, suggesting this modeling approach has real applications to these kinds of datasets.
 

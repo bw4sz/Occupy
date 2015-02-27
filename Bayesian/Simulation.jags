@@ -1,16 +1,16 @@
 
     model {
-  
-    for (j in 1:Months) {    
     
+    for (i in 1:Plants){
     # True state model for the only partially observed true state    
-    presentp[j] <- occ
-    present[j] ~ dbern(presentp[j]) # True occupancy z at site 
+    presentp[i] <- occ
+    present[i] ~ dbern(presentp[i]) # True occupancy z at site 
     
+    for (j in 1:Months) {    
     # Observation model for the actual observations
-    sightp[j] <- present[j] * detect
-    Y[j] ~ dbern(sightp[j]) 
-    }
+    sightp[i,j] <- present[i] * detect
+    Y[i,j] ~ dbern(sightp[i,j]) 
+    }}
     
     
     occ ~ dunif(0,1)
