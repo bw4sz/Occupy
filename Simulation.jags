@@ -1,0 +1,18 @@
+
+    model {
+    
+    for (i in 1:Plants) { # Loop through sites
+      j = 1 #Just one bird species to start
+      True_State[i,j]~dbern(psi[i,j])
+      psi[i,j]<-alpha
+    for (t in 1:replicates){
+      y[i,j] ~ dbern(p[i,j]) # True occupancy z at site i
+      eff.p[i,j]<-beta
+      }
+    }
+    
+  psi ~ dunif(0,1)
+  eff.p ~ dunif(0,1)
+    }
+    
+    

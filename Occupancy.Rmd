@@ -1,0 +1,194 @@
+---
+title: "Combining automated monitering and bayesian occupancy models for detecting rare plant-animal interactions"
+author: "Ben Weinstein"
+date: "Tuesday, February 24, 2015"
+output: html_document
+---
+
+```{r,warning=FALSE,message=FALSE,echo=FALSE}
+library(reshape2)
+library(ggplot2)
+library(knitr)
+library(R2jags)
+library(dplyr)
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=TRUE,cache=TRUE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
+
+setwd("C:/Users/Ben/Documents/Maquipicuna/")
+
+set.seed(3)
+```
+
+#Aim
+
+To estimate the frequency of interactions among plants and hummingbirds given that detection is low.
+
+Potential comparisons
+
+* Transects versus cameras
+
+##Background
+
+We used camera traps to moniter flower visitation by hummingbirds in Ecuador tropical montane cloud forest.
+
+This is an extension of classic site occupancy models, but each of the 'sites' is a flower species within the forest.
+
+**In this study we want to estimate three quantitites:**
+
+$$ Y_{i,j} = \text{Detection  of  Hummingbird i  at  Flower j }$$ 
+
+$$ \psi_{i,j} = \text{the probability a flower is visited by a hummigbird}  $$
+
+$$ p = \text{the probability of detecting a species as present} $$
+
+##Simulated example
+
+Consider a matrix of interactions, where we assume interactions among plants and hummingbirds are independent.
+
+Simulation parameters
+
+  * 1 hummingbird
+  * Ten plants
+  * Known occupancy $\psi = .6$ for all species
+  * Imperfect detection $p = .1$ for all species
+  * 12 replicates (1 per month)
+
+```{r}
+#Number of hummingbird species
+h_species=1
+dat<-replicate(h_species,rbinom(10,1,.6))
+```
+
+True Interaction Matrix
+
+* Rows are plants
+* Columns are hummingbirds
+
+```{r}
+print(dat)
+```
+
+```{r,fig.height=2,fig.width=8,fig.align='center'}
+#Reshape into a nicer format
+mdat<-melt(dat)
+colnames(mdat)<-c("Plant","Hummingbird","True_State")
+ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Plant",y="Hummingbird",fill="Presence") + ggtitle("True State")
+```
+
+##Simulate detection 
+
+* Detection rate $p = .1$
+* Twelve replicates
+
+Assuming a closed system throughout the year (can be relaxed)
+
+```{r}
+
+#for each species loop through and create a replicate dataframe
+obs<-list()
+
+for (x in 1:h_species){
+  #How many detections?
+  size<-nrow(mdat[mdat$True_State==1,])
+  
+  #Simualte detections
+obs[[x]]<-replicate(12,rbinom(size,1,.1))
+}
+
+mobs<-melt(obs)
+colnames(mobs)<-c("Plants","Month","Detection","Hummingbird")
+
+mobs<-dcast(mobs,Plants~Month,value.var="Detection")
+#Write data to file
+write.csv(mdat,"Bayesian/True_State.csv")
+write.csv(mobs,"Bayesian/Detection.csv",row.names=F)
+```
+
+So let's look at example. 
+
+Hummingbird 1 on Plant 1 - True State is Present
+```{r}
+dat[1,1]
+```
+
+Observed State - We only found the bird feeding on the plant once. In December
+```{r}
+obs[[1]][1,]
+```
+
+##Hierarchical model for the interaction of each hummingbird on each plant species
+
+$$ Y_{i,j} \sim \[i,j]} * p[i,j]$$
+$$p[i,j] = \beta$$
+$$\text{True_State} \sim dbern(psi[i,j]) $$
+$$logit(psi) = \alpha$$
+
+```{r,echo=FALSE,eval=TRUE}
+setwd("C:/Users/Ben/Documents/Maquipicuna/Bayesian")
+
+#Source model
+source("Simulation.R")
+ 
+#print model
+print.noquote(readLines("Simulation.R"))
+
+#Input Data
+Dat <- list(
+  Y=obs[[1]][1,],
+  Months=ncol(obs[[1]]))
+
+#Inits
+InitStage <- function() {list(occ=.5,detect=.5)}
+
+#Parameters to track
+ParsStage <- c("occ","detect")
+
+#MCMC options
+ni <- 100000  # number of draws from the posterior
+nt <- 2    #thinning rate
+nb <- 0  # number to discard for burn-in
+nc <- 2  # number of chains
+
+#Jags
+
+m = jags(inits=InitStage,
+         n.chains=nc,
+         model.file="Simulation.jags",
+         working.directory=getwd(),
+         data=Dat,
+         parameters.to.save=ParsStage,
+         n.thin=nt,
+         n.iter=ni,
+         n.burnin=nb,
+         DIC=T)
+```
+
+
+```{r}
+DIC_BRUTE<-m$BUGSoutput$DIC
+
+#Remove Burnin
+parsO<-melt(m$BUGSoutput$sims.array)
+colnames(parsO)<-c("Draw","Chain","parameter","estimate")
+parsO<-parsO[!parsO$Draw %in% 1:1000,]
+#take out deviance
+pars<-parsO[parsO$parameter %in% c("detect","occ"),]
+```
+
+```{r,cache=FALSE,eval=TRUE}
+###Posterior Distributions
+
+ggplot(pars,aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~parameter,scale="free") + theme_bw() 
+```
+
+```{r,cache=FALSE,eval=TRUE}
+###Chains
+ggplot(pars,aes(x=Draw,col=as.factor(Chain),y=estimate)) + geom_line() + facet_wrap(~parameter,scale="free") + theme_bw() + labs(col="Chain")
+```
+
+```{r}
+parG<-group_by(pars,parameter)
+out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
+out_brute
+```
+
+

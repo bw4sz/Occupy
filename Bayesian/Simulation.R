@@ -1,0 +1,27 @@
+setwd("C:/Users/Ben/Documents/Maquipicuna/Bayesian")
+
+sink("Simulation.jags")
+
+cat("
+    model {
+  
+    for (j in 1:Months) {    
+    
+    # True state model for the only partially observed true state    
+    presentp[j] <- occ
+    present[j] ~ dbern(presentp[j]) # True occupancy z at site 
+    
+    # Observation model for the actual observations
+    sightp[j] <- present[j] * detect
+    Y[j] ~ dbern(sightp[j]) 
+    }
+    
+    
+    occ ~ dunif(0,1)
+    detect ~ dunif(0,1)
+    
+    }
+    
+    ",fill=TRUE)
+
+sink()
