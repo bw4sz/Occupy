@@ -11,6 +11,7 @@ library(ggplot2)
 library(knitr)
 library(R2jags)
 library(dplyr)
+library(stringr)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=TRUE,cache=TRUE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
 
 setwd("C:/Users/Ben/Documents/Occupy/")
@@ -48,42 +49,35 @@ $$\hat{Y}_{i,j} = \text{Detection  of  Hummingbird i  at  Flower j}$$
 
 $$ \psi_{i,j} = \text{the probability a flower is visited by a hummigbird}  $$
 
-$$ p = \text{the probability of detecting a species as present} $$
+$$ p_{i,j} = \text{the probability of detecting a bird-flower interaction given that it occurs} $$
 
 #Simulations
 
 Consider a matrix of interactions, where we assume interactions among plants and hummingbirds are independent.
 
-Simulation parameters
+### Parameters
 
-  * 1 hummingbird
+  * 5 hummingbird
   * Ten plants
-  * Known occupancy $\psi = .6$ for all species
-  * Imperfect detection $p = .4$ for all species
+  * Known occupancy $\psi = U(0,1)$ 
+  * Imperfect detection $p = U(0,1)$ 
   * 24 Months replicates
 
-** Can we recover these parameters? **
+Each species gets their own occupancy and imperfect detection which is drawn from uniform distribution. The goal is **recover these parameters**.
 
 ```{r}
 #Number of hummingbird species
-h_species=1
+h_species=5
 plant_species=10
 months=24
-detection=.4
-occupancy=.6
-dat<-replicate(h_species,rbinom(plant_species,1,occupancy))
+detection=runif(h_species,0,1)
+occupancy=runif(h_species,0,1)
+dat<-sapply(occupancy,function(x){rbinom(plant_species,1,occupancy)})
 ```
 
-True Interaction Matrix
+### True Interaction Matrix
 
-* Rows are plants
-* Columns are hummingbirds
-
-```{r}
-print(dat)
-```
-
-```{r,fig.height=2,fig.width=8,fig.align='center'}
+```{r,fig.height=5,fig.width=6,fig.align='center'}
 #Reshape into a nicer format
 mdat<-melt(dat)
 colnames(mdat)<-c("Plant","Hummingbird","True_State")
@@ -93,16 +87,18 @@ ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_
 ##Simulate detection 
 
 ```{r}
-
 #for each species loop through and create a replicate dataframe
 obs<-list()
 
 for (x in 1:h_species){
+  
+  hdat<-mdat[mdat$Hummingbird==x,]
+  
   #How many detections?
-  size<-nrow(mdat[mdat$True_State==1,])
+  size<-nrow(hdat[hdat$True_State==1,])
   
   #Simualte detections for species with presences
-  pres<-replicate(months,rbinom(size,1,detection))
+  pres<-replicate(months,rbinom(size,1,detection[x]))
   #fill in 0's for species with absences
   ab<-replicate(months,rep(0,plant_species-size))
   obs[[x]]<-rbind(pres,ab)
@@ -111,27 +107,36 @@ for (x in 1:h_species){
 mobs<-melt(obs)
 colnames(mobs)<-c("Plants","Month","Detection","Hummingbird")
 
-mobs<-dcast(mobs,Plants~Month,value.var="Detection")
+mobs<-dcast(mobs,Hummingbird + Plants~Month,value.var="Detection")
 ```
 
 So let's look at example. 
 
 Hummingbird 1 on Plant 1 - True State is Present
 ```{r}
-dat[1,1]
+dat[2,2]
 ```
 
-Observed state from transect data
+Observed state from the simulated transect data
 ```{r}
-obs[[1]][1,]
+obs[[2]][2,]
+```
+
+```{r}
+#Format data for input into winbugs
+indat<-as.matrix(mobs[,-(1:2)])
+
+#Format is 
+#columns = months
+#Rows equal plants species * Hummingbird species, so if there are 10 plants, the 11th row is the first plant of hummingbird 2
 ```
 
 ##Hierarchical model for the interaction of each hummingbird on each plant species
 
 $$ Y_{i,j} \sim Bern(sightp_{i,j})$$
-$$sightp_{i,j} = present_i * detect$$
-$$present_i \sim Bern(presentp) $$
-$$presentp_{i,j}<-occ $$
+$$sightp_{i,j} = present_{i,j} * detect_i$$
+$$present_{i,j} \sim Bern(presentp) $$
+$$presentp_{i,j}<-occ_i $$
 
 ```{r,echo=FALSE,eval=TRUE}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
@@ -144,24 +149,25 @@ print.noquote(readLines("Simulation.R"))
 
 #Input Data
 Dat <- list(
-  Y=obs[[1]],
+  Y=indat,
   Plants=plant_species,
+  Birds=h_species,
   Months=months
   )
 
 #A blank Y matrix - all present
-initY<-as.numeric(matrix(nrow=plant_species,ncol=1,data=1))
+initY<-matrix(nrow=plant_species,ncol=h_species,data=1)
 
 #Inits
-InitStage <- function() {list(occ=.5,detect=.5,present=initY)}
+InitStage <- function() {list(occ=rep(.5,h_species),detect=rep(.5,h_species),present=initY)}
 
 #Parameters to track
-ParsStage <- c("occ","detect")
+ParsStage <- c("occ","detect","Y")
 
 #MCMC options
 ni <- 200000  # number of draws from the posterior
-nt <- 2    #thinning rate
-nb <- 0  # number to discard for burn-in
+nt <- 100   #thinning rate
+nb <- 0 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -179,37 +185,52 @@ m = jags(inits=InitStage,
 ```
 
 
+```{r,echo=FALSE,eval=FALSE}
+#Update if needed
+recompile(m)
+add<-100000
+m <- update(m,n.iter=add)
+```
+
 ```{r,cache=FALSE}
 DIC_BRUTE<-m$BUGSoutput$DIC
 
 #Remove Burnin
 parsO<-melt(m$BUGSoutput$sims.array)
 colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-parsO<-parsO[!parsO$Draw %in% 1:20000,]
-#take out deviance
-pars<-parsO[parsO$parameter %in% c("detect","occ"),]
-```
+parsO<-parsO[!parsO$Draw %in% 1:1000,]
 
+#take out deviance
+#label parameter
+parsO$par<-str_extract(parsO$parameter,"detect|occ")
+
+#label species
+parsO$species<-str_extract(parsO$parameter,"\\d+")
+
+pars<-parsO[parsO$par %in% c("detect","occ"),]
+```
 
 ###Assess Convergence
 ```{r,cache=FALSE,eval=TRUE}
 ###Chains
-ggplot(pars,aes(x=Draw,col=as.factor(Chain),y=estimate)) + geom_line() + facet_wrap(~parameter,scale="free") + theme_bw() + labs(col="Chain") 
-
-
+ggplot(pars,aes(x=Draw,col=as.factor(Chain),y=estimate)) + geom_line() + facet_grid(species~par,scale="free") + theme_bw() + labs(col="Chain") 
 ```
 
 ###Posteriors
 ```{r,cache=FALSE,eval=TRUE}
 ###Posterior Distributions
-p<-ggplot(pars,aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~parameter,scale="free") + theme_bw() 
+p<-ggplot(pars,aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() 
 
 #Add true values
-tr<-data.frame(parameter=c('detect','occ'),value=c(detection,occupancy))
-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,occ=occupancy),id.var='species')
+
+colnames(tr)<-c("species","par","value")
+
+p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ```
 
-**True values are given in the red dashed lines.**
+##True values are given in the red dashed lines.
+Species are the rows.
 
 ```{r}
 parG<-group_by(pars,parameter)
@@ -219,5 +240,22 @@ out_brute
 
 ##Conclusion
 
-We were able to recover the true data, suggesting this modeling approach has real applications to these kinds of datasets.
+We were able to recover the true data!
+This suggests that this modeling approach has real applications to these kinds of datasets.
+
+# Predicting inferences
+# Next steps
+
+  * Read in camera data
+  * Define closed population period
+  * Create model comparison for env correlates
+    * Elevation
+    * Time
+    * Behavioral Strategy (as defined by morphology or field observations)
+  * Create predictions of interactions
+  * Compare corrected and uncorrected interaction networks, models, and inferences.
+  
+```{r,echo=FALSE}
+save.image("Simulation.RData")
+```
 

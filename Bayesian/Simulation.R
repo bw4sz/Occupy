@@ -5,20 +5,24 @@ sink("Simulation.jags")
 cat("
     model {
     
-    for (i in 1:Plants){
-    # True state model for the only partially observed true state    
-    presentp[i] <- occ
-    present[i] ~ dbern(presentp[i]) # True occupancy z at site 
+    for (b in 1:Birds){
     
-    for (j in 1:Months) {    
-    # Observation model for the actual observations
-    sightp[i,j] <- present[i] * detect
-    Y[i,j] ~ dbern(sightp[i,j]) 
-    }}
+      for (i in 1:Plants){
+        # True state model for the only partially observed true state    
+        presentp[i,b] <- occ[b]
+        present[i,b] ~ dbern(presentp[i,b]) # True occupancy z at site 
+        
+        for (j in 1:Months) {    
+          # Observation model for the actual observations
+          sightp[((b-1)*Plants)+i,j] <- present[i,b] * detect[b]
+          Y[((b-1)*Plants)+i,j] ~ dbern(sightp[((b-1)*Plants)+i,j]) 
+        }}
+      }
     
-    
-    occ ~ dunif(0,1)
-    detect ~ dunif(0,1)
+    for (b in 1:Birds){
+    occ[b] ~ dunif(0,1)
+    detect[b] ~ dunif(0,1)
+    }
     
     }
     
