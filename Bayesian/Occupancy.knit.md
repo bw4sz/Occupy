@@ -5,23 +5,7 @@ date: "Tuesday, February months, 2015"
 output: html_document
 ---
 
-```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
-library(reshape2)
-library(ggplot2)
-library(knitr)
-library(R2jags)
-library(dplyr)
-library(stringr)
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=TRUE,cache=TRUE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
 
-setwd("C:/Users/Ben/Documents/Occupy/")
-
-set.seed(4)
-
-#If updating the model, just reload
-load("Simulation.RData")
-
-```
 
 #Aim
 
@@ -33,9 +17,10 @@ Network ecology is a rapidly developing field that uses graph theory to represen
 
 #Similiar work
 
-  * http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0069200
-  * http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210x.2012.00249.x/abstract
+Unfortunately someone already did this:
+http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0069200
 
+How can i take it a step further to actually make ecological inference?
 
 #Approach
 
@@ -54,13 +39,13 @@ $$ \psi_{i,j} = \text{the probability a flower is visited by a hummigbird}  $$
 
 $$ p_{i,j} = \text{the probability of detecting a bird-flower interaction given that it occurs} $$
 
-#Simulation 1 - Presence/Absence
+#Simulations
 
 Consider a matrix of interactions, where we assume interactions among plants and hummingbirds are independent.
 
 ### Parameters
 
-  * 5 hummingbirds
+  * 2 hummingbird
   * Twenty plants
   * Known occupancy $\psi = U(.2,1)$
     * At very low occupancies, the interaction is too rare to estimate.
@@ -69,10 +54,11 @@ Consider a matrix of interactions, where we assume interactions among plants and
 
 Each species gets their own occupancy and imperfect detection which is drawn from uniform distribution. The goal is **recover these parameters**.
 
-```{r}
+
+```r
 #Number of hummingbird species
 h_species=5
-plant_species=20
+plant_species=10
 months=24
 detection=runif(h_species,0,1)
 occupancy=runif(h_species,0,1)
@@ -81,16 +67,20 @@ dat<-sapply(occupancy,function(x){rbinom(plant_species,1,occupancy)})
 
 ### True Interaction Matrix
 
-```{r,fig.height=5,fig.width=6,fig.align='center'}
+
+```r
 #Reshape into a nicer format
 mdat<-melt(dat)
 colnames(mdat)<-c("Plant","Hummingbird","True_State")
 ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Plant",y="Hummingbird",fill="Presence") + ggtitle("True State")
 ```
 
+<img src="figure/unnamed-chunk-3.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" width="576" style="display: block; margin: auto;" />
+
 ##Simulate detection 
 
-```{r}
+
+```r
 #for each species loop through and create a replicate dataframe
 obs<-list()
 
@@ -117,16 +107,26 @@ mobs<-acast(mobs,Plants~Hummingbird~Month,value.var="Detection")
 Data is stored in a multidimensional array
 Hummingbird 1 on Plant 1 - True State is Present
 
-```{r}
+
+```r
 dat[1,1]
 ```
 
-Observed state from the simulated transect data
+```
+## [1] 1
+```
 
+Observed state from the simulated transect data
 **Format is [Plants,Hummingbird,Month]**
 
-```{r}
-mobs[1,1,]
+
+```r
+mobs[1,,1]
+```
+
+```
+## 1 2 
+## 1 1
 ```
 
 
@@ -137,127 +137,17 @@ $$sightp_{i,j} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_i $$
 
-```{r,echo=T,eval=T}
-setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
-
-runs<-2000000
-
-#Source model
-source("Simulation.R")
- 
-#print model
-print.noquote(readLines("Simulation.R"))
-
-#Input Data
-Dat <- list(
-  Y=mobs,
-  Plants=plant_species,
-  Birds=h_species,
-  Months=months
-  )
-
-#A blank Y matrix - all present
-initY<-matrix(nrow=plant_species,ncol=h_species,data=1)
-
-#Inits
-InitStage <- function() {list(occ=rep(.5,h_species),detect=rep(.5,h_species),present=initY)}
-
-#Parameters to track
-ParsStage <- c("occ","detect")
-
-#MCMC options
-ni <- runs  # number of draws from the posterior
-nt <- 25   #thinning rate
-nb <- 0 # number to discard for burn-in
-nc <- 2  # number of chains
-
-#Jags
-
-m = jags(inits=InitStage,
-         n.chains=nc,
-         model.file="Simulation.jags",
-         working.directory=getwd(),
-         data=Dat,
-         parameters.to.save=ParsStage,
-         n.thin=nt,
-         n.iter=ni,
-         n.burnin=nb,
-         DIC=T)
-```
 
 
-```{r update,echo=FALSE,eval=FALSE}
-#Update if needed
-recompile(m)
-add<-100000
-m <- update(m,n.iter=add)
-```
 
-```{r,cache=FALSE}
-DIC_BRUTE<-m$BUGSoutput$DIC
 
-#Remove Burnin
-parsO<-melt(m$BUGSoutput$sims.array)
-colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-parsO<-parsO[!parsO$Draw %in% 1:((runs/nt)-2000),]
 
-#take out deviance
-#label parameter
-parsO$par<-str_extract(parsO$parameter,"detect|occ")
 
-#label species
-parsO$species<-str_extract(parsO$parameter,"\\d+")
 
-pars<-parsO[parsO$par %in% c("detect","occ"),]
-```
 
-###Assess Convergence
-```{r,cache=FALSE,eval=TRUE}
-###Chains
-ggplot(pars,aes(x=Draw,col=as.factor(Chain),y=estimate)) + geom_line() + facet_grid(species~par,scale="free") + theme_bw() + labs(col="Chain") 
-```
 
-###Posteriors
-```{r,cache=FALSE,eval=TRUE}
-###Posterior Distributions
-p<-ggplot(pars,aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() 
 
-#Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,occ=occupancy),id.var='species')
 
-colnames(tr)<-c("species","par","value")
 
-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
-```
 
-##True values are given in the red dashed lines.
-Species are the rows.
-
-```{r}
-parG<-group_by(pars,parameter)
-out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
-out_brute
-```
-
-##Conclusion
-
-We were able to recover the true data for detection, but less accurate for occupancy (the right hand column).
-
-**Question 1: Why is occupancy harder to predict? Do we need more data? The chains look pretty converged. There are two types of additional data, more sites (flowers) and more visits (replicates), which type of data will help us estimate more accurately This does not bode well since we might think each pair of flowers and birds have their own occupancy, not just bird specific?**
-
-# Predicting inferences
-# Next steps
-
-  * Read in camera data
-  * Define closed population period
-  * Create model comparison for env correlates
-    * Elevation
-    * Time
-    * Behavioral Strategy (as defined by morphology or field observations)
-  * Create predictions of interactions
-  * Compare corrected and uncorrected interaction networks, models, and inferences.
-  
-```{r,echo=FALSE}
-save.image("Simulation.RData")
-```
 

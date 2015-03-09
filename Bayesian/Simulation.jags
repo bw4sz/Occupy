@@ -1,23 +1,24 @@
 
     model {
     
-    for (b in 1:Birds){
+    
     
       for (i in 1:Plants){
+        for (j in 1:Birds){
         # True state model for the only partially observed true state    
-        presentp[i,b] <- occ[b]
-        present[i,b] ~ dbern(presentp[i,b]) # True occupancy z at site 
+        presentp[i,j] <- occ[j]
+        present[i,j] ~ dbern(presentp[i,j]) # True occupancy of bird j on plant i at site 
         
-        for (j in 1:Months) {    
+        for (k in 1:Months) {    
           # Observation model for the actual observations
-          sightp[((b-1)*Plants)+i,j] <- present[i,b] * detect[b]
-          Y[((b-1)*Plants)+i,j] ~ dbern(sightp[((b-1)*Plants)+i,j]) 
+          sightp[i,j,k] <- present[i,j] * detect[j]
+          Y[i,j,k] ~ dbern(sightp[i,j,k]) 
         }}
       }
     
-    for (b in 1:Birds){
-    occ[b] ~ dunif(0,1)
-    detect[b] ~ dunif(0,1)
+    for (j in 1:Birds){
+    occ[j] ~ dunif(0,1)
+    detect[j] ~ dunif(0,1)
     }
     
     }
