@@ -12,7 +12,7 @@ library(knitr)
 library(R2jags)
 library(dplyr)
 library(stringr)
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=TRUE,cache=FALSE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=FALSE,cache=TRUE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
@@ -39,9 +39,14 @@ Network ecology is a rapidly developing field that uses graph theory to represen
 
 #Approach
 
-## Simulation 1: Constant occupancy and detection within each hummingbird species
-## Simulation 2: Constant detection but variable occupancy for each hummingbird species for each plant
-## Simulation 3: Constant detection but variable occupancy for each hummingbird species for each plant drawn from a hierarchical distribution of occupancies.
+### Simulation 1: Constant occupancy and detection within each hummingbird species
+
+
+### Simulation 2: Constant detection but variable occupancy for each hummingbird species for each plant
+
+
+### Simulation 3: Constant detection but variable occupancy for each hummingbird species for each plant drawn from a hierarchical distribution of occupancies.
+
 
 
 **In this study we want to estimate three quantitites:**
@@ -123,10 +128,10 @@ $$sightp_{i,j} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_i $$
 
-```{r,echo=T,eval=T}
+```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-20000
+runs<-200000
 
 #Source model
 source("Simulation1.R")
@@ -176,7 +181,7 @@ m = jags(inits=InitStage,
 ```{r update,echo=FALSE,eval=FALSE}
 #Update if needed
 recompile(m2)
-add<-20000
+add<-200000
 m2 <- update(m,n.iter=add)
 ```
 
@@ -219,6 +224,7 @@ p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ##True values are given in the red dashed lines.
 Species are the rows.
 
+###Parameter estimates
 ```{r}
 parG<-group_by(pars,parameter)
 out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
@@ -283,10 +289,10 @@ $$sightp_{i,j,k} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_{i,j} $$
 
-```{r,echo=T,eval=T}
+```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-20000
+runs<-200000
 
 #Source model
 source("Simulation2.R")
@@ -338,7 +344,7 @@ m2 = jags(inits=InitStage,
 ```{r update2,echo=FALSE,eval=FALSE}
 #Update if needed
 recompile(m2)
-add<-20000
+add<-200000
 m <- update(m2,n.iter=add)
 ```
 
@@ -373,11 +379,16 @@ ggplot(pars[pars$par %in% "occ",],aes(x=Draw,y=estimate,col=as.factor(Chain))) +
 
 ###Posteriors
 ```{r,cache=FALSE,eval=TRUE}
+
 ###Posterior Distributions
 p<-ggplot(pars[pars$par %in% "detect",],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Detection probability")
-p
-p<-ggplot(pars[pars$par %in% "occ",],aes(x=estimate,fill=as.factor(plant))) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Occupancy probability")
-p
+#Add true values
+tr<-melt(data.frame(species=1:length(detection),detect=detection),id.var='species')
+colnames(tr)<-c("species","par","value")
+p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
+
+p<-ggplot(pars[pars$par %in% "occ",],aes(x=estimate,fill=as.factor(plant))) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Occupancy probability") + labs(fill="Plant Species")
+
 #Add true values
 tr<-melt(occupancy)
 
@@ -386,9 +397,9 @@ colnames(tr)<-c("species","plant","value")
 p + geom_vline(data=tr,aes(xintercept=value,col=as.factor(plant)),linetype='dashed',size=1)
 ```
 
-##True values are given in the red dashed lines.
-Species are the rows.
+**True values are given in the dashed lines.**
 
+###Parameter estimates
 ```{r,eval=TRUE}
 parG<-group_by(pars,parameter)
 out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
