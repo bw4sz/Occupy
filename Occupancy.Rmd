@@ -12,14 +12,12 @@ library(knitr)
 library(R2jags)
 library(dplyr)
 library(stringr)
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=TRUE,cache=TRUE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=TRUE,cache=FALSE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
-set.seed(4)
-
 #If updating the model, just reload
-load("Simulation.RData")
+#load("Simulation.RData")
 
 ```
 
@@ -71,12 +69,12 @@ Each species gets their own occupancy and imperfect detection which is drawn fro
 
 ```{r}
 #Number of hummingbird species
-h_species=5
+h_species=10
 plant_species=20
 months=24
 detection=runif(h_species,0,1)
 occupancy=runif(h_species,0,1)
-dat<-sapply(occupancy,function(x){rbinom(plant_species,1,occupancy)})
+dat<-sapply(occupancy,function(x){rbinom(plant_species,1,x)})
 ```
 
 ### True Interaction Matrix
@@ -92,26 +90,14 @@ ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_
 
 ```{r}
 #for each species loop through and create a replicate dataframe
-obs<-list()
+obs<-array(dim=c(plant_species,h_species,months))
 
-for (x in 1:h_species){
-  
-  hdat<-mdat[mdat$Hummingbird==x,]
-  
-  #How many detections?
-  size<-nrow(hdat[hdat$True_State==1,])
-  
-  #Simualte detections for species with presences
-  pres<-replicate(months,rbinom(size,1,detection[x]))
-  #fill in 0's for species with absences
-  ab<-replicate(months,rep(0,plant_species-size))
-  obs[[x]]<-rbind(pres,ab)
-}
-
-mobs<-melt(obs)
-colnames(mobs)<-c("Plants","Month","Detection","Hummingbird")
-
-mobs<-acast(mobs,Plants~Hummingbird~Month,value.var="Detection")
+for(x in 1:plant_species){
+  for (y in 1:h_species){
+    ts<-dat[x,y]
+    obs[x,y,]<-rbinom(months,1,detection[y]) * ts
+    }
+  }
 ```
 
 Data is stored in a multidimensional array
@@ -126,7 +112,7 @@ Observed state from the simulated transect data
 **Format is [Plants,Hummingbird,Month]**
 
 ```{r}
-mobs[1,1,]
+obs[1,1,]
 ```
 
 
@@ -140,7 +126,7 @@ $$presentp_{i,j}<-occ_i $$
 ```{r,echo=T,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-2000000
+runs<-5000000
 
 #Source model
 source("Simulation.R")
@@ -150,7 +136,7 @@ print.noquote(readLines("Simulation.R"))
 
 #Input Data
 Dat <- list(
-  Y=mobs,
+  Y=obs,
   Plants=plant_species,
   Birds=h_species,
   Months=months
@@ -167,7 +153,7 @@ ParsStage <- c("occ","detect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- 25   #thinning rate
+nt <- 2   #thinning rate
 nb <- 0 # number to discard for burn-in
 nc <- 2  # number of chains
 
