@@ -131,7 +131,7 @@ $$presentp_{i,j}<-occ_i $$
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-2000000
+runs<-1000000
 
 #Source model
 source("Simulation1.R")
