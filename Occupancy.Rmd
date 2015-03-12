@@ -12,7 +12,7 @@ library(knitr)
 library(R2jags)
 library(dplyr)
 library(stringr)
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=FALSE,cache=FALSE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=6,fig.height=4,echo=FALSE,cache=FALSE,cache.path = 'jp_cache/',fig.align='center')
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
@@ -128,7 +128,7 @@ $$presentp_{i,j}<-occ_i $$
 ```{r,eval=F}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-1000000
+runs<-20000
 
 #Source model
 source("Simulation1.R")
@@ -406,6 +406,10 @@ out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upp
 out_brute
 ```
 
+#Simulation 3: Hierarcichal Occupancy and Detection
+
+  * what branch am i on?
+  
 # Predicting inferences
 # Next steps
 
