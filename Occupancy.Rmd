@@ -12,7 +12,7 @@ library(knitr)
 library(R2jags)
 library(dplyr)
 library(stringr)
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=6,fig.height=4,echo=FALSE,cache=FALSE,cache.path = 'jp_cache/',fig.align='center')
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=FALSE,cache=FALSE,cache.path = 'jp_cache/',fig.align='center')
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
@@ -36,6 +36,8 @@ Network ecology is a rapidly developing field that uses graph theory to represen
 
 #Approach
 
+Occupancy models are complex and require fiting a number of latent variables. Before I fit models to an observed dataset, it is crucial that I simulate data with known results to show that the models are performing well. The goal is to create datasets that match the size and characteristics of our observed data. I will begin slowly, beginning with constant detection and occupancy. The ultimate goal is a model that can estimate occupancy and detection as a hierarchical distribution with uneven sampling at sites. This model will be used to compare niche overlap as a function of available resources, as well as the importance of trait matching in determing occupancy.
+
 ### Simulation 1: Constant occupancy and detection within each hummingbird species
 
 
@@ -43,7 +45,6 @@ Network ecology is a rapidly developing field that uses graph theory to represen
 
 
 ### Simulation 3: Constant detection but variable occupancy for each hummingbird species for each plant drawn from a hierarchical distribution of occupancies.
-
 
 
 **In this study we want to estimate three quantitites:**
@@ -60,9 +61,9 @@ Consider a matrix of interactions, where we assume interactions among plants and
 
 ### Parameters
 
-  * 5 hummingbirds
+  * 3 hummingbirds
   * Twenty plants
-  * Known occupancy $\psi = U(0,1)$
+  * Known occupancy $\psi = U(.5,1)$
     * At very low occupancies, the interaction is too rare to estimate.
   * Imperfect detection $p = U(0,1)$ 
   * 24 Months replicates
@@ -81,7 +82,7 @@ dat<-t(sapply(occupancy,function(x){rbinom(plant_species,1,x)}))
 
 ### True Interaction Matrix
 
-```{r,fig.height=5,fig.width=6,fig.align='center'}
+```{r}
 #Reshape into a nicer format
 mdat<-melt(dat)
 colnames(mdat)<-c("Plant","Hummingbird","True_State")
@@ -125,10 +126,10 @@ $$sightp_{i,j} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_i $$
 
-```{r,eval=F}
+```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-20000
+runs<-30000
 
 #Source model
 source("Simulation1.R")
@@ -175,7 +176,7 @@ m = jags(inits=InitStage,
 ```
 
 
-```{r update,echo=FALSE,eval=T}
+```{r update,echo=FALSE,eval=F}
 #Update if needed
 recompile(m)
 add<-1000000
@@ -200,7 +201,7 @@ m2 <- update(m,n.iter=add)
 ```
 
 ###Assess Convergence
-```{r,cache=FALSE,eval=TRUE}
+```{r,cache=FALSE,eval=TRUE,fig.width=10,fig.height=3}
 ###Chains
 ggplot(pars,aes(x=Draw,col=as.factor(Chain),y=estimate)) + geom_line() + facet_grid(species~par,scale="free") + theme_bw() + labs(col="Chain") 
 ```
@@ -258,7 +259,7 @@ dat<-matrix(nrow=h_species,ncol=plant_species,data=rbinom(occupancy,1,occupancy)
 
 ### True Interaction Matrix
 
-```{r,fig.height=5,fig.width=6,fig.align='center'}
+```{r}
 #Reshape into a nicer format
 mdat<-melt(dat)
 colnames(mdat)<-c("Plant","Hummingbird","True_State")
@@ -286,10 +287,10 @@ $$sightp_{i,j,k} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_{i,j} $$
 
-```{r,eval=F}
+```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-1000000
+runs<-30000
 
 #Source model
 source("Simulation2.R")
@@ -338,7 +339,7 @@ m2 = jags(inits=InitStage,
 ```
 
 
-```{r update2,echo=FALSE,eval=T}
+```{r update2,echo=FALSE,eval=F}
 #Update if needed
 recompile(m2)
 add<-1000000
@@ -365,11 +366,14 @@ m <- update(m2,n.iter=add)
 ```
 
 ###Assess Convergence
-```{r,cache=FALSE,eval=TRUE,fig.height=10,fig.width=15}
+```{r,cache=FALSE,eval=TRUE,fig.width=10,fig.height=3}
 
 ###Chains
 ggplot(pars[pars$par %in% "detect",],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
+```
+
+```{r,fig.height=5,fig.width=12}
 ggplot(pars[pars$par %in% "occ",],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(plant~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Occupancy Probability")
 
 ```
@@ -385,7 +389,7 @@ colnames(tr)<-c("species","par","value")
 p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ```
 
-```{r,cache=FALSE,eval=TRUE,fig.height=11,fig.width=10}
+```{r,cache=FALSE,eval=TRUE,fig.height=6,fig.width=10}
 
 p<-ggplot(pars[pars$par %in% "occ",],aes(x=estimate,fill=as.factor(plant))) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(plant~species,scale="free") + theme_bw() + ggtitle("Occupancy probability") + labs(fill="Plant Species")
 
@@ -408,7 +412,6 @@ out_brute
 
 #Simulation 3: Hierarcichal Occupancy and Detection
 
-  * what branch am i on?
   
 # Predicting inferences
 # Next steps
