@@ -10,8 +10,7 @@ cat("
       for (j in 1:Plants){
 
         # True state model for the only partially observed true state    
-        presentp[i,j] <- occ[i,j]
-        present[i,j] ~ dbern(presentp[i,j]) 
+        present[i,j] ~ dbern(occ[i,j])
       
         for (k in 1:Months) {   
 
@@ -23,9 +22,9 @@ cat("
     }
     
     for (i in 1:Birds){
-      detect[i] ~ dunif(0,1) # Detection for each bird species
+      detect[i] ~ dnorm(.5,1) # Detection for each bird species
       for (j in 1:Plants){
-        occ[i,j] ~ dunif(0,1) # Occupancy for each Bird-Plant combination
+        occ[i,j] ~ dnorm(.5,1) # Occupancy for each Bird-Plant combination
         }
       }
     }
