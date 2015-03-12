@@ -16,8 +16,9 @@ opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=FALSE,c
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
+set.seed(3)
 #If updating the model, just reload
-load("Simulation.RData")
+#load("Simulation.RData")
 ```
 
 #Aim
@@ -74,7 +75,7 @@ Each species gets their own occupancy and imperfect detection which is drawn fro
 
 ```{r}
 #Number of hummingbird species
-h_species=3
+h_species=2
 plant_species=10
 months=24
 detection=rep(0.7,h_species)
@@ -560,7 +561,7 @@ out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upp
 out_brute
 ```
 
-## Simulation 3: Variable Occupancy drawn from a hierarcichal distribution
+## Simulation 3: Constant detection and varying occupancy drawn from a hierarcichal distribution
 
 Here we assume that the probability of detection is related to abundance and the abundance of species is constant within the sampling window. Therefore each hummingbird species gets a detection probability, but each plant-hummingbird gets a occupancy. 
 
@@ -620,6 +621,7 @@ $$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
 $$sightp_{i,j,k} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_{i,j} $$
+$$ where occ_{i,j} ~ N(\gamma,\sigma)$$
 
 ```{r,eval=F}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
@@ -627,10 +629,10 @@ setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 runs<-30000
 
 #Source model
-source("Simulation2.R")
+source("Simulation3.R")
  
 #print model
-print.noquote(readLines("Simulation2.R"))
+print.noquote(readLines("Simulation3.R"))
 
 #Input Data
 Dat <- list(
@@ -647,14 +649,14 @@ initY<-matrix(nrow=h_species,ncol=plant_species,data=1)
 initOcc<-matrix(h_species,plant_species,data=1)
 
 #Inits
-InitStage <- function() {list(occ=initOcc,detect=rep(.5,h_species),present=initY)}
+InitStage <- function() {list(sigma=0.001,gamma=.5,detect=rep(.5,h_species),present=initY)}
 
 #Parameters to track
-ParsStage <- c("occ","detect")
+ParsStage <- c("occ","detect","gamma","sigma")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- 2   #thinning rate
+nt <- runs*.001   #thinning rate
 nb <- 0 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -662,7 +664,7 @@ nc <- 2  # number of chains
 
 m3 = jags(inits=InitStage,
          n.chains=nc,
-         model.file="Simulation2.jags",
+         model.file="Simulation3.jags",
          working.directory=getwd(),
          data=Dat,
          parameters.to.save=ParsStage,

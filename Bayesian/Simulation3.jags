@@ -1,8 +1,4 @@
-setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-sink("Simulation3.jags")
-
-cat("
     model {
     
     for (i in 1:Birds){
@@ -29,6 +25,4 @@ cat("
     
     gamma ~ dunif(0,1)
     sigma ~ dgamma(0.001,0.001)
-    ",fill=TRUE)
-
-sink()
+    
