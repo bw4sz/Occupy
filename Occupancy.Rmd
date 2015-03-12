@@ -366,6 +366,7 @@ m <- update(m2,n.iter=add)
 ```
 
 ###Assess Convergence
+
 ```{r,cache=FALSE,eval=TRUE,fig.width=10,fig.height=3}
 
 ###Chains
