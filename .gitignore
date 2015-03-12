@@ -2,3 +2,4 @@
 .Rhistory
 .RData
 *.Rdata
+jp_cache/*

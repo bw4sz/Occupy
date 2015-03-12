@@ -12,15 +12,12 @@ library(knitr)
 library(R2jags)
 library(dplyr)
 library(stringr)
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=FALSE,cache=TRUE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=7,fig.height=4,echo=FALSE,cache=FALSE,cache.path = 'jp_cache/', fig.path='figure/',fig.align='center')
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
 #If updating the model, just reload
-#load("Simulation.RData")
-
-#Source Functions
-source("Functions.R")
+load("Simulation.RData")
 ```
 
 #Aim
@@ -78,7 +75,7 @@ h_species=3
 plant_species=20
 months=24
 detection=runif(h_species,0,1)
-occupancy=runif(h_species,0,1)
+occupancy=runif(h_species,.5,1)
 dat<-t(sapply(occupancy,function(x){rbinom(plant_species,1,x)}))
 ```
 
@@ -128,7 +125,7 @@ $$sightp_{i,j} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_i $$
 
-```{r,eval=T}
+```{r,eval=F}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
 runs<-1000000
@@ -178,10 +175,10 @@ m = jags(inits=InitStage,
 ```
 
 
-```{r update,echo=FALSE,eval=FALSE}
+```{r update,echo=FALSE,eval=T}
 #Update if needed
-recompile(m2)
-add<-200000
+recompile(m)
+add<-1000000
 m2 <- update(m,n.iter=add)
 ```
 
@@ -252,10 +249,10 @@ Here we assume that the probability of detection is related to abundance and the
 ```{r}
 #Number of hummingbird species
 h_species=3
-plant_species=10
+plant_species=5
 months=24
 detection=runif(h_species,0,1)
-occupancy=replicate(plant_species,runif(h_species,0,1))
+occupancy=replicate(plant_species,runif(h_species,.5,1))
 dat<-matrix(nrow=h_species,ncol=plant_species,data=rbinom(occupancy,1,occupancy))
 ```
 
@@ -289,10 +286,10 @@ $$sightp_{i,j,k} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_{i,j} $$
 
-```{r,eval=T}
+```{r,eval=F}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-2000000
+runs<-1000000
 
 #Source model
 source("Simulation2.R")
@@ -341,10 +338,10 @@ m2 = jags(inits=InitStage,
 ```
 
 
-```{r update2,echo=FALSE,eval=FALSE}
+```{r update2,echo=FALSE,eval=T}
 #Update if needed
 recompile(m2)
-add<-200000
+add<-1000000
 m <- update(m2,n.iter=add)
 ```
 
@@ -378,23 +375,26 @@ ggplot(pars[pars$par %in% "occ",],aes(x=Draw,y=estimate,col=as.factor(Chain))) +
 ```
 
 ###Posteriors
-```{r,cache=FALSE,eval=TRUE}
 
+```{r,cache=FALSE}
 ###Posterior Distributions
 p<-ggplot(pars[pars$par %in% "detect",],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Detection probability")
 #Add true values
 tr<-melt(data.frame(species=1:length(detection),detect=detection),id.var='species')
 colnames(tr)<-c("species","par","value")
 p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
+```
 
-p<-ggplot(pars[pars$par %in% "occ",],aes(x=estimate,fill=as.factor(plant))) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Occupancy probability") + labs(fill="Plant Species")
+```{r,cache=FALSE,eval=TRUE,fig.height=11,fig.width=10}
+
+p<-ggplot(pars[pars$par %in% "occ",],aes(x=estimate,fill=as.factor(plant))) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(plant~species,scale="free") + theme_bw() + ggtitle("Occupancy probability") + labs(fill="Plant Species")
 
 #Add true values
 tr<-melt(occupancy)
 
 colnames(tr)<-c("species","plant","value")
 
-p + geom_vline(data=tr,aes(xintercept=value,col=as.factor(plant)),linetype='dashed',size=1)
+p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1)
 ```
 
 **True values are given in the dashed lines.**
