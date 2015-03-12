@@ -38,6 +38,10 @@ Network ecology is a rapidly developing field that uses graph theory to represen
 
 Occupancy models are complex and require fiting a number of latent variables. Before I fit models to an observed dataset, it is crucial that I simulate data with known results to show that the models are performing well. The goal is to create datasets that match the size and characteristics of our observed data. I will begin slowly, beginning with constant detection and occupancy. The ultimate goal is a model that can estimate occupancy and detection as a hierarchical distribution with uneven sampling at sites. This model will be used to compare niche overlap as a function of available resources, as well as the importance of trait matching in determing occupancy.
 
+### Simulation 0: Constant occupancy and detection for all species
+
+This is just a test of the machinery of the modeling approach.
+
 ### Simulation 1: Constant occupancy and detection within each hummingbird species
 
 
@@ -55,7 +59,152 @@ $$ \psi_{i,j} = \text{the probability a flower is visited by a hummigbird}  $$
 
 $$ p_{i,j} = \text{the probability of detecting a bird-flower interaction given that it occurs} $$
 
-## Simulation 1: Constant occupancy and detection within each hummingbird species
+##Simulation 0: Constant occupancy and detection
+Consider a matrix of interactions, where we assume interactions among plants and hummingbirds are independent.
+
+### Parameters
+
+  * 3 hummingbirds
+  * Twenty plants
+  * Known occupancy $\psi = .8$
+  * Imperfect detection $p = .7$ 
+  * 24 Months replicates
+
+Each species gets their own occupancy and imperfect detection which is drawn from uniform distribution. The goal is **recover these parameters**.
+
+```{r}
+#Number of hummingbird species
+h_species=3
+plant_species=10
+months=24
+detection=rep(0.7,h_species)
+occupancy=rep(0.8,h_species)
+dat<-t(sapply(occupancy,function(x){rbinom(plant_species,1,x)}))
+```
+
+### True Interaction Matrix
+
+```{r}
+#Reshape into a nicer format
+mdat<-melt(dat)
+colnames(mdat)<-c("Plant","Hummingbird","True_State")
+ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State")
+```
+
+##Simulate detection 
+
+```{r}
+#for each species loop through and create a replicate dataframe
+obs<-array(dim=c(h_species,plant_species,months))
+
+for(x in 1:h_species){
+  for (y in 1:plant_species){
+    ts<-dat[x,y]
+    obs[x,y,]<-rbinom(months,1,detection[x]) * ts
+    }
+  }
+```
+
+##Occupancy model formulation
+For each hummingbird (i), plant (j) and month (k):
+
+$$ Y_{i,j} \sim Bern(sightp_{i,j})$$
+$$sightp_{i,j} = present_{i,j} * detect$$
+$$present_{i,j} \sim Bern(presentp) $$
+$$presentp_{i,j}<-occ $$
+
+```{r,eval=T}
+setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
+
+runs<-100000
+
+#Source model
+source("Simulation.R")
+ 
+#print model
+print.noquote(readLines("Simulation.R"))
+
+#Input Data
+Dat <- list(
+  Y=obs,
+  Plants=plant_species,
+  Birds=h_species,
+  Months=months
+  )
+
+#A blank Y matrix - all present
+initY<-matrix(nrow=h_species,ncol=plant_species,data=1)
+
+
+#Inits
+InitStage <- function() {list(occ=.5,detect=.5,present=initY)}
+
+#Parameters to track
+ParsStage <- c("occ","detect")
+
+#MCMC options
+ni <- runs  # number of draws from the posterior
+nt <- runs*.0001   #thinning rate
+nb <- 0 # number to discard for burn-in
+nc <- 2  # number of chains
+
+#Jags
+
+m0 = jags(inits=InitStage,
+         n.chains=nc,
+         model.file="Simulation.jags",
+         working.directory=getwd(),
+         data=Dat,
+         parameters.to.save=ParsStage,
+         n.thin=nt,
+         n.iter=ni,
+         n.burnin=nb,
+         DIC=T)
+```
+
+
+```{r,cache=FALSE}
+
+#Trim chains from model m2 to 2000 posterior draws and return parameters detect and occ
+  parsO<-melt(m0$BUGSoutput$sims.array)
+  colnames(parsO)<-c("Draw","Chain","parameter","estimate")
+  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-2000/m0$BUGSoutput$n.chains),]
+  
+  #take out deviance
+  #label parameter
+  pars<-parsO[parsO$parameter %in% c("detect","occ"),]
+```
+
+###Assess Convergence
+```{r,cache=FALSE,eval=TRUE,fig.width=10,fig.height=3}
+###Chains
+ggplot(pars,aes(x=Draw,col=as.factor(Chain),y=estimate)) + geom_line() + facet_grid(~parameter,scale="free") + theme_bw() + labs(col="Chain") 
+```
+
+###Posteriors
+```{r,cache=FALSE,eval=TRUE}
+###Posterior Distributions
+p<-ggplot(pars,aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(~parameter,scale="free") + theme_bw() 
+
+#Add true values
+tr<-melt(data.frame(species=1:length(detection),detect=detection,occ=occupancy),id.var='species')
+
+colnames(tr)<-c("species","parameter","value")
+
+p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1) + xlim(0,1)
+```
+
+##True values are given in the red dashed lines.
+Species are the rows.
+
+###Parameter estimates
+```{r}
+parG<-group_by(pars,parameter)
+out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
+out_brute
+```
+
+## Simulation 1: Constant occupancy and detection for each hummingbird species
 
 Consider a matrix of interactions, where we assume interactions among plants and hummingbirds are independent.
 
