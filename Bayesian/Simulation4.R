@@ -1,4 +1,5 @@
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
+#Data is ragged and indexed to remove NA's
 
 sink("Simulation4.jags")
 

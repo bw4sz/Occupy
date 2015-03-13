@@ -864,7 +864,12 @@ $$ occ_{i,j} ~ N(\gamma,\sigma)$$
 
 ```{r}
 #for each hummingbird plant combination, we need a string of numbers for which months have plant presence.
+#index of ragged array with Na's removed?
+obsr<-melt(obs)
+colnames(obsr)<-c("Hummigbird","Plant","Month","Presence")
+obsragged<-obsr[!is.na(obsr$Presence),]
 ```
+
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
@@ -879,7 +884,7 @@ print.noquote(readLines("Simulation4.R"))
 
 #Input Data
 Dat <- list(
-  Y=obs,
+  Y=obsragged,
   Plants=plant_species,
   Birds=h_species,
   Months=months
