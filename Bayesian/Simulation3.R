@@ -22,13 +22,14 @@ cat("
     
     for (i in 1:Birds){
       detect[i] ~ dunif(0,1) # Detection for each bird species
+      gamma[i] ~ dunif(0,1)
+      sigma[i] ~ dgamma(0.001,0.001)
+
       for (j in 1:Plants){
-        occ[i,j] ~ dnorm(gamma,sigma) # Occupancy for each Bird-Plant combination drawn from a hyperprior
+        occ[i,j] ~ dnorm(gamma[i],sigma[i]) # Occupancy for each Bird-Plant combination drawn from a hyperprior
       }
+    }
         }
-    
-    gamma ~ dunif(0,1)
-    sigma ~ dgamma(0.001,0.001)
     ",fill=TRUE)
 
 sink()
