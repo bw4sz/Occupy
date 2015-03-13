@@ -279,7 +279,7 @@ $$presentp_{i,j}<-occ_i $$
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-100000
+runs<-200000
 
 #Source model
 source("Simulation1.R")
@@ -440,7 +440,7 @@ $$presentp_{i,j}<-occ_{i,j} $$
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-1000000
+runs<-200000
 
 #Source model
 source("Simulation2.R")
@@ -583,9 +583,14 @@ detection=runif(h_species,0,1)
 
 #normally distributed centered on for each hummingbird species
 gamma=runif(h_species,0,1)
+sigma=runif(h_species,0.1,0.5)
 
 #draw occupancy values for each plant
-occupancy<-sapply(gamma,function(x){rnorm(plant_species,x,0.1)})
+occupancy<-mapply(function(x,y){rnorm(plant_species,x,0.1)},gamma,sigma)
+
+#truncate normal
+occupancy[occupancy>1]<-1
+occupancy[occupancy<0]<-0
 
 #create data matrix
 dat<-matrix(nrow=h_species,ncol=plant_species,data=rbinom(occupancy,1,occupancy))
@@ -623,10 +628,10 @@ $$present_{i,j} \sim Bern(presentp) $$
 $$presentp_{i,j}<-occ_{i,j} $$
 $$ where occ_{i,j} ~ N(\gamma,\sigma)$$
 
-```{r,eval=F}
+```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-30000
+runs<-200000
 
 #Source model
 source("Simulation3.R")
@@ -720,7 +725,7 @@ ggplot(pars[pars$par %in% "occ",],aes(x=Draw,y=estimate,col=as.factor(Chain))) +
 ###Posterior Distributions
 p<-ggplot(pars[pars$par %in% c("detect","gamma","sigma"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Detection probability")
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,gamma=gamma,sigma=sigma),id.var='species')
 colnames(tr)<-c("species","par","value")
 p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ```
