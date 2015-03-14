@@ -13,7 +13,8 @@ library(R2jags)
 library(dplyr)
 library(stringr)
 library(gridExtra)
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.heigFht=4,echo=FALSE,cache=FALSE,cache.path = 'jp_cache/',fig.align='center')
+library(boot)
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=4,fig.height=3,echo=FALSE,cache=TRUE,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
@@ -40,19 +41,20 @@ Network ecology is a rapidly developing field that uses graph theory to represen
 
 Occupancy models are complex and require fiting a number of latent variables. Before I fit models to an observed dataset, it is crucial that I simulate data with known results to show that the models are performing well. The goal is to create datasets that match the size and characteristics of our observed data. I will begin slowly, beginning with constant detection and occupancy. The ultimate goal is a model that can estimate occupancy and detection as a hierarchical distribution with uneven sampling at sites. This model will be used to compare niche overlap as a function of available resources, as well as the importance of trait matching in determing occupancy.
 
-### Simulation 0: Constant occupancy and detection for all species
+**Simulation 0: Constant occupancy and detection for all species**
 
-This is just a test of the machinery of the modeling approach.
+**Simulation 1: Constant occupancy and detection within each hummingbird species.**
 
-### Simulation 1: Constant occupancy and detection within each hummingbird species
+**Simulation 2: Constant detection but variable occupancy for each hummingbird species for each plant**
 
+**Simulation 3: Constant detection but variable occupancy for each hummingbird species. The occupancy of each plant-bird combination is drawn from a hierarchical distribution for each hummingbird species.**
 
-### Simulation 2: Constant detection but variable occupancy for each hummingbird species for each plant
+**Simulation 4: Constant detection, and hierarchical occupancy with uneven sampling among plants.**
 
+**Simulation 5: Constant detection for each hummingbird speices, occupancy is function of species hierarcichal model and corolla similarity.**
 
-### Simulation 3: Constant detection but variable occupancy for each hummingbird species. The occupancy of each plant-bird combination is drawn from a hierarchical distribution for each hummingbird species.
-
-
+````
+````
 **In this study we want to estimate three quantitites:**
 
 $$\hat{Y}_{i,j} = \text{Detection  of  Hummingbird i  at  Flower j}$$
@@ -94,7 +96,7 @@ trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.fa
 ```
 
 
-```{r}
+```{r,fig.width=11,fig.height=3}
 ##Simulate detection 
 
 #for each species loop through and create a replicate dataframe
@@ -120,13 +122,12 @@ For each hummingbird (i), plant (j) and month (k):
 
 $$ Y_{i,j} \sim Bern(sightp_{i,j})$$
 $$sightp_{i,j} = present_{i,j} * detect$$
-$$present_{i,j} \sim Bern(presentp) $$
-$$presentp_{i,j}<-occ $$
+$$present_{i,j} \sim Bern(occ) $$
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-1000000
+runs<-40000
 
 #Source model
 source("Simulation.R")
@@ -207,11 +208,11 @@ p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ##True values are given in the red dashed lines.
 Species are the rows.
 
-###Parameter estimates
 ```{r}
+###Parameter estimates
+
 parG<-group_by(pars,parameter)
-out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
-out_brute
+m0<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
 ```
 
 ## Simulation 1: Constant occupancy and detection for each hummingbird species
@@ -249,9 +250,9 @@ trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.fa
 ```
 
 
-```{r}
-##Simulate detection 
+```{r,fig.width=7,fig.height=3}
 
+##Simulate detection 
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,months))
 
@@ -289,13 +290,12 @@ For each hummingbird (i), plant (j) and month (k):
 
 $$ Y_{i,j} \sim Bern(sightp_{i,j})$$
 $$sightp_{i,j} = present_{i,j} * detect_i$$
-$$present_{i,j} \sim Bern(presentp) $$
-$$presentp_{i,j}<-occ_i $$
+$$present_{i,j} \sim Bern(occ_i) $$
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-100000
+runs<-40000
 
 #Source model
 source("Simulation1.R")
@@ -340,7 +340,6 @@ m = jags(inits=InitStage,
          n.burnin=nb,
          DIC=T)
 ```
-
 
 ```{r update,echo=FALSE,eval=F}
 #Update if needed
@@ -388,11 +387,11 @@ p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ###True values are given in the red dashed lines.
 Species are the rows.
 
-###Parameter estimates
 ```{r}
+###Parameter estimates
+
 parG<-group_by(pars,parameter)
-out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
-out_brute
+out_m2<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
 ```
 
 ##Conclusion
@@ -432,7 +431,7 @@ colnames(mdat)<-c("Plant","Hummingbird","True_State")
 trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ")
 ```
 
-```{r}
+```{r,fig.width=7,fig.height=3}
 ##Simulate detection 
 
 #for each species loop through and create a replicate dataframe
@@ -462,7 +461,7 @@ $$present_{i,j} \sim Bern(occ_{i,j}) $$
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-100000
+runs<-40000
 
 #Source model
 source("Simulation2.R")
@@ -575,14 +574,14 @@ p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1)
 
 **True values are given in the dashed lines.**
 
-###Parameter estimates
 ```{r,eval=TRUE}
+###Parameter estimates
+
 parG<-group_by(pars,parameter)
-out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
-out_brute
+out_m2<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
 ```
 
-## Simulation 3: Constant detection and varying occupancy drawn from a hierarcichal distribution
+## Simulation 3: Constant detection and varying occupancy drawn from a hierarcichal distribution.
 
 Here we assume that the probability of detection is related to abundance and the abundance of species is constant within the sampling window. Therefore each hummingbird species gets a detection probability, but each plant-hummingbird gets a occupancy. 
 
@@ -626,7 +625,7 @@ colnames(mdat)<-c("Plant","Hummingbird","True_State")
 trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ")
 ```
 
-```{r}
+```{r, fig.width=8,fig.height=3}
 ##Simulate detection 
 
 #for each species loop through and create a replicate dataframe
@@ -652,12 +651,14 @@ grid.arrange(trueplot,obplot,nrow=1)
 $$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
 $$sightp_{i,j,k} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(occ_{i,j}) $$
-$$ where occ_{i,j} ~ N(\gamma,\sigma)$$
+
+Where
+$$ occ_{i,j} ~ N(\gamma,\sigma)$$
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-1000000
+runs<-40000
 
 #Source model
 source("Simulation3.R")
@@ -745,7 +746,7 @@ ggplot(pars[pars$par %in% "occ",],aes(x=Draw,y=estimate,col=as.factor(Chain))) +
 
 ###Posteriors
 
-```{r,cache=FALSE}
+```{r,cache=FALSE,fig.width=10}
 ###Posterior Distributions
 p<-ggplot(pars[pars$par %in% c("detect","gamma","sigma"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Detection probability")
 #Add true values
@@ -768,14 +769,15 @@ p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1)
 
 **True values are given in the dashed lines.**
 
-###Parameter estimates
 ```{r,eval=TRUE}
+###Parameter estimates
+
 parG<-group_by(pars,parameter)
-out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
-out_brute
+out_m3<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
 ```
 
-#Simulation 4: Hierarchical occupancy with uneven detection
+#Simulation 4: Hierarchical occupancy with uneven sampling.
+
 Here we assume that the probability of detection is related to abundance and the abundance of species is constant within the sampling window. Therefore each hummingbird species gets a detection probability, but each plant-hummingbird gets a occupancy. However, each plant is only in flower during a certain number of transects. Add a phenology parameter, expressed as a proportion of surveys where the plant is available.
 
 ### Parameters
@@ -819,7 +821,7 @@ colnames(mdat)<-c("Plant","Hummingbird","True_State")
 trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ")
 ```
 
-```{r}
+```{r, fig.width=7,fig.height=3}
 ##Simulate detection 
 
 #for each species loop through and create a replicate dataframe
@@ -857,6 +859,7 @@ $$sightp_{i,j,k} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(occ_{i,j}) $$
 
 Where:
+
 $$ occ_{i,j} ~ N(\gamma,\sigma)$$
 
 ```{r}
@@ -872,7 +875,7 @@ obs_sample<-obsr[!is.na(obsr$Presence),]
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-100000
+runs<-40000
 
 #Source model
 source("Simulation4.R")
@@ -959,7 +962,7 @@ ggplot(pars[pars$par %in% "occ",],aes(x=Draw,y=estimate,col=as.factor(Chain))) +
 
 ###Posteriors
 
-```{r,cache=FALSE}
+```{r,cache=FALSE,fig.width=10}
 ###Posterior Distributions
 p<-ggplot(pars[pars$par %in% c("detect","gamma","sigma"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Detection probability")
 
@@ -983,11 +986,11 @@ p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1)
 
 **True values are given in the dashed lines.**
 
-###Parameter estimates
 ```{r,eval=TRUE}
+###Parameter estimates
+
 parG<-group_by(pars,parameter)
-out_brute<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
-out_brute
+out_m4<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=quantile(estimate,0.975),sd=sd(estimate))
 ```
 
 # What have we learned so far?
@@ -998,7 +1001,7 @@ out_brute
   * Its unclear whether the lack of solid estimates in Simulation 2 especially is due to lack of convergence, or just not enough data.
   * I'm concerned about how high occupancy needs to be to estimatable.
 
-#Simulation 5: Constant Detect for each hummingbird speices, occupancy is function of species hierarcichal model and corolla similarity.
+#Simulation 5: Constant detection for each hummingbird speices, occupancy is function of species hierarcichal model and corolla similarity. Uneven sampling among species.
 
 ### Parameters
 
@@ -1017,7 +1020,7 @@ out_brute
   * 24 month replicates
   * Phenology = .75 (plants are in flower 3/4 of surveys)
 
-```{r}
+```{r,fig.height=5,fig.width=8}
 #Number of hummingbird species
 h_species=3
 plant_species=10
@@ -1044,9 +1047,13 @@ Corolla<-rpois(plant_species,20)
 #Subtract both
 traitmatch<-sapply(Corolla,function(x) x - Bill)
 
+#regression slope
 intercept=0.5
-beta=1
-occupancy<-inv.logit(0.5 + -.1 * traitmatch)
+beta=-.1
+alpha=0.5
+
+#fit regression
+occupancy<-inv.logit(alpha + beta * traitmatch)
 
 df<-dcast(melt(list(occ=occupancy,traitmatch=traitmatch)),Var1+Var2~L1)
 ggplot(df,aes(x=traitmatch,y=occ,shape=as.factor(Var1),col=as.factor(Var2))) + geom_point(size=6) + geom_smooth(method="lm",aes(group=1)) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrence Probability",shape="Hummingbird",col="Plant") + ggtitle("Correlation in Simulated Data")
@@ -1065,7 +1072,7 @@ colnames(mdat)<-c("Plant","Hummingbird","True_State")
 trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ")
 ```
 
-```{r}
+```{r,fig.width=7,fig.height=3}
 ##Simulate detection 
 
 #for each species loop through and create a replicate dataframe
@@ -1106,7 +1113,7 @@ $$occ_{i,j}<-\alpha + \beta * (Bill_i - Corolla_i) $$
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-runs<-100000
+runs<-40000
 
 #Source model
 source("Simulation5.R")
@@ -1127,7 +1134,7 @@ Dat <- list(
 initY<-matrix(nrow=h_species,ncol=plant_species,data=1)
 
 #Inits
-InitStage <- function() {list(tau=rep(.5,h_species),beta=0,alpha=0,detect=rep(.5,h_species),present=initY)}
+InitStage <- function() {list(beta=0,alpha=0,detect=rep(.5,h_species),present=initY)}
 
 #Parameters to track
 ParsStage <- c("occ","detect","alpha","beta")
@@ -1156,7 +1163,7 @@ m5 = jags(inits=InitStage,
 #Update if needed
 recompile(m5)
 add<-1000000
-m4 <- update(m5,n.iter=add)
+m5 <- update(m5,n.iter=add)
 ```
 
 ```{r}
@@ -1184,36 +1191,36 @@ m4 <- update(m5,n.iter=add)
 ```{r,cache=FALSE,eval=TRUE,fig.width=10,fig.height=3}
 
 ###Chains
-ggplot(pars[pars$par %in% c("detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars[pars$par %in% c("detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
 ```
 
-```{r,fig.height=5,fig.width=12,eval=F}
+```{r,fig.height=2,fig.width=12,eval=F}
 ggplot(pars[pars$par %in% c("alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Occupancy Probability") + facet_wrap(~par,scales="free")
 ```
 
 ###Posteriors
 
-```{r,cache=FALSE}
+```{r,cache=FALSE,fig.width=11,fig.height=3}
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Detection probability")
+p<-ggplot(pars[pars$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~species,scale="free") + theme_bw() + ggtitle("Detection Probability")
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,beta=beta,alpha=alpha),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection),id.var='species')
 colnames(tr)<-c("species","par","value")
 p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ```
 
-```{r,cache=FALSE,eval=TRUE,fig.height=6,fig.width=10}
+```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
 
-p<-ggplot(pars[pars$par %in% "occ",],aes(x=estimate,fill=as.factor(plant))) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(plant~species,scale="free") + theme_bw() + ggtitle("Occupancy probability") + labs(fill="Plant Species")
+p<-ggplot(pars[pars$par %in% c("alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
-tr<-melt(occupancy)
+tr<-melt(list(alpha=alpha,beta=beta))
 
-colnames(tr)<-c("plant","species","value")
+colnames(tr)<-c("value","par")
 
-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1)
+p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
 ```
 
 **True values are given in the dashed lines.**
