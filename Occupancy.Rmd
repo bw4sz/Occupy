@@ -457,8 +457,7 @@ grid.arrange(trueplot,obplot,nrow=1)
 
 $$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
 $$sightp_{i,j,k} = present_{i,j} * detect_i$$
-$$present_{i,j} \sim Bern(presentp) $$
-$$presentp_{i,j}<-occ_{i,j} $$
+$$present_{i,j} \sim Bern(occ_{i,j}) $$
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
@@ -652,8 +651,7 @@ grid.arrange(trueplot,obplot,nrow=1)
 
 $$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
 $$sightp_{i,j,k} = present_{i,j} * detect_i$$
-$$present_{i,j} \sim Bern(presentp) $$
-$$presentp_{i,j}<-occ_{i,j} $$
+$$present_{i,j} \sim Bern(occ_{i,j}) $$
 $$ where occ_{i,j} ~ N(\gamma,\sigma)$$
 
 ```{r,eval=T}
@@ -856,8 +854,7 @@ grid.arrange(trueplot,obplot,nrow=1)
 
 $$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
 $$sightp_{i,j,k} = present_{i,j} * detect_i$$
-$$present_{i,j} \sim Bern(presentp) $$
-$$presentp_{i,j}<-occ_{i,j} $$
+$$present_{i,j} \sim Bern(occ_{i,j}) $$
 
 Where:
 $$ occ_{i,j} ~ N(\gamma,\sigma)$$
@@ -866,8 +863,9 @@ $$ occ_{i,j} ~ N(\gamma,\sigma)$$
 #for each hummingbird plant combination, we need a string of numbers for which months have plant presence.
 #index of ragged array with Na's removed?
 obsr<-melt(obs)
-colnames(obsr)<-c("Hummigbird","Plant","Month","Presence")
-obsragged<-obsr[!is.na(obsr$Presence),]
+colnames(obsr)<-c("Hummingbird","Plant","Month","Presence")
+
+obs_sample<-obsr[!is.na(obsr$Presence),]
 ```
 
 
@@ -884,7 +882,7 @@ print.noquote(readLines("Simulation4.R"))
 
 #Input Data
 Dat <- list(
-  Y=obsragged,
+  Y=obs,
   Plants=plant_species,
   Birds=h_species,
   Months=months
@@ -928,9 +926,9 @@ m4 <- update(m4,n.iter=add)
 
 ```{r}
   #extract desired info from the models
-  parsO<-melt(m3$BUGSoutput$sims.array)
+  parsO<-melt(m4$BUGSoutput$sims.array)
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-2000/m3$BUGSoutput$n.chains),]
+  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-2000/m4$BUGSoutput$n.chains),]
   
   
   #label species and plants
@@ -999,9 +997,228 @@ out_brute
   * Given data sizes we are likely to see in the field, it is not possible to model every interaction seperately and get believable estimates.
   * Its unclear whether the lack of solid estimates in Simulation 2 especially is due to lack of convergence, or just not enough data.
   * I'm concerned about how high occupancy needs to be to estimatable.
-# Simulations to do
 
-  * Variable sampling for each plant species, model needs to take in a ragged array
+#Simulation 5: Constant Detect for each hummingbird speices, occupancy is function of species hierarcichal model and corolla similarity.
+
+### Parameters
+
+  * 3 hummingbird species
+    * Range of bill sizes (mm) Pois(10)
+  * Ten plants
+    * Range of corolla sizes (mm) Pois(10)
+  * Mean occupancy ($\gamma$) for each hummingbird is drawn from U(0.5,1)  
+    * For each plant the occupancy is N($\gamma$,0.2) (truncated,0-1) 
+    * Strong trait matching (minimizing Bill-Corolla difference)
+      $$ logit(true_state)<-\alpha + \beta *traitmatch$$
+      where $$\alpha=0, \beta = 1$$
+      
+      * Keep it linear for now (only penalty for having increasingly smaller bill) 
+  * Imperfect detection $p = U(0,1)$ for each hummingbird species
+  * 24 month replicates
+  * Phenology = .75 (plants are in flower 3/4 of surveys)
+
+```{r}
+#Number of hummingbird species
+h_species=3
+plant_species=10
+months=24
+detection=runif(h_species,0,1)
+phenology=0.75
+#normally distributed centered on for each hummingbird species
+gamma=runif(h_species,0.5,1)
+sigma=runif(h_species,0.1,0.5)
+
+#draw occupancy values for each plant
+occupancy<-mapply(function(x,y){rnorm(plant_species,x,0.2)},gamma,sigma)
+
+#truncate normal
+occupancy[occupancy>1]<-1
+occupancy[occupancy<0]<-0
+
+#Bill sizes
+Bill<-rpois(h_species,10)
+
+#Corolla sizes
+Corolla<-rpois(plant_species,20)
+
+#Subtract both
+traitmatch<-sapply(Corolla,function(x) x - Bill)
+
+intercept=0.5
+beta=1
+occupancy<-inv.logit(0.5 + -.1 * traitmatch)
+
+df<-dcast(melt(list(occ=occupancy,traitmatch=traitmatch)),Var1+Var2~L1)
+ggplot(df,aes(x=traitmatch,y=occ,shape=as.factor(Var1),col=as.factor(Var2))) + geom_point(size=6) + geom_smooth(method="lm",aes(group=1)) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrence Probability",shape="Hummingbird",col="Plant") + ggtitle("Correlation in Simulated Data")
+
+#create data matrix
+dat<-matrix(nrow=h_species,ncol=plant_species,data=rbinom(occupancy,1,occupancy))
+
+```
+
+### True Interaction Matrix
+
+```{r}
+#Reshape into a nicer format
+mdat<-melt(dat)
+colnames(mdat)<-c("Plant","Hummingbird","True_State")
+trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ")
+```
+
+```{r}
+##Simulate detection 
+
+#for each species loop through and create a replicate dataframe
+obs<-array(dim=c(h_species,plant_species,months))
+
+#Which months are plants in bloom?
+#This is the phenology matrix
+sampled<-replicate(plant_species,rbinom(months,1,phenology))
+sampled[sampled==0]<-NA
+
+for(x in 1:h_species){
+  for (y in 1:plant_species){
+    ts<-dat[x,y]
+    
+    #Detections
+    d<-rbinom(months,1,detection[x])
+    
+    #detections are function of phenology detection probability and occupancy
+    obs[x,y,]<-d *sampled[,y] * ts
+    }
+  }
+
+#plot observed state
+obs.state<-melt(obs)
+colnames(obs.state)<-c("Hummingbird","Plant","Month","Presence")
+obs.state<-group_by(obs.state,Hummingbird,Plant) %>% summarize(Detections=sum(Presence,na.rm=T))
+obplot<-ggplot(obs.state,aes(x=Hummingbird,y=as.factor(Plant),fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red") + ylab("Plant") + ggtitle("Observed")
+grid.arrange(trueplot,obplot,nrow=1)
+```
+
+## Occupancy Model Formulation
+
+$$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
+$$sightp_{i,j,k} = present_{i,j} * detect_i$$
+$$present_{i,j} \sim Bern(occ_{i,j}) $$
+$$occ_{i,j}<-\alpha + \beta * (Bill_i - Corolla_i) $$
+
+```{r,eval=T}
+setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
+
+runs<-100000
+
+#Source model
+source("Simulation5.R")
+ 
+#print model
+print.noquote(readLines("Simulation5.R"))
+
+#Input Data
+Dat <- list(
+  Y=obs,
+  Plants=plant_species,
+  Birds=h_species,
+  Months=months,
+  traitmatch=traitmatch
+  )
+
+#A blank Y matrix - all present
+initY<-matrix(nrow=h_species,ncol=plant_species,data=1)
+
+#Inits
+InitStage <- function() {list(tau=rep(.5,h_species),beta=0,alpha=0,detect=rep(.5,h_species),present=initY)}
+
+#Parameters to track
+ParsStage <- c("occ","detect","alpha","beta")
+
+#MCMC options
+ni <- runs  # number of draws from the posterior
+nt <- runs*.001   #thinning rate
+nb <- 0 # number to discard for burn-in
+nc <- 2  # number of chains
+
+#Jags
+
+m5 = jags(inits=InitStage,
+         n.chains=nc,
+         model.file="Simulation5.jags",
+         working.directory=getwd(),
+         data=Dat,
+         parameters.to.save=ParsStage,
+         n.thin=nt,
+         n.iter=ni,
+         n.burnin=nb,
+         DIC=T)
+```
+
+```{r,echo=FALSE,eval=F}
+#Update if needed
+recompile(m5)
+add<-1000000
+m4 <- update(m5,n.iter=add)
+```
+
+```{r}
+  #extract desired info from the models
+  parsO<-melt(m5$BUGSoutput$sims.array)
+  colnames(parsO)<-c("Draw","Chain","parameter","estimate")
+  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-2000/m5$BUGSoutput$n.chains),]
+  
+  
+  #label species and plants
+  l<-levels(parsO$parameter)
+  sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,c("detect|alpha|beta")))
+  colnames(sp_pl)<-c("parameter","species","plant","par")
+
+  sp_pl[is.na(sp_pl$species),c("species")]<-str_extract(sp_pl[is.na(sp_pl$species),"parameter"],"\\d+")
+  pars<-merge(parsO,sp_pl)
+  
+  #take out deviance
+  pars<-pars[pars$par %in% c("detect","alpha","beta"),]
+  
+```
+
+###Assess Convergence
+
+```{r,cache=FALSE,eval=TRUE,fig.width=10,fig.height=3}
+
+###Chains
+ggplot(pars[pars$par %in% c("detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+
+```
+
+```{r,fig.height=5,fig.width=12,eval=F}
+ggplot(pars[pars$par %in% c("alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Occupancy Probability") + facet_wrap(~par,scales="free")
+```
+
+###Posteriors
+
+```{r,cache=FALSE}
+###Posterior Distributions
+p<-ggplot(pars[pars$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scale="free") + theme_bw() + ggtitle("Detection probability")
+
+#Add true values
+tr<-melt(data.frame(species=1:length(detection),detect=detection,beta=beta,alpha=alpha),id.var='species')
+colnames(tr)<-c("species","par","value")
+p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
+```
+
+```{r,cache=FALSE,eval=TRUE,fig.height=6,fig.width=10}
+
+p<-ggplot(pars[pars$par %in% "occ",],aes(x=estimate,fill=as.factor(plant))) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(plant~species,scale="free") + theme_bw() + ggtitle("Occupancy probability") + labs(fill="Plant Species")
+
+#Add true values
+tr<-melt(occupancy)
+
+colnames(tr)<-c("plant","species","value")
+
+p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1)
+```
+
+**True values are given in the dashed lines.**
+
+# Simulations to do
   * Hierarchical model where species-plant level covariates are estimated as a function of the species distrubtion * additional predictors such as traits and abundance of plants
   * Varying time models?
   * Get predicted networks based on output of models, need to build a function. Compare predicted and observed.

@@ -11,7 +11,7 @@ cat("
 
         # True state model for the only partially observed true state    
         present[i,j] ~ dbern(occ[i,j])
-      
+    
         for (k in 1:Months) {   
 
           # Observation model for the actual observations

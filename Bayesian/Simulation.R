@@ -8,8 +8,7 @@ cat("
       for (i in 1:Birds){
         for (j in 1:Plants){
         # True state model for the only partially observed true state    
-          presentp[i,j] <- occ
-          present[i,j] ~ dbern(presentp[i,j]) 
+          present[i,j] ~ dbern(occ) 
 
           for (k in 1:Months) {    
             # Observation model for the actual observations
