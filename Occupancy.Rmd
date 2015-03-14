@@ -120,8 +120,8 @@ grid.arrange(trueplot,obplot,nrow=1)
 ##Occupancy model formulation
 For each hummingbird (i), plant (j) and month (k):
 
-$$ Y_{i,j} \sim Bern(sightp_{i,j})$$
-$$sightp_{i,j} = present_{i,j} * detect$$
+$$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
+$$sightp_{i,j,k} = present_{i,j} * detect$$
 $$present_{i,j} \sim Bern(occ) $$
 
 ```{r,eval=T}
@@ -173,7 +173,6 @@ m0 = jags(inits=InitStage,
          DIC=T)
 ```
 
-
 ```{r,cache=FALSE}
 
 #Trim chains from model m2 to 2000 posterior draws and return parameters detect and occ
@@ -205,7 +204,7 @@ colnames(tr)<-c("species","parameter","value")
 p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1) + xlim(0,1)
 ```
 
-##True values are given in the red dashed lines.
+**True values are given in the red dashed lines.**
 Species are the rows.
 
 ```{r}
@@ -288,8 +287,8 @@ obs[1,1,]
 ##Occupancy model formulation
 For each hummingbird (i), plant (j) and month (k):
 
-$$ Y_{i,j} \sim Bern(sightp_{i,j})$$
-$$sightp_{i,j} = present_{i,j} * detect_i$$
+$$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
+$$sightp_{i,j,k} = present_{i,j} * detect_i$$
 $$present_{i,j} \sim Bern(occ_i) $$
 
 ```{r,eval=T}
@@ -384,7 +383,7 @@ colnames(tr)<-c("species","par","value")
 p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ```
 
-###True values are given in the red dashed lines.
+**True values are given in the red dashed lines.**
 Species are the rows.
 
 ```{r}
@@ -398,7 +397,7 @@ out_m2<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=
 
 We were able to recover the true data for detection, but less accurate for occupancy (the right hand column).
 
-**Question 1: Why is occupancy harder to predict? Do we need more data? The chains look pretty converged. There are two types of additional data, more sites (flowers) and more visits (replicates), which type of data will help us estimate more accurately This does not bode well since we might think each pair of flowers and birds have their own occupancy, not just bird specific?**
+**Question 1: Why is occupancy harder to predict? Do we need more data? The chains look pretty converged. There are two types of additional data, more sites (flowers) and more visits (replicates), which type of data will help us estimate more accurately?**
 
 ## Simulation 2: Constant detection but variable occupancy for each hummingbird species for each plant
 
@@ -1012,8 +1011,8 @@ out_m4<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=
   * Mean occupancy ($\gamma$) for each hummingbird is drawn from U(0.5,1)  
     * For each plant the occupancy is N($\gamma$,0.2) (truncated,0-1) 
     * Strong trait matching (minimizing Bill-Corolla difference)
-      $$ logit(true_state)<-\alpha + \beta *traitmatch$$
-      where $$\alpha=0, \beta = 1$$
+      $logit(true_state)<-\alpha + \beta *traitmatch$
+      where $\alpha=0, \beta = 1$
       
       * Keep it linear for now (only penalty for having increasingly smaller bill) 
   * Imperfect detection $p = U(0,1)$ for each hummingbird species
@@ -1023,7 +1022,7 @@ out_m4<-summarise(parG,mean=mean(estimate),lower=quantile(estimate,0.025),upper=
 ```{r,fig.height=5,fig.width=8}
 #Number of hummingbird species
 h_species=3
-plant_species=10
+plant_species=20
 months=24
 detection=runif(h_species,0,1)
 phenology=0.75
@@ -1203,7 +1202,7 @@ ggplot(pars[pars$par %in% c("alpha","beta"),],aes(x=Draw,y=estimate,col=as.facto
 
 ```{r,cache=FALSE,fig.width=11,fig.height=3}
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~species,scale="free") + theme_bw() + ggtitle("Detection Probability")
+p<-ggplot(pars[pars$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~species) + theme_bw() + ggtitle("Detection Probability")
 
 #Add true values
 tr<-melt(data.frame(species=1:length(detection),detect=detection),id.var='species')
@@ -1224,6 +1223,36 @@ p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
 ```
 
 **True values are given in the dashed lines.**
+###Predicted Relationship
+```{r}
+
+castdf<-group_by(pars,Chain) %>% sample_n(100) 
+%>% select(par,estimate) %>% filter(par %in% c("alpha","beta"))
+
+castdf<-dcast(pars[pars$par %in% c("alpha","beta"),], Chain + Draw~par,value.var="estimate")
+castdf<-castdf[sample(1:nrow(castdf),500),]
+
+trajF<-function(alpha,beta,x){
+  indat<-cbind(alpha,beta)
+  
+  #fit regression for each input estimate
+  sampletraj<-apply(indat,1,function(s){
+    data.frame(x=x,y=inv.logit(s['alpha'] + s['beta'] *x))})
+  sample_all<-rbind_all(sampletraj)
+  
+  #Compute CI intervals
+  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025),upper=quantile(y,0.975),mean=mean(y))
+  }
+
+#calculated predicted y
+predy<-trajF(alpha=castdf$alpha,beta=castdf$beta,x=as.numeric(traitmatch))
+
+#original, 'known' values
+original<-data.frame(x=as.numeric(traitmatch),y=as.numeric(occupancy))
+
+#plot and compare to original data
+ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2)  + geom_line(aes(y=mean),size=1.1,col="red") + theme_bw() + ylab("Probability of Occurrence") + geom_line(data=original,aes(x=x,y=y)) 
+```
 
 # Simulations to do
   * Hierarchical model where species-plant level covariates are estimated as a function of the species distrubtion * additional predictors such as traits and abundance of plants
