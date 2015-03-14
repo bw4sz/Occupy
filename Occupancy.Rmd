@@ -1032,7 +1032,7 @@ sigma=runif(h_species,0.1,0.5)
 
 #draw occupancy values for each plant
 occupancy<-mapply(function(x,y){rnorm(plant_species,x,0.2)},gamma,sigma)
-
+ 
 #truncate normal
 occupancy[occupancy>1]<-1
 occupancy[occupancy<0]<-0
