@@ -8,7 +8,7 @@ cat("
       for (j in 1:Plants){
     
     # True state model for the only partially observed true state    
-    logit(occ[i,j])<-alpha + beta * traitmatch[i,j]
+    logit(occ[i,j])<-alpha[i] + beta[i] * traitmatch[i,j]
     present[i,j] ~ dbern(occ[i,j])
     
     for (k in 1:Months) {   
@@ -21,9 +21,20 @@ cat("
     
     for (i in 1:Birds){
     detect[i] ~ dunif(0,1) # Detection for each bird species
-      }
-    alpha ~ dnorm(0.001,0.001)
-    beta ~ dnorm(0.001,0.001)    
+      
+    alpha[i] ~ dnorm(intercept,tau_alpha)
+    beta[i] ~ dnorm(gamma,tau_beta)    
+    }
+    
+    #Hyperpriors
+    gamma~dnorm(0.001,0.001)
+    intercept~dnorm(0.001,0.001)
+    
+    tau_alpha ~ dgamma(0.001,0.001)
+    sigma_int<-pow(1/tau_alpha,0.5) #Derived Quantities
+    tau_beta ~ dgamma(0.001,0.001)
+    sigma_slope<-pow(1/tau_beta,0.5) #Derived Quantities
+
     }
     ",fill=TRUE)
 
