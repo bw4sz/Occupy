@@ -1,0 +1,285 @@
+---
+title: "AbundanceMixture"
+author: "Ben Weinstein"
+date: "Monday, March 16, 2015"
+output: html_document
+---
+
+**In this study we want to estimate three quantitites:**
+
+$$\hat{Y}_{i,j} = \text{Abundance of Interactions between Hummingbird i  at  Flower j}$$
+
+$$ \psi_{i,j} = \text{the probability a flower is visited by a hummigbird}  $$
+
+$$ p_{i,j} = \text{the probability of detecting a bird-flower interaction given that it occurs} $$
+
+
+#Simulation: Constant detection for each hummingbird speices, Interaction frequency is a function of species hierarcichal model and corolla similarity. Uneven sampling among species.
+
+### Parameters
+
+  * 7 hummingbird species
+    * Range of bill sizes (mm) Pois(10)
+  * Ten plants
+    * Range of corolla sizes (mm) Pois(10)
+  * Mean occupancy ($\gamma$) for each hummingbird is drawn from U(0.5,1)  
+    * For each plant the occupancy is N($\gamma$,0.2) (truncated,0-1) 
+    * Strong trait matching (minimizing Bill-Corolla difference)
+      $logit(true_state)<-\alpha + \beta *traitmatch$
+      where $\alpha=0, \beta = 1$
+      
+      * Keep it linear for now (only penalty for having increasingly smaller bill) 
+  * Imperfect detection $p = U(0,1)$ for each hummingbird species
+  * 24 month replicates
+  * Phenology = .75 (plants are in flower 3/4 of surveys)
+
+```{r,fig.height=5,fig.width=8}
+#Number of hummingbird species
+h_species=4
+plant_species=20
+months=24
+detection=runif(h_species,0,1)
+phenology=0.5
+
+#Bill sizes
+Bill<-rpois(h_species,10)
+
+#Corolla sizes
+Corolla<-rpois(plant_species,20)
+
+#Subtract both
+traitmatch<-sapply(Corolla,function(x) x - Bill)
+
+#regression slope
+intercept=0.5
+gamma=-0.2
+sigma_slope=0.02
+sigma_intercept=0.02
+
+beta<-rnorm(h_species,gamma,sigma_slope)
+alpha<-rnorm(h_species,intercept,sigma_intercept)
+
+#fit regression
+occupancy<-inv.logit(alpha + beta * traitmatch)
+
+df<-dcast(melt(list(occ=occupancy,traitmatch=traitmatch)),Var1+Var2~L1)
+ggplot(df,aes(x=traitmatch,y=occ,col=as.factor(Var1))) + geom_point(size=6) + geom_smooth(method="lm",aes(group=Var1)) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrence Probability","Hummingbird") + ggtitle("Correlation in Simulated Data")
+
+#create data matrix
+dat<-matrix(nrow=h_species,ncol=plant_species,data=rbinom(occupancy,1,occupancy))
+
+```
+
+### True Interaction Matrix
+
+```{r}
+#Reshape into a nicer format
+mdat<-melt(dat)
+colnames(mdat)<-c("Plant","Hummingbird","True_State")
+trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ")
+```
+
+```{r,fig.width=7,fig.height=3}
+##Simulate detection 
+
+#for each species loop through and create a replicate dataframe
+obs<-array(dim=c(h_species,plant_species,months))
+
+#Which months are plants in bloom?
+#This is the phenology matrix
+sampled<-replicate(plant_species,rbinom(months,1,phenology))
+sampled[sampled==0]<-NA
+
+for(x in 1:h_species){
+  for (y in 1:plant_species){
+    ts<-dat[x,y]
+    
+    #Detections
+    d<-rbinom(months,1,detection[x])
+    
+    #detections are function of phenology detection probability and occupancy
+    obs[x,y,]<-d *sampled[,y] * ts
+    }
+  }
+
+#plot observed state
+obs.state<-melt(obs)
+colnames(obs.state)<-c("Hummingbird","Plant","Month","Presence")
+obs.state<-group_by(obs.state,Hummingbird,Plant) %>% summarize(Detections=sum(Presence,na.rm=T))
+
+obplot<-ggplot(obs.state,aes(x=Hummingbird,y=as.factor(Plant),fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red") + ylab("Plant") + ggtitle("Observed")
+grid.arrange(trueplot,obplot,nrow=1)
+```
+
+## Occupancy Model Formulation
+
+$$ Y_{i,j,k} \sim Bern(sightp_{i,j,k})$$
+$$sightp_{i,j,k} = present_{i,j} * detect_i$$
+$$present_{i,j} \sim Bern(occ_{i,j}) $$
+$$occ_{i,j}<-\alpha + \beta * (Bill_i - Corolla_i) $$
+
+```{r,eval=T}
+setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
+
+runs<-30000
+
+#Source model
+source("Simulation5.R")
+ 
+#print model
+print.noquote(readLines("Simulation5.R"))
+
+#Input Data
+Dat <- list(
+  Y=obs,
+  Plants=plant_species,
+  Birds=h_species,
+  Months=months,
+  traitmatch=traitmatch
+  )
+
+#A blank Y matrix - all present
+initY<-matrix(nrow=h_species,ncol=plant_species,data=1)
+
+#Inits
+InitStage <- function() {list(beta=rep(.5,h_species),alpha=rep(.5,h_species),detect=rep(.5,h_species),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,present=initY)}
+
+#Parameters to track
+ParsStage <- c("occ","detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","present")
+
+#MCMC options
+ni <- runs  # number of draws from the posterior
+nt <- runs*.001   #thinning rate
+nb <- 0 # number to discard for burn-in
+nc <- 2  # number of chains
+
+#Jags
+
+m5 = jags(inits=InitStage,
+         n.chains=nc,
+         model.file="Simulation5.jags",
+         working.directory=getwd(),
+         data=Dat,
+         parameters.to.save=ParsStage,
+         n.thin=nt,
+         n.iter=ni,
+         n.burnin=nb,
+         DIC=T)
+```
+
+```{r,echo=FALSE,eval=F}
+#Update if needed
+recompile(m5)
+add<-1000000
+m5 <- update(m5,n.iter=add)
+```
+
+```{r}
+  #extract desired info from the models
+  parsO<-melt(m5$BUGSoutput$sims.array)
+  colnames(parsO)<-c("Draw","Chain","parameter","estimate")
+  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-2000/m5$BUGSoutput$n.chains),]
+  
+  #label species and plants
+  l<-levels(parsO$parameter)
+
+  #parameters to save
+  totrack<-m5$parameters.to.save
+  
+  sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,paste(totrack,collapse="|")))
+  
+  colnames(sp_pl)<-c("parameter","species","plant","par")
+
+  sp_pl[is.na(sp_pl$species),c("species")]<-str_extract(sp_pl[is.na(sp_pl$species),"parameter"],"\\d+")
+  pars<-merge(parsO,sp_pl)
+  
+  #take out deviance
+  pars<-pars[!pars$par %in% "deviance",]
+  
+```
+
+###Assess Convergence
+
+```{r,cache=FALSE,eval=TRUE,fig.width=8,fig.height=4}
+
+###Chains
+ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+
+```
+
+```{r,fig.height=2,fig.width=12,eval=F}
+ggplot(pars[pars$par %in% c("alpha","beta","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Occupancy Probability") + facet_wrap(~par,scales="free")
+```
+
+###Posteriors
+
+```{r,cache=FALSE,fig.width=9,fig.height=3}
+###Posterior Distributions
+p<-ggplot(pars[pars$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~species) + theme_bw() + ggtitle("Detection Probability")
+
+#Add true values
+tr<-melt(data.frame(species=1:length(detection),detect=detection),id.var='species')
+colnames(tr)<-c("species","par","value")
+p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
+```
+
+```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
+
+p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_grid(~par,scale="free") + theme_bw() 
+
+#Add true values
+tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
+
+colnames(tr)<-c("value","par")
+
+p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
+```
+
+**True values are given in the dashed lines.**
+
+###Predicted Relationship
+```{r,fig.height=4,fig.width=4}
+ 
+castdf<-group_by(pars,Chain) %>% sample_n(1000)%>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
+
+castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
+castdf<-castdf[sample(1:nrow(castdf),1000),]
+
+trajF<-function(alpha,beta,x){
+  indat<-cbind(alpha,beta)
+  
+  #fit regression for each input estimate
+  sampletraj<-apply(indat,1,function(s){
+    data.frame(x=x,y=inv.logit(s['alpha'] + s['beta'] *x))})
+  sample_all<-rbind_all(sampletraj)
+  
+  #Compute CI intervals
+  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025),upper=quantile(y,0.975),mean=mean(y))
+  }
+
+#calculated predicted y
+predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=as.numeric(traitmatch))
+
+orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,sigma_slope),x=as.numeric(traitmatch))
+
+#plot and compare to original data
+ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2)  + geom_line(aes(y=mean),size=1.1,col="red") + theme_bw() + ylab("Probability of Occurrence") + geom_ribbon(data=orig,aes(x=x,ymin=lower,ymax=upper),fill='blue',alpha=.5) + xlab("Difference between Bill and Corolla Length")
+```
+
+Blue area is the true relationship with known variance. The red line is the mean estimated relationship with confidence intervals in shaded grey. 
+
+###Predicted Occupancy
+
+```{r}
+
+#any given state
+
+predState<-group_by(pars,par) %>% filter(par=="present") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
+
+predState$species<-as.factor(predState$species)
+predState$plant<-factor(predState$plant,levels=1:plant_species)
+
+predplot<-ggplot(predState,aes(x=species,y=plant,fill=as.factor(State))) + geom_tile() + scale_fill_manual(labels=c("Absent","Present"),values=c("white","black")) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted")
+
+grid.arrange(trueplot,obplot,predplot,nrow=1)
+```

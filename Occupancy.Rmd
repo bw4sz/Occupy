@@ -906,7 +906,7 @@ nb <- 0 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
-
+cd cd
 m4 = jags(inits=InitStage,
          n.chains=nc,
          model.file="Simulation4.jags",
