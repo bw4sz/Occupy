@@ -152,10 +152,33 @@ ggplot(d,aes(x=True_State,y=Detections,col=Month)) + geom_point() + theme_bw() +
 ###Observation
 $$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
 
-#Process
+###Process
 $$N_{i,j} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \_i* $$
 
+
+###Fixed Species Level Priors
+detect ~ dunif(0,1) # Detection for each bird species
+    
+###Hierarcichal Priors
+  
+    $$\alpha_i \sim dnorm(intercept,\tau_{\alpha})$$
+    $$\beta[i] ~ dnorm(\gamma,\tau_{\beta})$$    
+    $$\beta_2[i] ~ dnorm(\gamma,tau_polybeta)$$    
+    
+    #Hyperpriors
+    $$gamma \sim N(0.001,0.001)$$
+    $$polygamma \sim N(0.001,0.001)$$
+    $$intercept \sim N(0.001,0.001)$$
+    
+    $$tau_alpha \sim dgamma(0.001,0.001)$$
+    $$sigma_int = \frac{1}{\tau_{\alpha}}^2$$
+    $$tau_beta \sim dgamma(0.001,0.001)$$
+    $$sigma_slope = \frac{1}{\tau_{\beta}}^2$$
+    
+    tau_polybeta ~ dgamma(0.001,0.001)
+    sigma_polyslope<-pow(1/tau_polybeta,0.5)
+    
 ```{r,eval=T}
  setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
@@ -183,7 +206,7 @@ initY<-true_interactions+1
 InitStage <- function() {list(beta=rep(.5,h_species),alpha=rep(.5,h_species),detect=rep(.5,h_species),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("lambda","detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","polybeta","sigma_polyslope")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","polybeta","sigma_polyslope","polygamma")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -214,21 +237,23 @@ m5 <- update(m5,n.iter=add)
 
 ```{r}
   #extract desired info from the models
-  parsO<-melt(m5$BUGSoutput$sims.array)
+  parsO<-melt(m$BUGSoutput$sims.array)
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-2000/m5$BUGSoutput$n.chains),]
+  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-3000/m$BUGSoutput$n.chains),]
   
   #label species and plants
   l<-levels(parsO$parameter)
 
   #parameters to save
-  totrack<-m5$parameters.to.save
+  totrack<-m$parameters.to.save
   
   sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,paste(totrack,collapse="|")))
   
   colnames(sp_pl)<-c("parameter","species","plant","par")
 
   sp_pl[is.na(sp_pl$species),c("species")]<-str_extract(sp_pl[is.na(sp_pl$species),"parameter"],"\\d+")
+
+  #merge levels
   pars<-merge(parsO,sp_pl)
   
   #take out deviance
@@ -241,32 +266,32 @@ m5 <- update(m5,n.iter=add)
 ```{r,cache=FALSE,eval=TRUE,fig.width=8,fig.height=4}
 
 ###Chains
-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars[pars$par %in% c("detect","alpha","beta","polybeta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
 ```
 
 ```{r,fig.height=2,fig.width=12,eval=F}
-ggplot(pars[pars$par %in% c("alpha","beta","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Occupancy Probability") + facet_wrap(~par,scales="free")
+ggplot(pars[pars$par %in% c("gamma","polygamma","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Occupancy Probability") + facet_wrap(~par,scales="free")
 ```
 
 ###Posteriors
 
 ```{r,cache=FALSE,fig.width=9,fig.height=3}
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_wrap(~species) + theme_bw() + ggtitle("Detection Probability")
+p<-ggplot(pars[pars$par %in% c("detect","alpha","beta","polybeta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
 colnames(tr)<-c("species","par","value")
 p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ```
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
 
-p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_grid(~par,scale="free") + theme_bw() 
+p<-ggplot(pars[pars$par %in% c("gamma","polygamma","intercept","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
+tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope,polybeta=beta2))
 
 colnames(tr)<-c("value","par")
 
@@ -278,27 +303,27 @@ p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
 ###Predicted Relationship
 ```{r,fig.height=4,fig.width=4}
  
-castdf<-group_by(pars,Chain) %>% sample_n(1000)%>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
+castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("polygamma","gamma","intercept"))
 
-castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
-castdf<-castdf[sample(1:nrow(castdf),1000),]
+castdf<-dcast(pars[pars$par %in% c("gamma","intercept","polygamma"),], Chain + Draw~par,value.var="estimate")
+castdf<-castdf[sample(1:nrow(castdf),1500),]
 
-trajF<-function(alpha,beta,x){
-  indat<-cbind(alpha,beta)
+trajF<-function(alpha,beta,beta2,x){
+  indat<-cbind(alpha,beta,beta2)
   
   #fit regression for each input estimate
   sampletraj<-apply(indat,1,function(s){
-    data.frame(x=x,y=inv.logit(s['alpha'] + s['beta'] *x))})
+    data.frame(x=x,y=exp(s['alpha'] + s['beta'] *x + s['beta2']*x^2))})
   sample_all<-rbind_all(sampletraj)
   
   #Compute CI intervals
-  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025),upper=quantile(y,0.975),mean=mean(y))
+  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
   }
 
 #calculated predicted y
-predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=as.numeric(traitmatch))
+predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,beta2=castdf$polygamma,x=as.numeric(traitmatch))
 
-orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,sigma_slope),x=as.numeric(traitmatch))
+orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,sigma_slope),beta2=rnorm(2000,polygamma,sigma_slope2),x=as.numeric(traitmatch))
 
 #plot and compare to original data
 ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2)  + geom_line(aes(y=mean),size=1.1,col="red") + theme_bw() + ylab("Probability of Occurrence") + geom_ribbon(data=orig,aes(x=x,ymin=lower,ymax=upper),fill='blue',alpha=.5) + xlab("Difference between Bill and Corolla Length")
@@ -308,7 +333,7 @@ Blue area is the true relationship with known variance. The red line is the mean
 
 ###Predicted Occupancy
 
-```{r}
+```{r,eval=FALSE}
 
 #any given state
 

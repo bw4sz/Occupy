@@ -1,0 +1,12 @@
+base
+reshape2
+ggplot2
+knitr
+lattice
+coda
+rjags
+R2jags
+dplyr
+stringr
+gridExtra
+boot
