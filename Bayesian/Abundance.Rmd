@@ -5,6 +5,23 @@ date: "Monday, March 16, 2015"
 output: html_document
 ---
 
+```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
+library(reshape2)
+library(ggplot2)
+library(knitr)
+library(R2jags)
+library(dplyr)
+library(stringr)
+library(gridExtra)
+library(boot)
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=FALSE,cache=TRUE,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
+
+setwd("C:/Users/Ben/Documents/Occupy/")
+
+set.seed(11)
+
+```
+
 **In this study we want to estimate three quantitites:**
 
 $$\hat{Y}_{i,j} = \text{Abundance of Interactions between Hummingbird i  at  Flower j}$$
@@ -22,8 +39,8 @@ $$ p_{i,j} = \text{the probability of detecting a bird-flower interaction given 
     * Range of bill sizes (mm) Pois(10)
   * Ten plants
     * Range of corolla sizes (mm) Pois(10)
-  * Mean occupancy ($\gamma$) for each hummingbird is drawn from U(0.5,1)  
-    * For each plant the occupancy is N($\gamma$,0.2) (truncated,0-1) 
+  * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
+    * For each plant the occupancy is N($\lambda$,0.2) (truncated,0-1) 
     * Strong trait matching (minimizing Bill-Corolla difference)
       $logit(true_state)<-\alpha + \beta *traitmatch$
       where $\alpha=0, \beta = 1$
@@ -35,38 +52,45 @@ $$ p_{i,j} = \text{the probability of detecting a bird-flower interaction given 
 
 ```{r,fig.height=5,fig.width=8}
 #Number of hummingbird species
-h_species=4
+h_species=8
 plant_species=20
 months=24
 detection=runif(h_species,0,1)
-phenology=0.5
+phenology=1
 
 #Bill sizes
 Bill<-rpois(h_species,10)
 
 #Corolla sizes
-Corolla<-rpois(plant_species,20)
+Corolla<-rpois(plant_species,15)
 
 #Subtract both
 traitmatch<-sapply(Corolla,function(x) x - Bill)
 
 #regression slope
-intercept=0.5
-gamma=-0.2
-sigma_slope=0.02
-sigma_intercept=0.02
+intercept<-3
+gamma<- -0.01
+polygamma<- -0.04
+sigma_slope<- 0.002
+sigma_slope2<- 0.002
+sigma_intercept<- 0.01
 
 beta<-rnorm(h_species,gamma,sigma_slope)
+beta2<-rnorm(h_species,polygamma,sigma_slope2)
 alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #fit regression
-occupancy<-inv.logit(alpha + beta * traitmatch)
+lambda<-exp(alpha + beta * traitmatch + beta2*traitmatch^2)
 
-df<-dcast(melt(list(occ=occupancy,traitmatch=traitmatch)),Var1+Var2~L1)
-ggplot(df,aes(x=traitmatch,y=occ,col=as.factor(Var1))) + geom_point(size=6) + geom_smooth(method="lm",aes(group=Var1)) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrence Probability","Hummingbird") + ggtitle("Correlation in Simulated Data")
+true_interactions<-sapply(lambda,function(x){rpois(1,x)})
 
-#create data matrix
-dat<-matrix(nrow=h_species,ncol=plant_species,data=rbinom(occupancy,1,occupancy))
+#convert to matrix
+true_interactions<-matrix(nrow=h_species,ncol=plant_species,data=true_interactions)
+
+#combine and melt into a single dataframe
+mdat<-dcast(melt(list(y=true_interactions,x=traitmatch)),Var1+Var2~L1)
+
+ggplot(mdat,aes(x=x,y=y,col=Var1)) + geom_point() + geom_smooth(method="glm",family="poisson",formula=y~poly(x,2)) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Correlation in Simulated Data")
 
 ```
 
@@ -74,9 +98,8 @@ dat<-matrix(nrow=h_species,ncol=plant_species,data=rbinom(occupancy,1,occupancy)
 
 ```{r}
 #Reshape into a nicer format
-mdat<-melt(dat)
-colnames(mdat)<-c("Plant","Hummingbird","True_State")
-trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=as.factor(True_State))) + geom_tile() + scale_fill_manual(labels=c(0,1),values=c("White","Black")) + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ")
+colnames(mdat)<-c("Plant","Hummingbird","Bill Diff","True_State")
+trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=True_State)) + geom_tile() + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ") + scale_fill_continuous(low="white",high="red","Occurrences")
 ```
 
 ```{r,fig.width=7,fig.height=3}
@@ -92,23 +115,33 @@ sampled[sampled==0]<-NA
 
 for(x in 1:h_species){
   for (y in 1:plant_species){
-    ts<-dat[x,y]
     
-    #Detections
-    d<-rbinom(months,1,detection[x])
+    #True State
+    ts<-true_interactions[x,y]
     
     #detections are function of phenology detection probability and occupancy
-    obs[x,y,]<-d *sampled[,y] * ts
+    d<-rbinom(months,ts,detection[x])
+    
+    #detections and phenology
+    obs[x,y,]<-d *sampled[,y]
     }
   }
 
 #plot observed state
 obs.state<-melt(obs)
-colnames(obs.state)<-c("Hummingbird","Plant","Month","Presence")
-obs.state<-group_by(obs.state,Hummingbird,Plant) %>% summarize(Detections=sum(Presence,na.rm=T))
+colnames(obs.state)<-c("Hummingbird","Plant","Month","Detections")
 
-obplot<-ggplot(obs.state,aes(x=Hummingbird,y=as.factor(Plant),fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red") + ylab("Plant") + ggtitle("Observed")
-grid.arrange(trueplot,obplot,nrow=1)
+#turn NA's to 0
+obs.state$Detections[is.na(obs.state$Detections)]<-0
+
+obs.state$Hummingbird<-as.factor(obs.state$Hummingbird)
+obs.state$Plant<-factor(obs.state$Plant,levels=1:plant_species)
+
+ob1<-ggplot(obs.state[obs.state$Month==12,],aes(x=Hummingbird,y=Plant,fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red",limits=c(0,30)) + ylab("Plant") + ggtitle("Example 1") + xlab("Hummingbird")
+
+ob2<-ggplot(obs.state[obs.state$Month==18,],aes(x=Hummingbird,y=Plant,fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red",limits=c(0,30)) + ylab("Plant") + ggtitle("Example 2") + xlab("Hummingbird")
+
+grid.arrange(trueplot,ob1,ob2,nrow=1)
 ```
 
 ## Occupancy Model Formulation
@@ -124,10 +157,10 @@ setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 runs<-30000
 
 #Source model
-source("Simulation5.R")
+source("NMixture.R")
  
 #print model
-print.noquote(readLines("Simulation5.R"))
+print.noquote(readLines("NMixture.R"))
 
 #Input Data
 Dat <- list(

@@ -1,8 +1,4 @@
-setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-sink("NMixture.jags")
-
-cat("
     model {
     for (i in 1:Birds){
       for (j in 1:Plants){
@@ -36,6 +32,4 @@ cat("
     sigma_slope<-pow(1/tau_beta,0.5) #Derived Quantities
     
     }
-    ",fill=TRUE)
-
-sink()
+    
