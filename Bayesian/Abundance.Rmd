@@ -22,6 +22,23 @@ set.seed(11)
 
 ```
 
+#Aim
+
+Network ecology is a rapidly developing field that uses graph theory to represents interactions among plants and pollinators, hosts and parasites, and herbivores and hosts. One aim of network ecology is to quantify the rate of interaction among partners, their relative specialization, and the robustness of these interactions to perturbation. Considerable work has focused on the effect sampling on network structure and how best to measure network properties (Bluthgen, Bascompte, Jordano). Considerably less work has focused on a more fundamental problem of network ecology: Our ability to detect interactions is imperfect in time and space. This limitation is a fundamental assumption in wildlife ecology, where occupancy models are common(). In occupancy modeling, repeated surveys of the same site are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species ecology? The goal of this paper is to use a large dataset on plant-hummingbird interactins from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions and network properties. We will then seperate estimate environmental and morphological covariates to both the probability of interaction ($\psi$) as well as the probability of detection (p).
+
+#Background
+
+  Collecting network data is time consuming and few studies have the resources to adopt a repeated measures sampling design. The hummingbird dataset in this paper was collected using time-lapse cameras which turn on at dawn and dusk automatically. In addition, more traditional hummingbird transects were used to survey flower visitation. Combining these sampling types, we have a very large network with over 3,000 interactions (Weinstein XXXX).
+
+#Similiar work
+
+  * http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0069200
+  * http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210x.2012.00249.x/abstract
+
+#Approach
+
+Occupancy models are complex and require fiting a number of latent variables. Before I fit models to an observed dataset, it is crucial that I simulate data with known results to show that the models are performing well. The goal is to create datasets that match the size and characteristics of our observed data. I will begin slowly, beginning with constant detection and occupancy. The ultimate goal is a model that can estimate occupancy and detection as a hierarchical distribution with uneven sampling at sites. This model will be used to compare niche overlap as a function of available resources, as well as the importance of trait matching in determing occupancy.
+
 **In this study we want to estimate three quantitites:**
 
 $$\hat{Y}_{i,j} = \text{Abundance of Interactions between Hummingbird i  at  Flower j}$$
@@ -31,7 +48,7 @@ $$ \psi_{i,j} = \text{the probability a flower is visited by a hummigbird}  $$
 $$ p_{i,j} = \text{the probability of detecting a bird-flower interaction given that it occurs} $$
 
 
-#Simulation: Constant detection for each hummingbird speices, Interaction frequency is a function of species hierarcichal model and corolla similarity. Uneven sampling among species.
+##Simulation: Constant detection for each hummingbird speices, Interaction frequency is a function of species hierarcichal model and corolla similarity. Uneven sampling among species.
 
 ### Parameters
 
@@ -56,7 +73,7 @@ h_species=8
 plant_species=20
 months=24
 detection=runif(h_species,0,1)
-phenology=1
+phenology=.5
 
 #Bill sizes
 Bill<-rpois(h_species,10)
@@ -71,8 +88,8 @@ traitmatch<-sapply(Corolla,function(x) x - Bill)
 intercept<-3
 gamma<- -0.01
 polygamma<- -0.04
-sigma_slope<- 0.002
-sigma_slope2<- 0.002
+sigma_slope<- 0.01
+sigma_slope2<- 0.01
 sigma_intercept<- 0.01
 
 beta<-rnorm(h_species,gamma,sigma_slope)
@@ -99,10 +116,10 @@ ggplot(mdat,aes(x=x,y=y,col=Var1)) + geom_point() + geom_smooth(method="glm",fam
 ```{r}
 #Reshape into a nicer format
 colnames(mdat)<-c("Hummingbird","Plant","Bill Diff","True_State")
-trueplot<-ggplot(mdat,aes(x=as.factor(Plant),y=as.factor(Hummingbird),fill=True_State)) + geom_tile() + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ") + scale_fill_continuous(low="white",high="red","Occurrences")
+trueplot<-ggplot(mdat,aes(y=as.factor(Plant),x=as.factor(Hummingbird),fill=True_State)) + geom_tile() + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ") + scale_fill_continuous(low="white",high="red","Occurrences")
 ```
 
-```{r,fig.width=7,fig.height=3}
+```{r,fig.width=11,fig.height=4}
 ##Simulate detection 
 
 #for each species loop through and create a replicate dataframe
@@ -158,27 +175,28 @@ $$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \_i* $$
 
 
 ###Fixed Species Level Priors
-detect ~ dunif(0,1) # Detection for each bird species
+$$detect \sim N(0,1)$$ # Detection for each bird species
     
 ###Hierarcichal Priors
   
-    $$\alpha_i \sim dnorm(intercept,\tau_{\alpha})$$
-    $$\beta[i] ~ dnorm(\gamma,\tau_{\beta})$$    
-    $$\beta_2[i] ~ dnorm(\gamma,tau_polybeta)$$    
+$$\alpha_i \sim dnorm(intercept,\tau_{\alpha})$$
+$$\beta[i] \sim dnorm(\gamma,\tau_{\beta})$$    
+$$\beta_2[i] \sim dnorm(\gamma,tau_polybeta)$$    
     
-    #Hyperpriors
-    $$gamma \sim N(0.001,0.001)$$
-    $$polygamma \sim N(0.001,0.001)$$
-    $$intercept \sim N(0.001,0.001)$$
+**Hyperpriors**
+
+$$gamma \sim N(0.001,0.001)$$
+$$polygamma \sim N(0.001,0.001)$$
+$$intercept \sim N(0.001,0.001)$$
+  
+$$tau_alpha \sim dgamma(0.001,0.001)$$
+$$sigma_int = \frac{1}{\tau_{\alpha}}^2$$
+$$tau_beta \sim dgamma(0.001,0.001)$$
+$$sigma_slope = \frac{1}{\tau_{\beta}}^2$$
     
-    $$tau_alpha \sim dgamma(0.001,0.001)$$
-    $$sigma_int = \frac{1}{\tau_{\alpha}}^2$$
-    $$tau_beta \sim dgamma(0.001,0.001)$$
-    $$sigma_slope = \frac{1}{\tau_{\beta}}^2$$
-    
-    tau_polybeta ~ dgamma(0.001,0.001)
-    sigma_polyslope<-pow(1/tau_polybeta,0.5)
-    
+$$tau_polybeta \sim dgamma(0.001,0.001)$$
+$$sigma_polyslope = pow(1/tau_polybeta,0.5)$$
+
 ```{r,eval=T}
  setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
@@ -281,7 +299,7 @@ ggplot(pars[pars$par %in% c("gamma","polygamma","sigma_int","sigma_slope","sigma
 p<-ggplot(pars[pars$par %in% c("detect","alpha","beta","polybeta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta,polybeta=beta2),id.var='species')
 colnames(tr)<-c("species","par","value")
 p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 ```
@@ -326,23 +344,29 @@ predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,beta2=castdf$polygamma,x=a
 orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,sigma_slope),beta2=rnorm(2000,polygamma,sigma_slope2),x=as.numeric(traitmatch))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.2)  + geom_line(aes(y=mean),size=1.1,col="red") + theme_bw() + ylab("Probability of Occurrence") + geom_ribbon(data=orig,aes(x=x,ymin=lower,ymax=upper),fill='blue',alpha=.5) + xlab("Difference between Bill and Corolla Length")
+ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='blue',linetype="dashed",size=1) + xlab("Difference between Bill and Corolla Length")
 ```
 
 Blue area is the true relationship with known variance. The red line is the mean estimated relationship with confidence intervals in shaded grey. 
 
-###Predicted Occupancy
+###Predicted Frequency
 
-```{r,eval=FALSE}
+```{r,eval=T}
 
 #any given state
 
-predState<-group_by(pars,par) %>% filter(par=="present") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
+predState<-group_by(pars,par) %>% filter(par=="N") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
 
 predState$species<-as.factor(predState$species)
 predState$plant<-factor(predState$plant,levels=1:plant_species)
 
-predplot<-ggplot(predState,aes(x=species,y=plant,fill=as.factor(State))) + geom_tile() + scale_fill_manual(labels=c("Absent","Present"),values=c("white","black")) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted")
+predplot<-ggplot(predState,aes(x=species,y=plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted")
 
-grid.arrange(trueplot,obplot,predplot,nrow=1)
+#compare true and pred states
+tr<-melt(true_interactions)
+colnames(tr)<-c("Hummingbird","Plant","True_State")
+
+mdat<-merge(predState,tr,by.x=c("species","plant"),by.y=c("Hummingbird","Plant"))
+
+ggplot(mdat,aes(y=State,x=True_State)) + geom_point(size=3) + geom_abline(linetype="dashed") + theme_bw() + xlab("True State") + ylab("Predicted State") + coord_equal()
 ```
