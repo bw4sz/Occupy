@@ -10,3 +10,10 @@ dplyr
 stringr
 gridExtra
 boot
+ape
+permute
+vegan
+nlme
+picante
+sna
+bipartite

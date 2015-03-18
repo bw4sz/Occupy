@@ -1,5 +1,5 @@
 ---
-title: "AbundanceMixture"
+title: "Accounting for detection bias increases trait-matching in a tropical plant-hummingbird network"
 author: "Ben Weinstein"
 date: "Monday, March 16, 2015"
 output: html_document
@@ -14,6 +14,9 @@ library(dplyr)
 library(stringr)
 library(gridExtra)
 library(boot)
+library(picante)
+library(bipartite)
+
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=FALSE,cache=TRUE,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
@@ -41,31 +44,39 @@ Occupancy models are complex and require fiting a number of latent variables. Be
 
 **In this study we want to estimate three quantitites:**
 
-$$\hat{Y}_{i,j} = \text{Abundance of Interactions between Hummingbird i  at  Flower j}$$
+$$\hat{Y}_{i,j} = \text{Frequency of Interactions between Hummingbird_i  at  Flower_j}$$
 
-$$ \psi_{i,j} = \text{the probability a flower is visited by a hummigbird}  $$
+$$ \psi_{i,j} = \text{The probability a flower is visited by a hummigbird}  $$
 
-$$ p_{i,j} = \text{the probability of detecting a bird-flower interaction given that it occurs} $$
+$$ p_{i,j} = \text{The probability of detecting a bird-flower interaction given that it occurs} $$
 
 
-##Simulation: Constant detection for each hummingbird speices, Interaction frequency is a function of species hierarcichal model and corolla similarity. Uneven sampling among species.
+##Simulation
+
+I first create data with constant detection for each hummingbird speices, and the interaction frequency is a function of a species hierarcichal model and corolla similarity. There is uneven sampling among species.
 
 ### Parameters
 
   * 7 hummingbird species
-    * Range of bill sizes (mm) Pois(10)
+    * Range of hummingbird bill sizes (mm) ~ Pois(10)
   * Ten plants
-    * Range of corolla sizes (mm) Pois(10)
+    * Range of corolla sizes (mm) ~ Pois(20)
   * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
-    * For each plant the occupancy is N($\lambda$,0.2) (truncated,0-1) 
-    * Strong trait matching (minimizing Bill-Corolla difference)
-      $logit(true_state)<-\alpha + \beta *traitmatch$
-      where $\alpha=0, \beta = 1$
+    * For each plant the occupancy is N($\lambda$,0.2) (truncated 0-1) 
+    * Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
+      $logit(true_state)<-\alpha_i + \beta_i *traitmatch + \beta_{2i} * traitmatch^2$
+      $$\alpha=N(3,.01)
+      \beta = N(-.01,.001)
+      \Beta_2=N(.-.05,.001)$$
       
-      * Keep it linear for now (only penalty for having increasingly smaller bill) 
-  * Imperfect detection $p = U(0,1)$ for each hummingbird species
+  * Imperfect detection 
+    * $p_i = U(0,1)$ 
   * 24 month replicates
-  * Phenology = .75 (plants are in flower 3/4 of surveys)
+  * Phenology = .5 (plants are in flower/present .5 of surveys)
+
+************
+
+**View simulated strength and form of trait matching **
 
 ```{r,fig.height=5,fig.width=8}
 #Number of hummingbird species
@@ -87,7 +98,7 @@ traitmatch<-sapply(Corolla,function(x) x - Bill)
 #regression slope
 intercept<-3
 gamma<- -0.01
-polygamma<- -0.04
+polygamma<- -0.05
 sigma_slope<- 0.01
 sigma_slope2<- 0.01
 sigma_intercept<- 0.01
@@ -115,7 +126,8 @@ ggplot(mdat,aes(x=x,y=y,col=Var1)) + geom_point() + geom_smooth(method="glm",fam
 
 ```{r}
 #Reshape into a nicer format
-colnames(mdat)<-c("Hummingbird","Plant","Bill Diff","True_State")
+colnames(mdat)<-c("Hummingbird","Plant","Bill_Diff","True_State")
+
 trueplot<-ggplot(mdat,aes(y=as.factor(Plant),x=as.factor(Hummingbird),fill=True_State)) + geom_tile() + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ") + scale_fill_continuous(low="white",high="red","Occurrences")
 ```
 
@@ -159,29 +171,63 @@ ob1<-ggplot(obs.state[obs.state$Month==12,],aes(x=Hummingbird,y=Plant,fill=Detec
 ob2<-ggplot(obs.state[obs.state$Month==18,],aes(x=Hummingbird,y=Plant,fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red",limits=c(0,max(mdat$True_State))) + ylab("Plant") + ggtitle("Example 2") + xlab("Hummingbird")
 
 grid.arrange(trueplot,ob1,ob2,nrow=1)
+```
 
+The left hand panel is the true state for each hummingbird plant combination. The middle and right hand panel are two realizations that might result from a month of sampling given incomplete detection and phenology.
+
+```{r}
 d<-merge(mdat,obs.state)
 ggplot(d,aes(x=True_State,y=Detections,col=Month)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
+```
+
+#Niave Estimate of Trait-Matching
+
+The majorities model observations without repect to their hierarcichal structure or with detection bias.
+
+Observations between each bird and flower is modeled as a poisson with a lognormal link. 
+
+$$Y{i,j} \sim Pois(\lambda)$$
+$$log(\lambda) = \alpha + \beta * Bill_i-Corolla_i$$
+
+```{r}
+niave<-glm(data=d,Detections~poly(Bill_Diff,2,raw=T)  ,family=poisson())
+pm<-predict(niave,type="response")
+niave.pred<-data.frame(x=d$Bill_Diff,y=pm)
+true.pred<-data.frame(x=d$Bill_Diff,y=d$True_State)
+detect.pred<-data.frame(x=d$Bill_Diff,y=d$Detections)
+pred.frame<-melt(list(Niave=niave.pred,True=true.pred,Detections=detect.pred),id.var=c("x","y"))
+ggplot(pred.frame,aes(x=x,y=y,col=L1)) + geom_point(size=3) + theme_bw() + geom_line(data=pred.frame[pred.frame$L1=='Niave',]) 
 ```
 
 ## Occupancy Model Formulation
 
 ###Observation
+
+The number of observations observed between $hummingbird_i$ and $flower_j$ in $survey_k$ is a binomial trail where the probability of detecting a species is a species specific parameter detect with N trials.
+
 $$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
 
 ###Process
+
+N is the underlying frequency of interactions among each pair of plants and hummingbirds drawn from a poisson with $\lambda_{i,j}$, which is modeled as lognormal distributions 
+
 $$N_{i,j} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \_i* $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \beta_{i2} *(Bill_i - Corolla_i)^2 $$
 
+###Fixed species level priors
+$$detect \sim N(0,1)$$ 
+**Detection is set for each bird species** This could account for differing abundances or foraging intensity.
 
-###Fixed Species Level Priors
-$$detect \sim N(0,1)$$ # Detection for each bird species
     
-###Hierarcichal Priors
+###Hierarchical Priors
   
-$$\alpha_i \sim dnorm(intercept,\tau_{\alpha})$$
-$$\beta[i] \sim dnorm(\gamma,\tau_{\beta})$$    
-$$\beta_2[i] \sim dnorm(\gamma,tau_polybeta)$$    
+Species level priors for the strength of trait-matching is drawn from a normal distribution of for all hummingirds.
+
+$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
+
+$$\beta_i \sim N(\gamma,\tau_{\beta})$$
+
+$$\beta_{i2} \sim N(\gamma,\tau_{polybeta})$$    
     
 **Hyperpriors**
 
@@ -189,13 +235,15 @@ $$gamma \sim N(0.001,0.001)$$
 $$polygamma \sim N(0.001,0.001)$$
 $$intercept \sim N(0.001,0.001)$$
   
-$$tau_alpha \sim dgamma(0.001,0.001)$$
-$$sigma_int = \frac{1}{\tau_{\alpha}}^2$$
-$$tau_beta \sim dgamma(0.001,0.001)$$
-$$sigma_slope = \frac{1}{\tau_{\beta}}^2$$
-    
-$$tau_polybeta \sim dgamma(0.001,0.001)$$
-$$sigma_polyslope = pow(1/tau_polybeta,0.5)$$
+$$\tau_{\alpha} \sim Gamma(0.001,0.001)$$
+$$\tau_\beta \sim Gamma(0.001,0.001)$$
+$$\tau_{polybeta} \sim Gamma(0.001,0.001)$$
+
+**Derived quantities**
+
+$$\sigma_{int} = \frac{1}{\tau_{\alpha}}^2$$
+$$\sigma_{slope} = \frac{1}{\tau_{\beta}}^2$$    
+$$\sigma_{polyslope} = \frac{1}{\tau_{polybeta}}^2$$
 
 ```{r,eval=T}
  setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
@@ -281,14 +329,14 @@ m5 <- update(m5,n.iter=add)
 
 ###Assess Convergence
 
-```{r,cache=FALSE,eval=TRUE,fig.width=8,fig.height=4}
+```{r,cache=FALSE,eval=TRUE,fig.width=10,fig.height=5}
 
 ###Chains
 ggplot(pars[pars$par %in% c("detect","alpha","beta","polybeta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
 ```
 
-```{r,fig.height=2,fig.width=12,eval=F}
+```{r,fig.height=5,fig.width=11,eval=F}
 ggplot(pars[pars$par %in% c("gamma","polygamma","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Occupancy Probability") + facet_wrap(~par,scales="free")
 ```
 
@@ -309,7 +357,7 @@ p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 p<-ggplot(pars[pars$par %in% c("gamma","polygamma","intercept","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope,polybeta=beta2))
+tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope,sigma_polyslope=sigma_slope2,polygamma=polygamma))
 
 colnames(tr)<-c("value","par")
 
@@ -354,7 +402,6 @@ Blue area is the true relationship with known variance. The red line is the mean
 ```{r,eval=T}
 
 #any given state
-
 predState<-group_by(pars,par) %>% filter(par=="N") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
 
 predState$species<-as.factor(predState$species)
