@@ -64,10 +64,10 @@ I first create data with constant detection for each hummingbird speices, and th
   * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
     * For each plant the occupancy is N($\lambda$,0.2) (truncated 0-1) 
     * Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
-      $logit(true_state)<-\alpha_i + \beta_i *traitmatch + \beta_{2i} * traitmatch^2$
-      $$\alpha=N(3,.01)
-      \beta = N(-.01,.001)
-      \Beta_2=N(.-.05,.001)$$
+    $$logit(true_state)<-\alpha_i + \beta_i *traitmatch + \beta_{2i} * traitmatch^2$$
+      $$\alpha=N(3,.01)$$
+      $$\beta = N(-.01,.001)$$
+      $$\beta_2=N(.-.05,.001)$$
       
   * Imperfect detection 
     * $p_i = U(0,1)$ 
@@ -124,7 +124,7 @@ ggplot(mdat,aes(x=x,y=y,col=Var1)) + geom_point() + geom_smooth(method="glm",fam
 
 ### True Interaction Matrix
 
-```{r}
+```{r,fig.width=12}
 #Reshape into a nicer format
 colnames(mdat)<-c("Hummingbird","Plant","Bill_Diff","True_State")
 
@@ -182,12 +182,12 @@ ggplot(d,aes(x=True_State,y=Detections,col=Month)) + geom_point() + theme_bw() +
 
 #Niave Estimate of Trait-Matching
 
-The majorities model observations without repect to their hierarcichal structure or with detection bias.
+Fit a model of observations without repect to their hierarcichal structure or with detection bias.
 
 Observations between each bird and flower is modeled as a poisson with a lognormal link. 
 
 $$Y{i,j} \sim Pois(\lambda)$$
-$$log(\lambda) = \alpha + \beta * Bill_i-Corolla_i$$
+$$log(\lambda) = \alpha + \beta * (Bill_i-Corolla_i)$$
 
 ```{r}
 niave<-glm(data=d,Detections~poly(Bill_Diff,2,raw=T)  ,family=poisson())
@@ -195,11 +195,11 @@ pm<-predict(niave,type="response")
 niave.pred<-data.frame(x=d$Bill_Diff,y=pm)
 true.pred<-data.frame(x=d$Bill_Diff,y=d$True_State)
 detect.pred<-data.frame(x=d$Bill_Diff,y=d$Detections)
-pred.frame<-melt(list(Niave=niave.pred,True=true.pred,Detections=detect.pred),id.var=c("x","y"))
-ggplot(pred.frame,aes(x=x,y=y,col=L1)) + geom_point(size=3) + theme_bw() + geom_line(data=pred.frame[pred.frame$L1=='Niave',]) 
+pred.frame<-melt(list(Niave=niave.pred,Detections=detect.pred),id.var=c("x","y"))
+ggplot(pred.frame,aes(x=x,y=y,col=L1)) + geom_point(data=pred.frame[pred.frame$L1=='Detections',],size=2.5) + theme_bw() + geom_line(data=pred.frame[pred.frame$L1=='Niave',]) + labs(col="",x="Bill Length- Corolla Length",y="Interactions") + scale_color_discrete(labels=c("Observations","Poisson GLM"))
 ```
 
-## Occupancy Model Formulation
+## Hierarcichal Occupancy Model Formulation
 
 ###Observation
 
@@ -215,9 +215,8 @@ $$N_{i,j} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \beta_{i2} *(Bill_i - Corolla_i)^2 $$
 
 ###Fixed species level priors
-$$detect \sim N(0,1)$$ 
+$$detect_i \sim U(0,1)$$ 
 **Detection is set for each bird species** This could account for differing abundances or foraging intensity.
-
     
 ###Hierarchical Priors
   
@@ -242,8 +241,8 @@ $$\tau_{polybeta} \sim Gamma(0.001,0.001)$$
 **Derived quantities**
 
 $$\sigma_{int} = \frac{1}{\tau_{\alpha}}^2$$
-$$\sigma_{slope} = \frac{1}{\tau_{\beta}}^2$$    
-$$\sigma_{polyslope} = \frac{1}{\tau_{polybeta}}^2$$
+$$\sigma_{slope} = \frac{1}{\tau_{\beta}}^2$$
+$$\sigma_{polyslope} = \frac{1}{\tau_{poly\beta}}^2$$
 
 ```{r,eval=T}
  setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
@@ -329,20 +328,20 @@ m5 <- update(m5,n.iter=add)
 
 ###Assess Convergence
 
-```{r,cache=FALSE,eval=TRUE,fig.width=10,fig.height=5}
+```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
 
 ###Chains
 ggplot(pars[pars$par %in% c("detect","alpha","beta","polybeta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
 ```
 
-```{r,fig.height=5,fig.width=11,eval=F}
-ggplot(pars[pars$par %in% c("gamma","polygamma","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Occupancy Probability") + facet_wrap(~par,scales="free")
+```{r,fig.height=5,fig.width=11,eval=T}
+ggplot(pars[pars$par %in% c("gamma","polygamma","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ###Posteriors
 
-```{r,cache=FALSE,fig.width=9,fig.height=3}
+```{r,cache=FALSE,fig.width=7,fig.height=5}
 ###Posterior Distributions
 p<-ggplot(pars[pars$par %in% c("detect","alpha","beta","polybeta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
 
@@ -366,7 +365,10 @@ p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
 
 **True values are given in the dashed lines.**
 
-###Predicted Relationship
+###Predicted Relationship 
+
+Does accounting for non-independence and detection change our estimate of trait matching?
+
 ```{r,fig.height=4,fig.width=4}
  
 castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("polygamma","gamma","intercept"))
@@ -391,13 +393,20 @@ predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,beta2=castdf$polygamma,x=a
 
 orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,sigma_slope),beta2=rnorm(2000,polygamma,sigma_slope2),x=as.numeric(traitmatch))
 
+niaveP<-trajF(alpha=rep(niave$coefficients[1],100),beta=rep(niave$coefficients[2],100),beta2=rep(niave$coefficients[3],100),x=as.numeric(traitmatch))
+
 #plot and compare to original data
-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='blue',linetype="dashed",size=1) + xlab("Difference between Bill and Corolla Length")
+ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='blue',linetype="dashed",size=1) + geom_line(data=niaveP,aes(x=x,y=mean),col="green") + xlab("Difference between Bill and Corolla Length") 
 ```
 
-Blue area is the true relationship with known variance. The red line is the mean estimated relationship with confidence intervals in shaded grey. 
+Blue line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The poisson glm that does not account for detectability or non-independence is in green.
+
+
+**Conclusion:** Accounting for detection and non-independence greatly increases the accuracy of the predicted state. The poisson glm underestimates the strength of trait matching among hummingbirds and their foodplants.
 
 ###Predicted Frequency
+
+Validating the model.
 
 ```{r,eval=T}
 
@@ -417,3 +426,7 @@ mdat<-merge(predState,tr,by.x=c("species","plant"),by.y=c("Hummingbird","Plant")
 
 ggplot(mdat,aes(y=State,x=True_State)) + geom_point(size=3) + geom_abline(linetype="dashed") + theme_bw() + xlab("True State") + ylab("Predicted State") + coord_equal()
 ```
+
+***********
+
+#Observed dataset
