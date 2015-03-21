@@ -1,7 +1,4 @@
 
-sink("NMixture.jags")
-
-cat("
     model {
     for (i in 1:Birds){
       for (j in 1:Plants){
@@ -38,6 +35,4 @@ cat("
     sigma_polyslope<-pow(1/tau_polybeta,0.5)
     
     }
-    ",fill=TRUE)
-
-sink()
+    
