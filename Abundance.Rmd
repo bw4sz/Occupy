@@ -26,11 +26,11 @@ set.seed(11)
 
 ```
 
-#Aim
+#Introduction
 
-Network ecology is a rapidly developing field that uses graph theory to represent interactions in ecological assemblages. While considerable work has focused on the effect sampling on network structure and how best to measure network properties (Bluthgen, Bascompte, Jordano), much less work has focused on a central problem of network ecology: our ability to detect interactions is imperfect in time and space. This limitation can greatly bias results by assuming that non-detection is synomonous with non-interaction. 
+Network ecology is a rapidly developing field that reinvorgorated research on assemblage stability and complexity. By harnessing graph theory to represent interactions in ecological assemblages, ecological networks have been used to study the evolution of specialization (), the importance of complex interactions in maintaining stablity() and predicting population collapse due to shared interactions(). While considerable work has focused on the effect sampling on network structure and how best to measure network properties (Bluthgen, Bascompte, Jordano), much less work has focused on a central problem of network ecology: our ability to detect interactions is imperfect in time and space. This limitation can greatly bias results by assuming that non-detection is synomonous with non-interaction. 
 
-  The importance of detection bias is widely appreciated in wildlife ecology, but only rarely incoporated into evolutionary and theoretical ecology. However, the same issues that limit inference in determining population dyanimcs (), site selection(), and breeding ecology (), also undermine our ability to make inference about ecological systems. We can harness the tools developed in widlife sciences to strengthen the realism of network observations. The chief improvement is to incorporate detection bias direct into our estimates of species interactions using occupancy models. In occupancy modeling, repeated surveys of the same site are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species ecology? The goal of this paper is to use a large dataset on plant-hummingbird interactions from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions and network properties. 
+  The importance of detection bias is widely appreciated in wildlife sciences(Mackenzie), but only rarely incoporated into evolutionary and theoretical ecology (xy, but see). However, the same issues that limit inference in determining population dyanimcs (), site selection(), and breeding ecology (), also undermine our ability to make inference about the evolution of ecological systems. We can harness the tools developed in widlife sciences to strengthen the realism of network observations. The chief improvement is to incorporate detection bias directly into our estimates of species interactions using occupancy models. In occupancy modeling, repeated surveys of the same site are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species  or functional morphology? The goal of this paper is to use a large dataset on plant-hummingbird interactions from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions and network properties. 
   
   In the tropical Andes, up to thirty hummingbirds can co-occur in local assemblages. Hummingbirds have a diversity of bill morphologies, which are used to extract nectar from food plants. Species with longer, more curved bills tend to be more specialized (Temeles,Magliansi), and tend to match their bill morphology to longer and more curved flower corollas. This traitmatching may help promote community stability through niche partitioning(). To test the strength of the observed traitmatching, studies use the number of visits to a flower as interaction strength among network levels. While, randomization approaches have been purposed to test for the strength of specialization (Bluthgen), extremely few studies have evaluated the detection rates of different interactions, and included these coefficients into estimates of trait matching. 
   
@@ -69,7 +69,6 @@ $$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \beta_{i2} *(B
 $$ \psi_{i,j} = \text{The probability a flower is visited by a hummigbird}  $$
 
 $$ p_{i,j} = \text{The probability of detecting a bird-flower interaction given that it occurs} $$
-
 
 ##Simulation
 
@@ -267,38 +266,29 @@ $$\sigma_{int} = \frac{1}{\tau_{\alpha}}^2$$
 $$\sigma_{slope} = \frac{1}{\tau_{\beta}}^2$$
 $$\sigma_{polyslope} = \frac{1}{\tau_{poly\beta}}^2$$
 
-
-```{r}
-#Input data is ragged
-obsrag<-melt(obs)
-colnames(obsrag)<-c("Hummingbird","Plant","Month","Detections")
-obsrag<-obsrag[!is.na(obsrag$Detections),]
-```
-
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
 runs<-20000
 
 #Source model
-source("Bayesian/NMixtureRagged.R")
+source("Bayesian/NMixture.R")
  
 #print model
-print.noquote(readLines("Bayesian/NMixtureRagged.R"))
+print.noquote(readLines("Bayesian/NMixture.R"))
 
 #Input Data
 Dat <- list(
-  Y=obsS,
-  Plants=plant_species,
-  Birds=h_species,
-  Months=months,
-  traitmatch=traitmatch
-  )
+  Y=obs,
+  Birds=dim(obs)[1],
+  Plants=dim(obs)[2],
+  Months=dim(obs)[3],
+  traitmatch=traitmatch)
 
 #A blank Y matrix - all present
-initY<-true_interactions+1
+initY<-array(dim=c(Dat$Birds,Dat$Plants),data=max(obs,na.rm=T))
 
 #Inits
-InitStage <- function() {list(beta=rep(.5,h_species),alpha=rep(.5,h_species),detect=rep(.5,h_species),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","polybeta","sigma_polyslope","polygamma")
@@ -530,64 +520,77 @@ p<-p + coord_flip()
 #remove species with less than  20 observations
 keep<-names(which(table(m.datH$Hummingbird) > 20))
 
-m.datH<-m.datH[m.datH$Hummmingbird %in% keep,]
-
-#observed data matrix
-obsF<-with(m.datH,table(Hummingbird,Iplant_Double,DateP))
+m.datH<-droplevels(m.datH[m.datH$Hummingbird %in% keep,])
 
 #observed traitmatching
 traitmatchF<-t(sapply(hum.morph$Bill,function(x){x-fl.morph$TotalCorolla}))
 
 rownames(traitmatchF)<-hum.morph$English
 colnames(traitmatchF)<-fl.morph$Group.1
-
-#Species get an index level
-
-#levels have to match
-obsT<-obsF[rownames(obsF) %in% rownames(traitmatchF),colnames(obsF) %in% colnames(traitmatchF),]
-
-traitmatchT<-traitmatchF[rownames(traitmatchF) %in% rownames(obsT),colnames(traitmatchF) %in% colnames(obsT)]
-
-
 ```
 
-Account for phenology
-
-Not every plant is available every month. Set all plants that are 0 in a month to NA
+```{r}
+traitmatchT<-traitmatchF[rownames(traitmatchF) %in% m.datH$Hummingbird,colnames(traitmatchF) %in% m.datH$Iplant_Double]
+```
 
 ```{r}
-for(x in 1:length(dim(obsT)[3])){
-obsT[,,x]
-toNA<-names(which(apply(obsT[,,x]
-,2,sum)==0))
-obsT[,toNA,x]<-NA
+#Formatting indexes
+m.datH$Bird<-as.numeric(factor(m.datH$Hummingbird,sort(unique(m.datH$Hummingbird))))
+m.datH$Plant<-as.numeric(factor(m.datH$Iplant_Double,sort(unique(m.datH$Iplant_Double))))
+m.datH$obs<-1
+
+traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))]
+
+indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=paste(Month,Year)) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) 
+
+indat$Time<-as.numeric(factor(indat$Time))
+
+#add in non-detection 0's
+#this involves some ugly data management, where we have to figure out which plants were sampled in which periods, and if it was sampled, the non-detections are 0 if it wasn't the non-detections are NA. then remove all the Na's.
+
+indat<-acast(indat,Bird~Plant~Time,value.var="Yobs",fill=0)
+
+#Get rid of plants not surveyed in that time period
+for(x in 1:dim(indat)[3]){
+  a<-indat[,,x]
+  toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
+  indat[,toNA,x]<-NA
 }
+
+#melt and remove Na's
+indat<-melt(indat)
+indat<-indat[!is.na(indat$value),]
+
+colnames(indat)<-c("Bird","Plant","Time","Yobs")
 ```
 
 ```{r,eval=T}
-  
-runs<-20000
+
+
+runs<-10000
 
 #Source model
-source("Bayesian/NMixture.R")
+source("Bayesian/NMixtureRagged.R")
  
 #print model
-print.noquote(readLines("Bayesian/NMixture.R"))
+print.noquote(readLines("Bayesian/NMixtureRagged.R"))
 
 #Input Data
 Dat <- list(
-  Y=obsT,
-  Plants=dim(obsT)[2],
-  Birds=dim(obsT)[1],
-  Months=dim(obsT)[3],
+  Y=indat$Yobs,
+  Bird=indat$Bird,
+  Plant=indat$Plant,
+  Birds=length(unique(indat$Bird)),
+  Plants=length(unique(indat$Plant)),
+  Nobs=length(indat$Yobs),
   traitmatch=traitmatchT
   )
 
 #A blank Y matrix - all present
-initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(as.numeric(obsT[]),na.rm=T)+1)
+initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y))
 
 #Inits
-InitStage <- function() {list(beta=rep(.5,h_species),alpha=rep(.5,h_species),detect=rep(.5,h_species),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","polybeta","sigma_polyslope","polygamma")
@@ -602,7 +605,7 @@ nc <- 2  # number of chains
 
 m2 = jags(inits=InitStage,
          n.chains=nc,
-         model.file="Bayesian/NMixture.jags",
+         model.file="Bayesian/NMixtureRagged.jags",
          working.directory=getwd(),
          data=Dat,
          parameters.to.save=ParsStage,
@@ -623,7 +626,7 @@ m2 = jags(inits=InitStage,
   l<-levels(parsO$parameter)
 
   #parameters to save
-  totrack<-m$parameters.to.save
+  totrack<-m2$parameters.to.save
   
   sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,paste(totrack,collapse="|")))
   
@@ -671,17 +674,24 @@ ggplot(pars[pars$par %in% c("gamma","polygamma","intercept","sigma_int","sigma_s
 
 castdf<-dcast(pars[pars$par %in% c("beta","alpha","polybeta"),], species +Chain + Draw~par,value.var="estimate")
 
-species.split<-split(castdf,castdf$species)
-species.traj<-lapply(species.split,function(x){
-  trajF(alpha=x$alpha,beta=x$beta,beta2=x$polybeta,x=as.numeric(traitmatch))
-})
+#Turn to 
+castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
 
-names(species.traj)<-rownames(obsT)
+species.split<-split(castdf,castdf$species)
+
+species.traj<-list()
+
+for(d in 1:length(species.split)){
+  x<-species.split[[d]]
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,beta2=x$polybeta,x=as.numeric(traitmatchT))
+}
+
+names(species.traj)<-rownames(traitmatchT)
 
 species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
 
 #plot and compare to original data
-ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~L1,scales="free",ncol=3) 
+ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~L1,scales="free",ncol=3) + labs(fill="Species")
 ```
 
 ###Overall predicted relationship 
@@ -708,7 +718,7 @@ trajF<-function(alpha,beta,beta2,x){
   }
 
 #calculated predicted y
-predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,beta2=castdf$polygamma,x=as.numeric(traitmatch))
+predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,beta2=castdf$polygamma,x=seq(-20,20,.5))
 
 #plot and compare to original data
 ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 

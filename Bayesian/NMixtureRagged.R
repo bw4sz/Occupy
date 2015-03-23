@@ -1,21 +1,29 @@
-setwd("C:/Users/Ben/Documents/Occupy/Bayesian")
 
-sink("NMixtureRagged.jags")
+sink("Bayesian/NMixtureRagged.jags")
 
 cat("
     model {
-    for (i in 1:N){
-    # True state model for the only partially observed true state    
-      log(lambda[Bird[i],Plant[i])<-alpha[Bird[i]] + beta[Bird[i]] * traitmatch[Bird[i],Plant[i]] + polybeta[Bird[i]] * pow(traitmatch[Bird[i],Plant[i]],2)
-      N[Bird[i],Plant[i]] ~ dpois(lambda[Bird[i],Plant[i]])
+    
+  for (i in 1:Birds){
+    for (j in 1:Plants){
+      #Process Model
+      log(lambda[i,j])<-alpha[i] + beta[i] * traitmatch[i,j] + polybeta[i] * pow(traitmatch[i,j],2)
+
+      #True state model  
+      N[i,j] ~ dpois(lambda[i,j])
+      }
+    }
+
+    #Observation Model
+    for (i in 1:Nobs){
       Y[i] ~ dbin(detect[Bird[i]],N[Bird[i],Plant[i]]) 
     }
     
-    for (i in 1:Birds){
-    detect[Bird[i]] ~ dunif(0,1) # Detection for each bird species
-    alpha[Bird[i]] ~ dnorm(intercept,tau_alpha)
-    beta[Bird[i]] ~ dnorm(gamma,tau_beta)    
-    polybeta[Bird[i]] ~ dnorm(polygamma,tau_polybeta)    
+    for (k in 1:Birds){
+    detect[k] ~ dunif(0,1) # Detection for each bird species
+    alpha[k] ~ dnorm(intercept,tau_alpha)
+    beta[k] ~ dnorm(gamma,tau_beta)    
+    polybeta[k] ~ dnorm(polygamma,tau_polybeta)    
     }
     
     #Hyperpriors

@@ -1,5 +1,5 @@
 
-sink("NMixture.jags")
+sink("Bayesian/NMixture.jags")
 
 cat("
     model {
