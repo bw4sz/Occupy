@@ -268,7 +268,7 @@ $$\sigma_{polyslope} = \frac{1}{\tau_{poly\beta}}^2$$
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-20000
+runs<-100000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -530,7 +530,10 @@ colnames(traitmatchF)<-fl.morph$Group.1
 ```
 
 ```{r}
-traitmatchT<-traitmatchF[rownames(traitmatchF) %in% m.datH$Hummingbird,colnames(traitmatchF) %in% m.datH$Iplant_Double]
+#make the names
+#ROund to 2 decimals
+#Convert to cm for winbugs, avoids numerical underflow
+traitmatchT<-round(traitmatchF[rownames(traitmatchF) %in% m.datH$Hummingbird,colnames(traitmatchF) %in% m.datH$Iplant_Double],2)/10
 ```
 
 ```{r}
@@ -541,24 +544,24 @@ m.datH$obs<-1
 
 traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))]
 
-indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=paste(Month,Year)) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) 
+indat<-filter(m.datH,!is.na(Month)) %>% mutate(Time=paste(Month,Year)) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) 
 
 indat$Time<-as.numeric(factor(indat$Time))
 
 #add in non-detection 0's
 #this involves some ugly data management, where we have to figure out which plants were sampled in which periods, and if it was sampled, the non-detections are 0 if it wasn't the non-detections are NA. then remove all the Na's.
 
-indat<-acast(indat,Bird~Plant~Time,value.var="Yobs",fill=0)
+indatlong<-acast(indat,Bird~Plant~Time,value.var="Yobs",fill=0)
 
 #Get rid of plants not surveyed in that time period
-for(x in 1:dim(indat)[3]){
-  a<-indat[,,x]
+for(x in 1:dim(indatlong)[3]){
+  a<-indatlong[,,x]
   toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
-  indat[,toNA,x]<-NA
+  indatlong[,toNA,x]<-NA
 }
 
 #melt and remove Na's
-indat<-melt(indat)
+indat<-melt(indatlong)
 indat<-indat[!is.na(indat$value),]
 
 colnames(indat)<-c("Bird","Plant","Time","Yobs")
@@ -566,28 +569,40 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T}
 
-
-runs<-10000
+runs<-100000
 
 #Source model
-source("Bayesian/NMixtureRagged.R")
+source("Bayesian/NMixture.R")
  
 #print model
-print.noquote(readLines("Bayesian/NMixtureRagged.R"))
+print.noquote(readLines("Bayesian/NMixture.R"))
 
-#Input Data
-Dat <- list(
-  Y=indat$Yobs,
-  Bird=indat$Bird,
-  Plant=indat$Plant,
-  Birds=length(unique(indat$Bird)),
-  Plants=length(unique(indat$Plant)),
-  Nobs=length(indat$Yobs),
-  traitmatch=traitmatchT
-  )
+
+#ragged index data
+
+# #Input Data
+# Dat <- list(
+#   Y=indat$Yobs,
+#   Bird=indat$Bird,
+#   Plant=indat$Plant,
+#   Birds=length(unique(indat$Bird)),
+#   Plants=length(unique(indat$Plant)),
+#   Nobs=length(indat$Yobs),
+#   traitmatch=traitmatchT
+#   )
+
+
+# #Input Data
+ Dat <- list(
+   Y=indatlong,
+   Birds=dim(indatlong)[1],
+   Plants=dim(indatlong)[2],
+   Months=dim(indatlong)[3],
+   traitmatch=traitmatchT
+   )
 
 #A blank Y matrix - all present
-initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y))
+initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
 
 #Inits
 InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
@@ -605,7 +620,7 @@ nc <- 2  # number of chains
 
 m2 = jags(inits=InitStage,
          n.chains=nc,
-         model.file="Bayesian/NMixtureRagged.jags",
+         model.file="Bayesian/NMixture.jags",
          working.directory=getwd(),
          data=Dat,
          parameters.to.save=ParsStage,
@@ -681,6 +696,28 @@ species.split<-split(castdf,castdf$species)
 
 species.traj<-list()
 
+trajF<-function(alpha,beta,beta2,x){
+  fdat<-data.frame(alpha=alpha,beta=beta,beta2=beta2)
+  
+  #fit regression for each input estimate
+  sampletraj<-list()
+  for (s in 1:nrow(fdat)){
+    a<-fdat$alpha[s]
+    b<-fdat$beta[s]
+    b2<-fdat$beta2[s]
+    yp=exp(a + (b*x) + (b2*x^2))
+    
+    #compute pred value
+    sampletraj[[s]]<-data.frame(x=x,y=yp)
+    }
+
+   sample_all<-rbind_all(sampletraj)
+  
+  #Compute CI intervals
+  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
+  return(predy)
+  }
+
 for(d in 1:length(species.split)){
   x<-species.split[[d]]
   species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,beta2=x$polybeta,x=as.numeric(traitmatchT))
@@ -703,25 +740,12 @@ Does accounting for non-independence and detection change our estimate of trait 
 castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("polygamma","gamma","intercept"))
 
 castdf<-dcast(pars[pars$par %in% c("gamma","intercept","polygamma"),], Chain + Draw~par,value.var="estimate")
-castdf<-castdf[sample(1:nrow(castdf),1500),]
-
-trajF<-function(alpha,beta,beta2,x){
-  indat<-cbind(alpha,beta,beta2)
-  
-  #fit regression for each input estimate
-  sampletraj<-apply(indat,1,function(s){
-    data.frame(x=x,y=exp(s['alpha'] + s['beta'] *x + s['beta2']*x^2))})
-  sample_all<-rbind_all(sampletraj)
-  
-  #Compute CI intervals
-  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
-  }
 
 #calculated predicted y
-predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,beta2=castdf$polygamma,x=seq(-20,20,.5))
+predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,beta2=castdf$polygamma,x=round(as.numeric(traitmatchT),2))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
+ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
 ```
 
 The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The poisson glm that does not account for detectability or non-independence is in green.
@@ -730,14 +754,27 @@ The red line is the posterior mean with confidible intervals in shaded grey for 
 
 ###Poisson regression without detection bias
 ```{r}
+for (g in 1:nrow(indat)){  
+indat[g,"x"]<-traitmatchT[indat[g,"Bird"],indat[g,"Plant"]]  
+}
 
+niaveobs<-glm(data=indat,Yobs~poly(x,2,raw=T),family=poisson())
+summary(niaveobs)
+niavecoef<-niaveobs$coefficients
+predyniave<-trajF(alpha=rep(niavecoef[1],100),beta=rep(niavecoef[2],100),beta2=rep(niavecoef[3],100),x=as.numeric(traitmatchT))
+
+#plot and compare to original data
+p<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + ggtitle("Without accounting for detection bias")
+
+pboth<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_ribbon(data=predy,aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(data=predy,aes(y=mean),size=1.,col="red") + ggtitle("Accounting for detection bias")
+grid.arrange(p,pboth)
 ```
 
 ###Predicted Frequency
 
 Validating the model.
 
-```{r,eval=F}
+```{r,eval=T}
 
 #any given state
 predState<-group_by(pars,par) %>% filter(par=="N") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
