@@ -1,6 +1,6 @@
 ---
 title: "Accounting for detection bias increases trait-matching in a tropical plant-hummingbird network"
-author: "Ben Weinstein"
+author: "Ben Weinstein - Stony Brook University"
 date: "Monday, March 16, 2015"
 output: html_document
 ---
@@ -28,32 +28,32 @@ set.seed(11)
 
 #Introduction
 
-Network ecology is a rapidly developing field that reinvorgorated research on assemblage stability and complexity. By harnessing graph theory to represent interactions in ecological assemblages, ecological networks have been used to study the evolution of specialization (), the importance of complex interactions in maintaining stablity() and predicting population collapse due to shared interactions(). While considerable work has focused on the effect sampling on network structure and how best to measure network properties (Bluthgen, Bascompte, Jordano), much less work has focused on a central problem of network ecology: our ability to detect interactions is imperfect in time and space. This limitation can greatly bias results by assuming that non-detection is synomonous with non-interaction. 
+Network ecology is a rapidly developing field that has reinvorgorated research on assemblage stability and complexity. By harnessing graph theory to represent ecological interactions, networks have informed evolution of specialization (), the importance of complex interactions () and predicting population decline due to shared partners(). While considerable work has focused on sampling and measuring network properties (Bluthgen, Bascompte, Jordano), much less work has focused on a central problem of network ecology: our ability to detect interactions is imperfect in time and space. This limitation can greatly bias results by assuming that non-detection is synomonous with non-interaction. 
 
-  The importance of detection bias is widely appreciated in wildlife sciences(Mackenzie), but only rarely incoporated into evolutionary and theoretical ecology (xy, but see). However, the same issues that limit inference in determining population dyanimcs (), site selection(), and breeding ecology (), also undermine our ability to make inference about the evolution of ecological systems. We can harness the tools developed in widlife sciences to strengthen the realism of network observations. The chief improvement is to incorporate detection bias directly into our estimates of species interactions using occupancy models. In occupancy modeling, repeated surveys of the same site are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species  or functional morphology? The goal of this paper is to use a large dataset on plant-hummingbird interactions from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions and network properties. 
+  The importance of detection bias is widely appreciated in wildlife sciences(Mackenzie), but only rarely incoporated into evolutionary and theoretical ecology (xy, but see). However, the same issues that limit inference in determining population dyanimcs (), site selection(), and breeding ecology (), also undermine our ability to make inference about the evolution of ecological systems. We can harness the tools developed in widlife sciences to strengthen the realism of network observations. The chief improvement is to incorporate detection bias directly into our estimates of species interactions using occupancy models. In occupancy modeling, repeated surveys are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species  or functional morphology? The goal of this paper is to use a large dataset on plant-hummingbird interactions from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions. 
   
-  In the tropical Andes, up to thirty hummingbirds can co-occur in local assemblages. Hummingbirds have a diversity of bill morphologies, which are used to extract nectar from food plants. Species with longer, more curved bills tend to be more specialized (Temeles,Magliansi), and tend to match their bill morphology to longer and more curved flower corollas. This traitmatching may help promote community stability through niche partitioning(). To test the strength of the observed traitmatching, studies use the number of visits to a flower as interaction strength among network levels. While, randomization approaches have been purposed to test for the strength of specialization (Bluthgen), extremely few studies have evaluated the detection rates of different interactions, and included these coefficients into estimates of trait matching. 
+  In the tropical Andes, up to thirty hummingbirds can co-occur in local assemblages. Hummingbirds are largley nectarivorous and have diversity of bill morphologies. Species with longer and more curved bills tend to visit flowers with longer and more curved flower corollas (Temeles,Magliansi). This traitmatching may help promote community stability through niche partitioning(Weinstein). To test the strength of the observed trait-matching, studies use the number of visits to a flower as interaction strength among network levels. While randomization approaches have been purposed to test for the strength of specialization (Bluthgen), extremely few studies have evaluated the detection rates of different interactions, and included these coefficients into estimates of trait-matching. 
   
-  This oversight is usually due to lack of data. To estimate detection, observers need to return multiple times within a sampling window. Human observation is expensive, and it is often prohibitively expensive to design studies to accomodate occupancy modeling using human observations. However, the hummingbird dataset in this paper was collected by using time-lapse cameras which turn on at dawn and dusk automatically. In addition, more traditional hummingbird transects were used to survey flower visitation. Combining these sampling types, we have a very large network with over 3,000 interactions (Weinstein XXXX). By embracing automated monitering of plant-animal interactions, we can determine and account for detection bias.
+  To estimate detection, observers need to return multiple times within a sampling window. Human observation is expensive, and it is often prohibitively expensive to design studies to accomodate occupancy modeling using human observations. However, the hummingbird dataset in this paper was collected by using time-lapse cameras which turn on at dawn and dusk automatically. In addition, more traditional hummingbird transects were used to survey flower visitation. Combining these sampling types, we have a very large network with over 3,000 interactions (Weinstein XXXX). By embracing automated monitering of plant-animal interactions, we can determine and account for detection bias. 
 
-  To illustrate the utility of this approach, I begin with simulations to demonstrate the importance for accoutning for detection bias, and to demonstrate the flexibility and accuracy of such heirarcicjal models. In addition, occupancy models are complex and require fiting a number of latent variables. Before I fit models to an observed dataset, it is crucial that I simulate data with known results to show that the models are performing well. In this analysis, i will use a Bayesian Hierarcichal framework, where we are ultimately interested in estimating three quantities, the number of interactions between a hummingbird species and plant species, the probability of detection, and the frequency (or 'intensity') of the interaction. To do this, i will first consider the observation model.
+  To illustrate the utility of this approach, I begin with simulations to demonstrate the importance for accounting for detection bias, and to demonstrate the flexibility and accuracy of such heirarcichal models. In addition, occupancy models are complex and require fitting a number of latent variables. Before I fit models to an observed dataset, it is crucial to simulate data with known results to show that the models perform as expected. In this analysis, i will use a Bayesian Hierarcichal framework, where we are ultimately interested in estimating three quantities, the number of interactions between a hummingbird species and plant species, the probability of detection, and the frequency (or 'intensity') of the interaction. To do this, i will first consider the observation model.
 
+###Observation Model
 
-  $$\hat{Y}_{i,j} = \text{Frequency of interactions between Hummingbird_i  at  Flower_j}$$
-
-###Observation
-
-The observation model describes the sampling process that yields our data. These are the actual number of observations observed by reviewing the cameras. We know there is some true, but unknown intensity of interactions among hummingbird i and plant j, and that we are likely to see some, but not all, interactions. We assume that we are equally likely to see any one interaction, so the total number of interactions is modeled as as a binomial trail where the probability of detecting a species is a species specific parameter detect with N trials. 
+The observation model describes the sampling process that yields our data. These are the actual number of observations observed by reviewing the cameras and transects. We know there is some true, but unknown intensity of interactions among hummingbird i and plant j, and that we are likely to see some, but not all, interactions. We assume that we are equally likely to see any one interaction, so the number of detections of hummingbird i on plant j in month k is modeled as as a binomial trail where the probability of detecting a species is a species-specific parameter *detect* with *N* trials. 
 
 $$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
 
-###Process
-To estimate the parameter N, which is the unknown true rate of interactions, we need a process model. N is a frequency of interactions given a sampling. In our analysis our sampling period is one day. N is therefore the underlying frequency of interactions among each pair of plants and hummingbirds each day. We can model this as a poisson distribution with $\lambda_{i,j}$. The hypothesis is that $\lambda$ should increase with tighter matching between plant corolla and hummingbird bill lengths. Since lambda is a intensity of interactions, it must be a positive number. We there model lambda as a function of linear predictorswiwith a log link function. In our simulation, we give equal penalty for having a bill too long, or too short for a given corolla. The entire process model can be written as:
+###Process Model
+
+To estimate the parameter *N*, which is the unknown true rate of interactions, we need a process model. The process model is the mechansism that generates interactions among plants and pollinators in a given time period.In our analysis, our sampling period is one day. We can model the daily intensity as a poisson distribution with $\lambda_{i,j}$. The hypothesis is that $\lambda$ should increase with greater matching between plant corolla and hummingbird bill lengths. Since lambda is a intensity of interactions, it must be a positive number. We there model lambda as a function of linear predictors with a log link function. In our simulation, we give equal penalty for having a bill too long, or too short for a given corolla. The entire process model can be written as:
 
 $$N_{i,j} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \beta_{i2} *(Bill_i - Corolla_i)^2 $$
 
-###Hierahcical structure
+###Hierarcichal structure
+
+Each $Y_{i,j,k}$ interaction is not independent. Due to foraging behavior (Sandlin), physiological requirements (Powers), or difference in available resources (Weinstein), different species may respond differently to differences in bill or corolla lengths. However, our goal is to study any one species, but to capture the overall effect of trait-matching on hummingbirds and plants. We therefore use a hierarcichal model to account both for within species variability, but to estimate a group-level mean (Bolker). Similiarly, due to differences in abundance, behavior, and foraging strategy (Colwell), some hummingbird species will be more detectable than others. We allow a fixed species level effect of hummingbird species on detection probability. Each of these levels could be fit to covariates as well depending on vegetation height, observer distance and quality (Royle).
 
 
 #Similiar work
@@ -268,7 +268,7 @@ $$\sigma_{polyslope} = \frac{1}{\tau_{poly\beta}}^2$$
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-100000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -495,7 +495,7 @@ int.FLlevels<-levels(factor(m.datH$Iplant_Double))
 #Which flowers are we missing info for?
 missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 
-print(paste("Missing Trait Information:",missingTraits))
+#print(paste("Missing Trait Information:",missingTraits))
 m.datH<-merge(m.datH,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
@@ -544,7 +544,7 @@ m.datH$obs<-1
 
 traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))]
 
-indat<-filter(m.datH,!is.na(Month)) %>% mutate(Time=paste(Month,Year)) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) 
+indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) 
 
 indat$Time<-as.numeric(factor(indat$Time))
 
@@ -569,7 +569,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T}
 
-runs<-100000
+runs<-40000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -714,7 +714,7 @@ trajF<-function(alpha,beta,beta2,x){
    sample_all<-rbind_all(sampletraj)
   
   #Compute CI intervals
-  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
+  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),median=mean(y,na.rm=T))
   return(predy)
   }
 
@@ -728,7 +728,7 @@ names(species.traj)<-rownames(traitmatchT)
 species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
 
 #plot and compare to original data
-ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~L1,scales="free",ncol=3) + labs(fill="Species")
+ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~L1,scales="free",ncol=3) + labs(fill="Species")
 ```
 
 ###Overall predicted relationship 
@@ -745,53 +745,74 @@ castdf<-dcast(pars[pars$par %in% c("gamma","intercept","polygamma"),], Chain + D
 predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,beta2=castdf$polygamma,x=round(as.numeric(traitmatchT),2))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
+ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
 ```
 
-The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The poisson glm that does not account for detectability or non-independence is in green.
+The red line is the posterior median with confidible intervals in shaded grey for the proposed bayesian model. The poisson glm that does not account for detectability or non-independence is in green.
 
 **Conclusion:** Accounting for detection and non-independence greatly increases the accuracy of the predicted state. The poisson glm underestimates the strength of trait matching among hummingbirds and their foodplants.
 
 ###Poisson regression without detection bias
 ```{r}
-for (g in 1:nrow(indat)){  
-indat[g,"x"]<-traitmatchT[indat[g,"Bird"],indat[g,"Plant"]]  
+
+niavedat<-as.data.frame(filter(m.datH,!is.na(Month)) %>% mutate(Time=paste(Month,Year)) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)))
+niavedat$x<-NULL
+
+for (g in 1:nrow(niavedat)){ 
+  b<-niavedat[g,"Bird"]
+  I<-niavedat[g,"Plant"]
+  niavedat[g,"x"]<-traitmatchT[b,I]  
 }
 
-niaveobs<-glm(data=indat,Yobs~poly(x,2,raw=T),family=poisson())
+niaveobs<-glm(data=niavedat,Yobs~poly(x,2,raw=T),family=poisson())
 summary(niaveobs)
 niavecoef<-niaveobs$coefficients
 predyniave<-trajF(alpha=rep(niavecoef[1],100),beta=rep(niavecoef[2],100),beta2=rep(niavecoef[3],100),x=as.numeric(traitmatchT))
 
 #plot and compare to original data
-p<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + ggtitle("Without accounting for detection bias")
+p<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + ggtitle("Without accounting for detection bias")
 
-pboth<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_ribbon(data=predy,aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(data=predy,aes(y=mean),size=1.,col="red") + ggtitle("Accounting for detection bias")
+pboth<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_ribbon(data=predy,aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(data=predy,aes(y=median),size=1.,col="red") + ggtitle("Accounting for detection bias")
 grid.arrange(p,pboth)
 ```
 
 ###Predicted Frequency
 
-Validating the model.
-
-```{r,eval=T}
+```{r,eval=T,fig.height=6,fig.width=10}
 
 #any given state
 predState<-group_by(pars,par) %>% filter(par=="N") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
 
-predState$species<-as.factor(predState$species)
-predState$plant<-factor(predState$plant,levels=1:plant_species)
+#remerge species levels
+bindex<-data.frame(Index=1:length(rownames(traitmatchT)),Species=rownames(traitmatchT))
 
-predplot<-ggplot(predState,aes(x=species,y=plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted")
+pindex<-data.frame(Index=1:length(colnames(traitmatchT)),Species=colnames(traitmatchT))
 
-#compare true and pred states
-tr<-melt(true_interactions)
-colnames(tr)<-c("Hummingbird","Plant","True_State")
+predState<-merge(predState,bindex,by.x="species",by.y="Index")
 
-mdat<-merge(predState,tr,by.x=c("species","plant"),by.y=c("Hummingbird","Plant"))
+predState<-merge(predState,pindex,by.x="plant",by.y="Index")
+colnames(predState)<-c("plant","species","par","State","Bird","Plant")
 
-ggplot(mdat,aes(y=State,x=True_State)) + geom_point(size=3) + geom_abline(linetype="dashed") + theme_bw() + xlab("True State") + ylab("Predicted State") + coord_equal()
+#order it to show nestedness.
+b_ord<-group_by(predState,Bird) %>% summarize(I=sum(State)) %>% arrange(desc(I)) %>% select(Bird)
+
+p_ord<-group_by(predState,Plant) %>% summarize(I=sum(State)) %>% arrange(I) %>% select(Plant)
+
+predState$Bird<-factor(predState$Bird,levels=b_ord$Bird)
+predState$Plant<-factor(predState$Plant,levels=p_ord$Plant)
+
+predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted")
+
+predplot
+
+#discrepancy plot
+orig<-group_by(indat,Bird,Plant) %>% summarize(Y=sum(Yobs))
+
+finaldat<-merge(predState,orig,by.x=c("species","plant"),by.y=c("Bird","Plant"))
+ggplot(finaldat,aes(x=Y,y=State)) + geom_point() + geom_abline() + coord_equal()
 ```
+
+
 
 ```{r}
 save.image("Abundance.Rdata")
