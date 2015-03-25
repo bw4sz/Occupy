@@ -11,9 +11,17 @@ cat("
       N[i,j] ~ dpois(lambda[i,j])
       
       for (k in 1:Months) {   
+
       # Observation model for the actual observations
       Y[i,j,k] ~ dbin(detect[i],N[i,j]) 
-          }
+      
+      #Fit discrepancy statistics
+      eval[i,j,k]<-detect[i]*N[i,j]
+      E[i,j,k]<-pow((Y[i,j,k]-eval[i,j,k]),2)/(eval[i,j,k]+0.5)
+
+      y.new[i,j,k]~dbin(detect[i],N[i,j])
+      E.new[i,j,k]<-pow((y.new[i,j,k]-eval[i,j,k]),2)/(eval[i,j,k]+0.5)
+        }
       }
     }
     
@@ -36,6 +44,10 @@ cat("
     
     tau_polybeta ~ dgamma(0.001,0.001)
     sigma_polyslope<-pow(1/tau_polybeta,0.5)
+    
+    #derived posterior check
+    fit<-sum(E[,,]) #Discrepancy for the observed data
+    fitnew<-sum(E.new[,,])
     
     }
     ",fill=TRUE)

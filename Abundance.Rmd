@@ -569,7 +569,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T}
 
-runs<-40000
+runs<-1000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -608,7 +608,7 @@ initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
 InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","polybeta","sigma_polyslope","polygamma")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","polybeta","sigma_polyslope","polygamma","fit","fit.new")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -778,7 +778,7 @@ grid.arrange(p,pboth)
 
 ###Predicted Frequency
 
-```{r,eval=T,fig.height=6,fig.width=10}
+```{r,eval=T,fig.height=7,fig.width=12,eval=F}
 
 #any given state
 predState<-group_by(pars,par) %>% filter(par=="N") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
@@ -812,7 +812,10 @@ finaldat<-merge(predState,orig,by.x=c("species","plant"),by.y=c("Bird","Plant"))
 ggplot(finaldat,aes(x=Y,y=State)) + geom_point() + geom_abline() + coord_equal()
 ```
 
-
+```{r}
+fitstat<-pars[pars$par %in% c("fit","fit.new"),]
+fitstat<-dcast(fitstat,...~par,value.var="estimate")
+```
 
 ```{r}
 save.image("Abundance.Rdata")
