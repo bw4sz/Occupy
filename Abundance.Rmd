@@ -273,7 +273,7 @@ $$\sigma_{polyslope} = \frac{1}{\tau_{poly\beta}}^2$$
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-50000
+runs<-40000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -574,7 +574,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T}
 
-runs<-20000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
