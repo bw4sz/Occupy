@@ -14,6 +14,13 @@
     #Observation Model
     for (i in 1:Nobs){
       Y[i] ~ dbin(detect[Bird[i]],N[Bird[i],Plant[i]]) 
+      
+      #Fit discrepancy statistics
+      eval[i]<-detect[Bird[i]]*N[Bird[i],Plant[i]]
+      E[i]<-pow((Y[i]-eval[i]),2)/(eval[i]+0.5)
+
+      y.new[i]~dbin(detect[Bird[i]],N[Bird[i],Plant[i]])
+      E.new[i]<-pow((y.new[i]-eval[i]),2)/(eval[i]+0.5)
     }
     
     for (k in 1:Birds){
@@ -35,6 +42,10 @@
     
     tau_polybeta ~ dgamma(0.001,0.001)
     sigma_polyslope<-pow(1/tau_polybeta,0.5)
+    
+    #derived posterior check
+    fit<-sum(E[]) #Discrepancy for the observed data
+    fitnew<-sum(E.new[])
     
     }
     

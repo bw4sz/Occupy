@@ -91,6 +91,13 @@ I first create data with constant detection for each hummingbird speices, and th
   * 24 month replicates
   * Phenology = .5 (plants are in flower/present .5 of surveys)
 
+##Observed Data
+###Data Collection
+### Model Fitting
+### Posterior Checks
+
+
+#Results
 ************
 
 **View simulated strength and form of trait matching **
@@ -567,37 +574,37 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T}
 
-runs<-2000
+runs<-20000
 
 #Source model
-source("Bayesian/NMixture.R")
+source("Bayesian/NMixtureRagged.R")
  
 #print model
-print.noquote(readLines("Bayesian/NMixture.R"))
+print.noquote(readLines("Bayesian/NMixtureRagged.R"))
 
 
 #ragged index data
 
-# #Input Data
-# Dat <- list(
-#   Y=indat$Yobs,
-#   Bird=indat$Bird,
-#   Plant=indat$Plant,
-#   Birds=length(unique(indat$Bird)),
-#   Plants=length(unique(indat$Plant)),
-#   Nobs=length(indat$Yobs),
-#   traitmatch=traitmatchT
-#   )
+#Input Data
+Dat <- list(
+  Y=indat$Yobs,
+  Bird=indat$Bird,
+  Plant=indat$Plant,
+  Birds=length(unique(indat$Bird)),
+  Plants=length(unique(indat$Plant)),
+  Nobs=length(indat$Yobs),
+  traitmatch=traitmatchT
+  )
 
 
-# #Input Data
- Dat <- list(
-   Y=indatlong,
-   Birds=dim(indatlong)[1],
-   Plants=dim(indatlong)[2],
-   Months=dim(indatlong)[3],
-   traitmatch=traitmatchT
-   )
+# # #Input Data 
+#  Dat <- list(
+#    Y=indatlong,
+#    Birds=dim(indatlong)[1],
+#    Plants=dim(indatlong)[2],
+#    Months=dim(indatlong)[3],
+#    traitmatch=traitmatchT
+#    )
 
 #A blank Y matrix - all present
 initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
@@ -618,7 +625,7 @@ nc <- 2  # number of chains
 
 m2 = jags(inits=InitStage,
          n.chains=nc,
-         model.file="Bayesian/NMixture.jags",
+         model.file="Bayesian/NMixtureRagged.jags",
          working.directory=getwd(),
          data=Dat,
          parameters.to.save=ParsStage,
@@ -776,7 +783,7 @@ grid.arrange(p,pboth)
 
 ###Predicted Frequency
 
-```{r,eval=T,fig.height=7,fig.width=12,eval=F}
+```{r,eval=T,fig.height=7,fig.width=12,eval=T}
 
 #any given state
 predState<-group_by(pars,par) %>% filter(par=="N") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
@@ -813,9 +820,13 @@ ggplot(finaldat,aes(x=Y,y=State)) + geom_point() + geom_abline() + coord_equal()
 ```{r}
 fitstat<-pars[pars$par %in% c("fit","fitnew"),]
 fitstat<-dcast(fitstat,Draw+Chain~par,value.var="estimate")
-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point() + geom_abline() + coord_equal() + theme_bw()
+p<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point() + theme_bw()
+p + geom_abline() + coord_equal() + ylim(0,4000) + xlim(0,4000) 
 ```
 
 ```{r}
 save.image("Abundance.Rdata")
 ```
+
+#Discussion
+
