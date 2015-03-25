@@ -55,13 +55,10 @@ $$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \beta_{i2} *(B
 
 Each $Y_{i,j,k}$ interaction is not independent. Due to foraging behavior (Sandlin), physiological requirements (Powers), or difference in available resources (Weinstein), different species may respond differently to differences in bill or corolla lengths. However, our goal is to study any one species, but to capture the overall effect of trait-matching on hummingbirds and plants. We therefore use a hierarcichal model to account both for within species variability, but to estimate a group-level mean (Bolker). Similiarly, due to differences in abundance, behavior, and foraging strategy (Colwell), some hummingbird species will be more detectable than others. We allow a fixed species level effect of hummingbird species on detection probability. Each of these levels could be fit to covariates as well depending on vegetation height, observer distance and quality (Royle).
 
-
 #Similiar work
 
   * http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0069200
   * http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210x.2012.00249.x/abstract
-
-#Approach
 
 
 **In this study we want to estimate three quantitites:**
@@ -70,6 +67,7 @@ $$ \psi_{i,j} = \text{The probability a flower is visited by a hummigbird}  $$
 
 $$ p_{i,j} = \text{The probability of detecting a bird-flower interaction given that it occurs} $$
 
+#Methods
 ##Simulation
 
 I first create data with constant detection for each hummingbird speices, and the interaction frequency is a function of a species hierarcichal model and corolla similarity. There is uneven sampling among species.
@@ -569,7 +567,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T}
 
-runs<-1000
+runs<-2000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -608,7 +606,7 @@ initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
 InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","polybeta","sigma_polyslope","polygamma","fit","fit.new")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","polybeta","sigma_polyslope","polygamma","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -813,8 +811,9 @@ ggplot(finaldat,aes(x=Y,y=State)) + geom_point() + geom_abline() + coord_equal()
 ```
 
 ```{r}
-fitstat<-pars[pars$par %in% c("fit","fit.new"),]
-fitstat<-dcast(fitstat,...~par,value.var="estimate")
+fitstat<-pars[pars$par %in% c("fit","fitnew"),]
+fitstat<-dcast(fitstat,Draw+Chain~par,value.var="estimate")
+ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point() + geom_abline() + coord_equal() + theme_bw()
 ```
 
 ```{r}
