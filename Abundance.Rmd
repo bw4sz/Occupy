@@ -810,7 +810,6 @@ predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale
 
 predplot
 
-#discrepancy plot
 orig<-group_by(indat,Bird,Plant) %>% summarize(Y=sum(Yobs))
 
 finaldat<-merge(predState,orig,by.x=c("species","plant"),by.y=c("Bird","Plant"))
@@ -818,10 +817,76 @@ ggplot(finaldat,aes(x=Y,y=State)) + geom_point() + geom_abline() + coord_equal()
 ```
 
 ```{r}
+#Define a function that computes new state for the model
+trajState<-function(alpha,beta,beta2,x,observed){
+  
+  #Bind together
+  fdat<-data.frame(alpha=alpha,beta=beta,beta2=beta2)
+  
+  #fit regression for each input estimate
+  sampletraj<-list()
+  for (s in 1:nrow(fdat)){
+    a<-fdat$alpha[s]
+    b<-fdat$beta[s]
+    b2<-fdat$beta2[s]
+    yp=exp(a + (b*x$value) + (b2*x$value^2))
+    
+    #compute pred value
+    state<-data.frame(x,State=rpois(length(yp),yp))
+    
+    #merge with observed state
+    mstate<-merge(state,observed,by=c("Bird","Plant"))
+    
+    #Compute chisquared
+    csq<-sum((mstate$Y-mstate$State)^2/(mstate$State+0.5))
+    
+    sampletraj[[s]]<-csq
+    }
+   
+  #return as a vector
+  return(unlist(sampletraj))
+  }
+
+
+#format the trait matrix
+it<-melt(traitmatchT)
+colnames(it)<-c("Bird","Plant","value")
+
+#list of observed data
+orig<-as.data.frame(group_by(m.datH,Hummingbird,Iplant_Double) %>% summarize(Y=sum(obs)))
+colnames(orig)<-c("Bird","Plant","Y")
+
+#create a replicated dataset from the parameters
+niave_fit<-trajState(alpha=rep(niavecoef[1],100),beta=rep(niavecoef[2],100),beta2=rep(niavecoef[3],100),x=it,observed=orig)
+
+#create a replicated dataset from the parameters
+yp=exp(niavecoef[1] + (niavecoef[2]*it$value) + (niavecoef[3]*it$value^2))
+    
+pstate<-data.frame(it,Y=rpois(length(yp),yp))
+
+niave_fitnew<-trajState(alpha=rep(niavecoef[1],100),beta=rep(niavecoef[2],100),beta2=rep(niavecoef[3],100),x=it,observed=pstate)
+
+discr_niave<-data.frame(fit=niave_fit,fitnew=niave_fitnew,model="Poisson GLM")
+
+```
+###Discrepancy 
+
+The goodness if of fit is a measured as chi-squared. The expected value for each month is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
+Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. 
+
+```{r}
 fitstat<-pars[pars$par %in% c("fit","fitnew"),]
 fitstat<-dcast(fitstat,Draw+Chain~par,value.var="estimate")
-p<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point() + theme_bw()
-p + geom_abline() + coord_equal() + ylim(0,4000) + xlim(0,4000) 
+fitstat$model<-"Bayesian Hierarchical Detection"
+
+ddat<-rbind_all(list(fitstat,discr_niave))
+#add 1:1 line
+
+ymin<-round(min(c(ddat$fit,ddat$fitnew)))
+ymax<-round((c(ddat$fit,ddat$fitnew)))
+ab<-data.frame(x=ymin:ymax,y=ymin:ymax)
+p<-ggplot(ddat,aes(x=fit,y=fitnew)) + geom_point(aes(col=model)) + theme_bw()
+p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model") + geom_abline() + geom_abline(data=ab,aes(x=x,y=y))
 ```
 
 ```{r}
