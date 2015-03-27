@@ -242,7 +242,7 @@ ggplot(pred.frame,aes(x=x,y=y,col=L1)) + geom_point(data=pred.frame[pred.frame$L
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -588,7 +588,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-1000
+runs<-70000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
