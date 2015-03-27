@@ -7,7 +7,7 @@ cat("
   for (i in 1:Birds){
     for (j in 1:Plants){
       #Process Model
-      log(lambda[i,j])<-alpha[i] + beta[i] * traitmatch[i,j] + polybeta[i] * pow(traitmatch[i,j],2)
+      log(lambda[i,j])<-alpha[i] + beta[i] * traitmatch[i,j]
 
       #True state model  
       N[i,j] ~ dpois(lambda[i,j])
@@ -30,22 +30,17 @@ cat("
     detect[k] ~ dunif(0,1) # Detection for each bird species
     alpha[k] ~ dnorm(intercept,tau_alpha)
     beta[k] ~ dnorm(gamma,tau_beta)    
-    polybeta[k] ~ dnorm(polygamma,tau_polybeta)    
     }
     
     #Hyperpriors
     gamma~dnorm(0.001,0.001)
-    polygamma~dnorm(0.001,0.001)
     intercept~dnorm(0.001,0.001)
     
     tau_alpha ~ dgamma(0.001,0.001)
     sigma_int<-pow(1/tau_alpha,0.5) #Derived Quantity
     tau_beta ~ dgamma(0.001,0.001)
     sigma_slope<-pow(1/tau_beta,0.5)
-    
-    tau_polybeta ~ dgamma(0.001,0.001)
-    sigma_polyslope<-pow(1/tau_polybeta,0.5)
-    
+
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
