@@ -23,20 +23,19 @@ opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=FALSE,c
 setwd("C:/Users/Ben/Documents/Occupy/")
 
 set.seed(11)
-
 ```
 
 #Introduction
 
 Network ecology is a rapidly developing field that has reinvorgorated research on assemblage stability and complexity. By harnessing graph theory to represent ecological interactions, networks have informed the evolution of specialization (), the importance of complex interactions () and predicting population decline due to shared partners(). While considerable work has focused on sampling and measuring network properties (Bluthgen, Bascompte, Jordano), there has been much less attention to a central problem of network ecology: our ability to detect interactions is imperfect in time and space. This limitation can greatly bias results by assuming that non-detection is synomonous with non-interaction. 
 
-  The importance of detection bias is widely appreciated in wildlife sciences(Mackenzie), but only rarely incoporated into evolutionary and theoretical ecology (xy, but see). However, the same issues that limit inference in determining population dyanimcs (), site selection(), and breeding ecology (), also undermine our ability to make inference about the evolution of ecological systems. We can harness the tools developed in widlife sciences to strengthen the realism of network observations. The chief improvement is to incorporate detection bias directly into our estimates of species interactions using occupancy models. In occupancy modeling, repeated surveys are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species  or functional morphology? The goal of this paper is to use a large dataset on plant-hummingbird interactions from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions. 
-  
-  In the tropical Andes, up to thirty hummingbirds can co-occur in local assemblages. Hummingbirds are largley nectarivorous and have diversity of bill morphologies. Species with longer and more curved bills tend to visit flowers with longer and more curved flower corollas (Temeles,Magliansi). This trait-matching may help promote community stability through niche partitioning (Weinstein). To test the strength of the observed trait-matching, studies use the number of visits to a flower as interaction strength among birds and plants, represented by nodes in the network graph.While randomization approaches have been purposed to test for the strength of specialization (Bluthgen, Schueling), few studies have evaluated the detection rates of different interactions, and included these coefficients into estimates of trait-matching. 
-  
-  To estimate detection, observers need to return multiple times within a sampling window. Human observation is expensive, and it is often prohibitively expensive to design studies to accomodate occupancy modeling using human observations. However, the hummingbird dataset in this paper was collected by using time-lapse cameras which turn on at dawn and dusk automatically. In addition, more traditional hummingbird transects were used to survey flower visitation. Combining these sampling types, we have a very large network with over 3,000 interactions (Weinstein XXXX). By embracing automated monitering of plant-animal interactions, we can determine and account for detection bias. 
+The importance of detection bias is widely appreciated in wildlife sciences(Mackenzie), but only rarely incoporated into evolutionary and theoretical ecology (xy, but see). However, the same issues that limit inference in determining population dyanimcs (), site selection(), and breeding ecology (), also undermine our ability to make inference about the evolution of ecological systems. We can harness the tools developed in widlife sciences to strengthen the realism of network observations. The chief improvement is to incorporate detection bias directly into our estimates of species interactions using occupancy models. In occupancy modeling, repeated surveys are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species timing or functional morphology? The goal of this paper is to use a large dataset on plant-hummingbird interactions from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions. 
 
-  To illustrate the utility of this approach, I begin with simulations to demonstrate the importance for accounting for detection. In addition, occupancy models are complex and require fitting a number of latent variables. Before I fit models to an observed dataset, it is crucial to simulate data with known results to show that the models perform as expected. In this analysis, I will use a Bayesian hierarcichal approach. We are ultimately interested in estimating three quantities, the number of interactions between a hummingbird species and plant species, the probability of detection, and the frequency (or 'intensity') of the interaction. To do this, i will divide our model into three components: an observation model, a process model, and a hierarcichal set of priors.
+In the tropical Andes, up to thirty hummingbirds can co-occur in local assemblages. Hummingbirds are largley nectarivorous and have a diversity of bill morphologies. In general, species with longer and more curved bills tend to be more specialized (Temeles,Magliansi). This trait relationship may help promote community stability through niche partitioning (Weinstein). To test the strength of trait-matching between bird bill and flower corolla lengths, studies use the number of visits to a flower as interaction strength among birds and plants. These data are used to represent links between the nodes in the network graph. While randomization approaches have been purposed to test for the strength of specialization (Bluthgen, Schueling), few studies have evaluated the detection rates of different interactions, and included these coefficients into estimates of trait-matching (Bartolomeau). 
+
+To estimate detection, observers return multiple times to a site within a sampling window. Human observation is expensive, and it is often prohibitively expensive to design studies to accomodate occupancy modeling using human observations. However, the hummingbird dataset in this paper was collected by using time-lapse cameras which turn on at dawn and dusk automatically. In addition, more traditional hummingbird transects were used to survey flower visitation. Combining these sampling types, we have a very large network with over 3,000 interactions (Weinstein XXXX). By embracing automated monitering of plant-animal interactions, we can begin to determine and account for detection bias. 
+
+To illustrate the utility of this approach, I begin with simulations to demonstrate the importance of accounting for detection. In addition, occupancy models are complex and require fitting a number of latent variables. Before I fit models to an observed dataset, it is crucial to simulate data with known results to show that the models perform as expected. In this analysis, I will use a Bayesian hierarcichal approach. We are ultimately interested in estimating three quantities, the number of interactions between a hummingbird species and plant species, the probability of detection, and the frequency (or 'intensity') of the interaction. To do this, i will divide our model into three components: an observation model, a process model, and a hierarcichal set of priors.
 
 ###Observation Model
 
@@ -53,7 +52,7 @@ $$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \beta_{i2} *(B
 
 ###Hierarcichal structure
 
-Each $Y_{i,j,k}$ interaction is not independent. Due to foraging behavior (Sandlin), physiological requirements (Powers), or difference in available resources (Weinstein),  species may respond indiualistically to differences in bill or corolla lengths. However, our goal is not to study any one species, but to capture the overall effect of trait-matching on hummingbirds and plants. We therefore use a hierarcichal model to account both for within species variability, but to estimate a group-level mean (Bolker). Similiarly, due to differences in abundance, behavior, and foraging strategy (Colwell), some hummingbird species will be more detectable than others. We allow a fixed species level effect of hummingbird species on detection probability. Each of these levels could be fit to covariates as well depending on vegetation height, observer distance and quality (Royle). By combining an observation model, process model, and hiericichal structure, I am accounting for known obstacles in intepretting my data. To illustrate the added information based on this setup, i compare my results to a direct poisson generalized linear model that does not account for detection or non-independence of observations. 
+Each $Y_{i,j,k}$ interaction is not independent. Due to foraging behavior (Sandlin), physiological requirements (Powers), or difference in available resources (Weinstein),  species may respond individualistically to differences in bill or corolla lengths. However, our goal is not to study any one species, but to capture the overall effect of trait-matching on hummingbirds and plants. We therefore use a hierarcichal model to account both for within species variability, but to estimate a group-level mean (Bolker). Similiarly, due to differences in abundance, behavior, and foraging strategy (Colwell), some hummingbird species will be more detectable than others. We allow a fixed species level effect of hummingbird species on detection probability. Each of these levels could be fit to covariates as well depending on vegetation height, observer distance and quality (Royle). By combining an observation model, process model, and hiericichal structure, I am accounting for known obstacles in intepretting my data. To illustrate the added information based on this setup, I compare my results to a direct poisson generalized linear model that does not account for detection or non-independence of observations. 
 
 #Methods
 ##Simulation
@@ -62,22 +61,22 @@ I first create data with constant detection for each hummingbird speices, and th
 
 ### Parameters
 
-  * 8 hummingbird species
-    * Range of hummingbird bill sizes (mm) ~ Pois(20)
-  * Ten plants
-    * Range of corolla sizes (mm) ~ Pois(20)
-  * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
-    * For each plant the occupancy is N($\lambda$,0.2) (truncated 0-1) 
-    * Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
-    $$log(\lambda)<-\alpha_i + \beta_i *traitmatch + \beta_{2i} * traitmatch^2$$
-      $$\alpha=N(3,.01)$$
-      $$\beta = N(-.01,.001)$$
-      $$\beta_2=N(.-.05,.001)$$
-      
-  * Imperfect detection 
-    * $p_i = U(0,1)$ 
-  * 24 month replicates
-  * Phenology = .5 (plants are in flower/present .5 of surveys)
+* 8 hummingbird species
+* Range of hummingbird bill sizes (mm) ~ Pois(20)
+* Twenty plants
+* Range of corolla sizes (mm) ~ Pois(20)
+* Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
+* For each plant the occupancy is N($\lambda$,0.2) (truncated 0-1) 
+* Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
+$$log(\lambda)<-\alpha_i + \beta_i *traitmatch + \beta_{2i} * traitmatch^2$$
+$$\alpha=N(3,.01)$$
+$$\beta = N(-.01,.001)$$
+$$\beta_2=N(.-.05,.001)$$
+
+* Imperfect detection 
+* $p_i = U(0,1)$ 
+* 24 month replicates
+* Phenology = .5 (plants are in flower/present .5 of surveys)
 
 ##Observed Data
 ###Data Collection
@@ -107,7 +106,7 @@ $$\beta_{i2} \sim N(\gamma,\tau_{polybeta})$$
 $$gamma \sim N(0.001,0.001)$$
 $$polygamma \sim N(0.001,0.001)$$
 $$intercept \sim N(0.001,0.001)$$
-  
+
 $$\tau_{\alpha} \sim Gamma(0.001,0.001)$$
 $$\tau_\beta \sim Gamma(0.001,0.001)$$
 $$\tau_{polybeta} \sim Gamma(0.001,0.001)$$
@@ -250,11 +249,11 @@ ggplot(pred.frame,aes(x=x,y=y,col=L1)) + geom_point(data=pred.frame[pred.frame$L
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-40000
+runs<-30000
 
 #Source model
 source("Bayesian/NMixture.R")
- 
+
 #print model
 print.noquote(readLines("Bayesian/NMixture.R"))
 
@@ -303,29 +302,29 @@ m5 <- update(m5,n.iter=add)
 ```
 
 ```{r}
-  #extract desired info from the models
-  parsO<-melt(m$BUGSoutput$sims.array)
-  colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-3000/m$BUGSoutput$n.chains),]
-  
-  #label species and plants
-  l<-levels(parsO$parameter)
+#extract desired info from the models
+parsO<-melt(m$BUGSoutput$sims.array)
+colnames(parsO)<-c("Draw","Chain","parameter","estimate")
+parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-3000/m$BUGSoutput$n.chains),]
 
-  #parameters to save
-  totrack<-m$parameters.to.save
-  
-  sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,paste(totrack,collapse="|")))
-  
-  colnames(sp_pl)<-c("parameter","species","plant","par")
+#label species and plants
+l<-levels(parsO$parameter)
 
-  sp_pl[is.na(sp_pl$species),c("species")]<-str_extract(sp_pl[is.na(sp_pl$species),"parameter"],"\\d+")
+#parameters to save
+totrack<-m$parameters.to.save
 
-  #merge levels
-  pars<-merge(parsO,sp_pl)
-  
-  #take out deviance
-  pars<-pars[!pars$par %in% "deviance",]
-  
+sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,paste(totrack,collapse="|")))
+
+colnames(sp_pl)<-c("parameter","species","plant","par")
+
+sp_pl[is.na(sp_pl$species),c("species")]<-str_extract(sp_pl[is.na(sp_pl$species),"parameter"],"\\d+")
+
+#merge levels
+pars<-merge(parsO,sp_pl)
+
+#take out deviance
+pars<-pars[!pars$par %in% "deviance",]
+
 ```
 
 ###Assess Convergence
@@ -372,7 +371,7 @@ p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
 Does accounting for non-independence and detection change our estimate of trait matching?
 
 ```{r,fig.height=4,fig.width=4}
- 
+
 castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("polygamma","gamma","intercept"))
 
 castdf<-dcast(pars[pars$par %in% c("gamma","intercept","polygamma"),], Chain + Draw~par,value.var="estimate")
@@ -499,7 +498,7 @@ p<-p + coord_flip()
 ```{r}
 ###Format data
 
-#remove species with less than  20 observations
+#remove species with less than  10 observations
 keep<-names(which(table(m.datH$Hummingbird) > 20))
 
 m.datH<-droplevels(m.datH[m.datH$Hummingbird %in% keep,])
@@ -512,8 +511,8 @@ colnames(traitmatchF)<-fl.morph$Group.1
 ```
 
 ```{r}
-#make the names
-#ROund to 2 decimals
+#match names
+#Round to 2 decimals
 #Convert to cm for winbugs, avoids numerical underflow
 traitmatchT<-round(traitmatchF[rownames(traitmatchF) %in% m.datH$Hummingbird,colnames(traitmatchF) %in% m.datH$Iplant_Double],2)/10
 ```
@@ -526,6 +525,12 @@ m.datH$obs<-1
 
 traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))]
 
+#Create an index to connect to species names
+#remerge species levels
+bindex<-data.frame(Index=1:length(rownames(traitmatchT)),Species=rownames(traitmatchT))
+
+pindex<-data.frame(Index=1:length(colnames(traitmatchT)),Species=colnames(traitmatchT))
+
 indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) 
 
 indat$Time<-as.numeric(factor(indat$Time))
@@ -534,13 +539,52 @@ indat$Time<-as.numeric(factor(indat$Time))
 #this involves some ugly data management, where we have to figure out which plants were sampled in which periods, and if it was sampled, the non-detections are 0 if it wasn't the non-detections are NA. then remove all the Na's.
 
 indatlong<-acast(indat,Bird~Plant~Time,value.var="Yobs",fill=0)
+```
 
-#Get rid of plants not surveyed in that time period
+
+###Elevation ranges
+
+Create a binary variable whether each observation was in a low elevation or high elevation transect. We have some species that just occur at the top of the gradient, and are not present in the sampling window of flowers at the low elevation.
+
+Start by a hand drawn table - then move to quantitative
+```{r}
+
+#1 is low elevation, #2 is high elevation, # 3 is both
+elevH<-data.frame(Species=keep,Range=c(1,3,3,2,2,2,1,2,1,2,1,3,3,1))
+#merge to names
+elevH<-merge(bindex,elevH)
+
+elevP<-data.frame(Species=colnames(traitmatchT),Range=c(2,2,2,3,3,1,1,2,2,3,3,3,3,2,1,3,1,1,1,2,2,2,3,3,3,1,2,2,3,2,3,3,1,3,1,2))
+elevP<-merge(pindex,elevP)
+
+```
+
+```{r}
+#Only non-detections are real 0's, the rest are NA's and are removed.
+#Plants not surveyed in that time period
+#Hummingbirds not present at that site
+
 for(x in 1:dim(indatlong)[3]){
+  #Remove non sampled plants 
   a<-indatlong[,,x]
   toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
+  pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
+  
   indatlong[,toNA,x]<-NA
-}
+  
+  #match elevation if there were presences, slightly terse code.
+  if(length(pres)>0){
+    for (y in 1:length(pres)){
+      #Plant range
+      pr<-elevP[elevP$Index %in% pres[y],"Range"]
+      if(!pr==3){
+        helim<-elevH[!elevH$Range %in% c(pr,3),"Index"]
+        #print(paste(x,"=",sum(indatlong[helim,pres[y],x])))
+        indatlong[helim,pres[y],x]<-NA
+        }
+      }  
+    }
+  }
 
 #melt and remove Na's
 indat<-melt(indatlong)
@@ -551,11 +595,11 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-60000
+runs<-70000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
- 
+
 #print model
 #print.noquote(readLines("Bayesian/NMixtureRagged.R"))
 
@@ -601,42 +645,42 @@ nc <- 2  # number of chains
 #Jags
 
 m2 = jags(inits=InitStage,
-         n.chains=nc,
-         model.file="Bayesian/NMixtureRagged.jags",
-         working.directory=getwd(),
-         data=Dat,
-         parameters.to.save=ParsStage,
-         n.thin=nt,
-         n.iter=ni,
-         n.burnin=nb,
-         DIC=T)
+          n.chains=nc,
+          model.file="Bayesian/NMixtureRagged.jags",
+          working.directory=getwd(),
+          data=Dat,
+          parameters.to.save=ParsStage,
+          n.thin=nt,
+          n.iter=ni,
+          n.burnin=nb,
+          DIC=T)
 ```
 
 
 ```{r}
-  #extract desired info from the models
-  parsO<-melt(m2$BUGSoutput$sims.array)
-  colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-3000/m2$BUGSoutput$n.chains),]
-  
-  #label species and plants
-  l<-levels(parsO$parameter)
+#extract desired info from the models
+parsO<-melt(m2$BUGSoutput$sims.array)
+colnames(parsO)<-c("Draw","Chain","parameter","estimate")
+parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-3000/m2$BUGSoutput$n.chains),]
 
-  #parameters to save
-  totrack<-m2$parameters.to.save
-  
-  sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,paste(totrack,collapse="|")))
-  
-  colnames(sp_pl)<-c("parameter","species","plant","par")
+#label species and plants
+l<-levels(parsO$parameter)
 
-  sp_pl[is.na(sp_pl$species),c("species")]<-str_extract(sp_pl[is.na(sp_pl$species),"parameter"],"\\d+")
+#parameters to save
+totrack<-m2$parameters.to.save
 
-  #merge levels
-  pars<-merge(parsO,sp_pl)
-  
-  #take out deviance
-  pars<-pars[!pars$par %in% "deviance",]
-  
+sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,paste(totrack,collapse="|")))
+
+colnames(sp_pl)<-c("parameter","species","plant","par")
+
+sp_pl[is.na(sp_pl$species),c("species")]<-str_extract(sp_pl[is.na(sp_pl$species),"parameter"],"\\d+")
+
+#merge levels
+pars<-merge(parsO,sp_pl)
+
+#take out deviance
+pars<-pars[!pars$par %in% "deviance",]
+
 ```
 
 ###Assess Convergence
@@ -667,6 +711,20 @@ ggplot(pars[pars$par %in% c("gamma","polygamma","intercept","sigma_int","sigma_s
 
 ###Species Predictions
 
+```{r}
+#orignal data to plot as ppints
+odat<-merge(indat,bindex,by.x="Bird",by.y="Index")
+odat<-merge(odat,pindex,by.x="Plant",by.y="Index")
+
+#Append the traits
+odatT<-melt(traitmatchT)
+colnames(odatT)<-c("Bird","Plant","x")
+colnames(odat)<-c("Plant","Bird","Time","Yobs","Bird_Species","Plant_Species")
+odat<-merge(odat,odatT,by.x=c("Bird_Species","Plant_Species"),by.y=c("Bird","Plant"))
+#rename the column to match
+colnames(odat)[1]<-"L1"
+```
+
 ```{r,fig.height=10,fig.width=11}
 
 castdf<-dcast(pars[pars$par %in% c("beta","alpha","polybeta"),], species +Chain + Draw~par,value.var="estimate")
@@ -692,8 +750,8 @@ trajF<-function(alpha,beta,beta2,x){
     #compute pred value
     sampletraj[[s]]<-data.frame(x=x,y=yp)
     }
-
-   sample_all<-rbind_all(sampletraj)
+  
+  sample_all<-rbind_all(sampletraj)
   
   #Compute CI intervals
   predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),median=mean(y,na.rm=T))
@@ -702,15 +760,16 @@ trajF<-function(alpha,beta,beta2,x){
 
 for(d in 1:length(species.split)){
   x<-species.split[[d]]
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,beta2=x$polybeta,x=as.numeric(traitmatchT))
-}
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,beta2=x$polybeta,x=as.numeric(traitmatchT[d,]))
+  }
 
 names(species.traj)<-rownames(traitmatchT)
 
 species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
 
+
 #plot and compare to original data
-ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~L1,scales="free",ncol=3) + labs(fill="Species")
+ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~L1,scales="free",ncol=3) + labs(fill="Species") + geom_point(data=odat,aes(x=x,y=Yobs))
 ```
 
 ###Overall predicted relationship 
@@ -718,7 +777,7 @@ ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upp
 Does accounting for non-independence and detection change our estimate of trait matching?
 
 ```{r,fig.height=4,fig.width=4}
- 
+
 castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("polygamma","gamma","intercept"))
 
 castdf<-dcast(pars[pars$par %in% c("gamma","intercept","polygamma"),], Chain + Draw~par,value.var="estimate")
@@ -744,7 +803,7 @@ for (g in 1:nrow(niavedat)){
   b<-niavedat[g,"Bird"]
   I<-niavedat[g,"Plant"]
   niavedat[g,"x"]<-traitmatchT[b,I]  
-}
+  }
 
 niaveobs<-glm(data=niavedat,Yobs~poly(x,2,raw=T),family=poisson())
 summary(niaveobs)
@@ -764,11 +823,6 @@ grid.arrange(p,pboth)
 
 #any given state
 predState<-group_by(pars,par) %>% filter(par=="N") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
-
-#remerge species levels
-bindex<-data.frame(Index=1:length(rownames(traitmatchT)),Species=rownames(traitmatchT))
-
-pindex<-data.frame(Index=1:length(colnames(traitmatchT)),Species=colnames(traitmatchT))
 
 predState<-merge(predState,bindex,by.x="species",by.y="Index")
 
@@ -817,7 +871,7 @@ trajState<-function(alpha,beta,beta2,x,observed){
     
     sampletraj[[s]]<-csq
     }
-   
+  
   #return as a vector
   return(unlist(sampletraj))
   }
@@ -836,7 +890,7 @@ niave_fit<-trajState(alpha=rep(niavecoef[1],100),beta=rep(niavecoef[2],100),beta
 
 #create a replicated dataset from the parameters
 yp=exp(niavecoef[1] + (niavecoef[2]*it$value) + (niavecoef[3]*it$value^2))
-    
+
 pstate<-data.frame(it,Y=rpois(length(yp),yp))
 
 niave_fitnew<-trajState(alpha=rep(niavecoef[1],1000),beta=rep(niavecoef[2],1000),beta2=rep(niavecoef[3],1000),x=it,observed=pstate)
@@ -872,5 +926,5 @@ save.image("Abundance.Rdata")
 
 #Similiar work
 
-  * http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0069200
-  * http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210x.2012.00249.x/abstract
+* http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0069200
+* http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210x.2012.00249.x/abstract
