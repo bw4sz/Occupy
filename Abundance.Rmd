@@ -1,5 +1,6 @@
 ---
-title: "Accounting for detection bias increases trait-matching in a tropical plant-hummingbird network"
+title: Accounting for detection bias increases trait-matching in a tropical plant-hummingbird
+  network
 author: "Ben Weinstein - Stony Brook University"
 date: "Monday, March 16, 2015"
 output: html_document
@@ -18,106 +19,35 @@ library(boot)
 library(picante)
 library(bipartite)
 
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=FALSE,cache=TRUE,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=TRUE,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
 set.seed(11)
+load("Abundance.RData")
 ```
 
-#Introduction
-
-Network ecology is a rapidly developing field that has reinvorgorated research on assemblage stability and complexity. By harnessing graph theory to represent ecological interactions, networks have informed the evolution of specialization (), the importance of complex interactions () and predicting population decline due to shared partners(). While considerable work has focused on sampling and measuring network properties (Bluthgen, Bascompte, Jordano), there has been much less attention to a central problem of network ecology: our ability to detect interactions is imperfect in time and space. This limitation can greatly bias results by assuming that non-detection is synomonous with non-interaction. 
-
-The importance of detection bias is widely appreciated in wildlife sciences(Mackenzie), but only rarely incoporated into evolutionary and theoretical ecology (xy, but see). However, the same issues that limit inference in determining population dyanimcs (), site selection(), and breeding ecology (), also undermine our ability to make inference about the evolution of ecological systems. We can harness the tools developed in widlife sciences to strengthen the realism of network observations. The chief improvement is to incorporate detection bias directly into our estimates of species interactions using occupancy models. In occupancy modeling, repeated surveys are used to estimate the probability of detection given a species probability of occurrence. The probability of occurrence is a latent variable which cannot be directly infered from the data. If we did not see a species at a site, was it absent or undetected? By analogy, if we failed to find a pollinator interacting with a plant, is it due to detection or is it a 'forbidden link' due mismatch in species timing or functional morphology? The goal of this paper is to use a large dataset on plant-hummingbird interactions from a tropical montane forest to evaluate the effect of imperfect detection on estimating species interactions. 
-
-In the tropical Andes, up to thirty hummingbirds can co-occur in local assemblages. Hummingbirds are largley nectarivorous and have a diversity of bill morphologies. In general, species with longer and more curved bills tend to be more specialized (Temeles,Magliansi). This trait relationship may help promote community stability through niche partitioning (Weinstein). To test the strength of trait-matching between bird bill and flower corolla lengths, studies use the number of visits to a flower as interaction strength among birds and plants. These data are used to represent links between the nodes in the network graph. While randomization approaches have been purposed to test for the strength of specialization (Bluthgen, Schueling), few studies have evaluated the detection rates of different interactions, and included these coefficients into estimates of trait-matching (Bartolomeau). 
-
-To estimate detection, observers return multiple times to a site within a sampling window. Human observation is expensive, and it is often prohibitively expensive to design studies to accomodate occupancy modeling using human observations. However, the hummingbird dataset in this paper was collected by using time-lapse cameras which turn on at dawn and dusk automatically. In addition, more traditional hummingbird transects were used to survey flower visitation. Combining these sampling types, we have a very large network with over 3,000 interactions (Weinstein XXXX). By embracing automated monitering of plant-animal interactions, we can begin to determine and account for detection bias. 
-
-To illustrate the utility of this approach, I begin with simulations to demonstrate the importance of accounting for detection. In addition, occupancy models are complex and require fitting a number of latent variables. Before I fit models to an observed dataset, it is crucial to simulate data with known results to show that the models perform as expected. In this analysis, I will use a Bayesian hierarcichal approach. We are ultimately interested in estimating three quantities, the number of interactions between a hummingbird species and plant species, the probability of detection, and the frequency (or 'intensity') of the interaction. To do this, i will divide our model into three components: an observation model, a process model, and a hierarcichal set of priors.
-
-###Observation Model
-
-The observation model describes the sampling process that yields our data (Elison). These are the actual number of observations observed by reviewing the cameras and transects. We know there is some true, but unknown intensity of interactions among hummingbird i and plant j, and that we are likely to see some, but not all, interactions. We assume that we are equally likely to see any one interaction, so the number of detections of hummingbird i on plant j in month k is modeled as as a binomial trail where the probability of detecting a species is a species-specific parameter *detect* with *N* trials (Royle). 
-
-$$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
-
-###Process Model
-
-To estimate the parameter *N*, which is the unknown true rate of interactions, we need a process model. The process model is the mechansism that generates interactions among plants and pollinators in a given time period. In our analysis, our sampling period is one day. We can model the daily intensity as a poisson distribution with $\lambda_{i,j}$. The hypothesis is that $\lambda$ should increase with greater matching between plant corolla and hummingbird bill lengths. Since lambda is a intensity of interactions, it must be a positive number. We therefore model $\lambda$ as a function of linear predictors with a log link function. In our simulation, we give equal penalty for having a bill too long, or too short for a given corolla. The process model can be written as:
-
-$$N_{i,j} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_i * (Bill_i - Corolla_i) + \beta_{i2} *(Bill_i - Corolla_i)^2 $$
-
-###Hierarcichal structure
-
-Each $Y_{i,j,k}$ interaction is not independent. Due to foraging behavior (Sandlin), physiological requirements (Powers), or difference in available resources (Weinstein),  species may respond individualistically to differences in bill or corolla lengths. However, our goal is not to study any one species, but to capture the overall effect of trait-matching on hummingbirds and plants. We therefore use a hierarcichal model to account both for within species variability, but to estimate a group-level mean (Bolker). Similiarly, due to differences in abundance, behavior, and foraging strategy (Colwell), some hummingbird species will be more detectable than others. We allow a fixed species level effect of hummingbird species on detection probability. Each of these levels could be fit to covariates as well depending on vegetation height, observer distance and quality (Royle). By combining an observation model, process model, and hiericichal structure, I am accounting for known obstacles in intepretting my data. To illustrate the added information based on this setup, I compare my results to a direct poisson generalized linear model that does not account for detection or non-independence of observations. 
-
-#Methods
-##Simulation
+#Simulation
 
 I first create data with constant detection for each hummingbird speices, and the interaction frequency is a function of a species hierarcichal model and corolla similarity. There is uneven sampling among species.
 
 ### Parameters
 
 * 8 hummingbird species
-* Range of hummingbird bill sizes (mm) ~ Pois(20)
+* Range of hummingbird bill sizes (mm) ~ Pois(2)
 * Twenty plants
-* Range of corolla sizes (mm) ~ Pois(20)
+* Range of corolla sizes (mm) ~ Pois(2)
 * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
 * For each plant the occupancy is N($\lambda$,0.2) (truncated 0-1) 
 * Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
-$$log(\lambda)<-\alpha_i + \beta_i *traitmatch + \beta_{2i} * traitmatch^2$$
+$$log(\lambda)<-\alpha_i + \beta_i *traitmatch$$
 $$\alpha=N(3,.01)$$
 $$\beta = N(-.01,.001)$$
-$$\beta_2=N(.-.05,.001)$$
 
 * Imperfect detection 
 * $p_i = U(0,1)$ 
 * 24 month replicates
 * Phenology = .5 (plants are in flower/present .5 of surveys)
-
-##Observed Data
-###Data Collection
-* Data were collected at the Maquipucuna Research Station and Santa Lucia Ecolodges, Ecuador (0.118 S,-78.612 W) between June 2013 and July 2015 along an elevation gradient from 1300 m to 2500 m. The area contains regenerating secondary and primary cloud-forest, and has a warmer dry season from June to September (Webster and Rhodes 2005). 
-* We used time-lapse cameras to monitor hummingbird visitation. Flowers in bloom were noted during each transect, and cameras were placed 1-3 meters from focal flowers. Cameras turned on automatically at dawn and recorded an image every second for at least two days. 
-* We used the computer vision program MotionMeerkat to identify images where hummingbirds were observed (Weinstein 2014).
-
-### Model Fitting
-## Hierarcichal Occupancy Model Formulation
-
-###Observation
-
-The number of observations observed between $hummingbird_i$ and $flower_j$ in $survey_k$ is a binomial trail where the probability of detecting a species is a species specific parameter detect with N trials.N is the underlying frequency of interactions among each pair of plants and hummingbirds drawn from a poisson with $\lambda_{i,j}$, which is modeled as a lognormal link. The detection probability is fixed for each species. This could account for differing abundances or foraging intensity. Species level priors for the strength of trait-matching is drawn from a normal distribution of all hummingirds.
-
-$$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
-$$N_{i,j} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
-$$detect_i \sim U(0,1)$$     
-
-**Priors**
-
-$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
-$$\beta_i \sim N(\gamma,\tau_{\beta})$$
-
-**Hyperpriors**
-$$gamma \sim N(0.001,0.001)$$
-$$intercept \sim N(0.001,0.001)$$
-
-$$\tau_{\alpha} \sim Gamma(0.001,0.001)$$
-$$\tau_\beta \sim Gamma(0.001,0.001)$$
-
-**Derived quantities**
-
-$$\sigma_{int} = \frac{1}{\tau_{\alpha}}^2$$
-$$\sigma_{slope} = \frac{1}{\tau_{\beta}}^2$$
-
-###Posterior Checks
-
-************
-#Results
-
 
 **View simulated strength and form of trait matching **
 
@@ -136,13 +66,13 @@ Bill<-rpois(h_species,10)
 Corolla<-rpois(plant_species,15)
 
 #Subtract both and take absolute value
-traitmatch<-abs(sapply(Corolla,function(x) x - Bill))
+traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
 
 #regression slope
-gamma=-0.1
+gamma=-0.5
 intercept<-3
-sigma_slope<- 0.01
-sigma_intercept<- 0.01
+sigma_slope<- 0.2
+sigma_intercept<- 0.2
 
 beta<-rnorm(h_species,gamma,sigma_slope)
 alpha<-rnorm(h_species,intercept,sigma_intercept)
@@ -220,7 +150,32 @@ d<-merge(mdat,obs.state)
 ggplot(d,aes(x=True_State,y=Detections,col=Month)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
 ```
 
-#Niave Estimate of Trait-Matching
+### Model Fitting
+## Hierarcichal Occupancy Model Formulation
+
+$$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
+$$N_{i,j} \sim Pois(\lambda_{i,j}) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
+$$detect_i \sim U(0,1)$$     
+
+**Priors**
+
+$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
+$$\beta_i \sim N(\gamma,\tau_{\beta})$$
+
+**Hyperpriors**
+$$gamma \sim N(0.001,0.001)$$
+$$intercept \sim N(0.001,0.001)$$
+
+$$\tau_{\alpha} \sim Gamma(0.001,0.001)$$
+$$\tau_\beta \sim Gamma(0.001,0.001)$$
+
+**Derived quantities**
+
+$$\sigma_{int} = \frac{1}{\tau_{\alpha}}^2$$
+$$\sigma_{slope} = \frac{1}{\tau_{\beta}}^2$$
+
+## Poisson Estimate of trait-matching without detection bias or non-independence. 
 
 Fit a model of observations without repect to their hierarcichal structure or with detection bias.
 
@@ -240,9 +195,11 @@ pred.frame<-melt(list(Niave=niave.pred,Detections=detect.pred),id.var=c("x","y")
 ggplot(pred.frame,aes(x=x,y=y,col=L1)) + geom_point(data=pred.frame[pred.frame$L1=='Detections',],size=2.5) + theme_bw() + geom_line(data=pred.frame[pred.frame$L1=='Niave',]) + labs(col="",x="Bill Length- Corolla Length",y="Interactions") + scale_color_discrete(labels=c("Observations","Poisson GLM"))
 ```
 
+##Hierarcichal Bayesian Model
+
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-50000
+runs<-100000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -265,7 +222,7 @@ initY<-array(dim=c(Dat$Birds,Dat$Plants),data=max(obs,na.rm=T))
 InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N","gamma")
+ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N","gamma","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -337,24 +294,26 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,cache=FALSE,fig.width=7,fig.height=5}
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
+p<-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
 tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
 colnames(tr)<-c("species","par","value")
-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
+psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
+ggsave("Figures/SimulationPosteriors.jpg",dpi=300,height=8,width=8)
 ```
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
 
-p<-ggplot(pars[pars$par %in% c("gamma","polygamma","intercept","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_grid(~par,scale="free") + theme_bw() 
+p<-ggplot(pars[pars$par %in% c("gamma","polygamma","intercept","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
 tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
 
 colnames(tr)<-c("value","par")
 
-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
+psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="red")
+ggsave("Figures/SimulationH.jpg",dpi=300,height=4,width=10)
 ```
 
 **True values are given in the dashed lines.**
@@ -390,7 +349,9 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 niaveP<-trajF(alpha=rep(niave$coefficients[1],100),beta=rep(niave$coefficients[2],100),x=as.numeric(traitmatch))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='blue',linetype="dashed",size=1) + geom_line(data=niaveP,aes(x=x,y=mean),col="green") + xlab("Difference between Bill and Corolla Length") 
+psim3<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1.,col="red") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='blue',linetype="dashed",size=1) + geom_line(data=niaveP,aes(x=x,y=mean),col="green") + xlab("Difference between Bill and Corolla Length") 
+
+ggsave("Figures/SimulationResults.jpg",height=5,width=6,dpi=300)
 ```
 
 Blue line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The poisson glm that does not account for detectability or non-independence is in green.
@@ -400,7 +361,7 @@ Blue line is the true relationship. The red line is the posterior mean with conf
 
 ###Predicted Frequency
 
-Validating the model.
+Validating the model
 
 ```{r,eval=T}
 
@@ -421,7 +382,87 @@ mdat<-merge(predState,tr,by.x=c("species","plant"),by.y=c("Hummingbird","Plant")
 ggplot(mdat,aes(y=State,x=True_State)) + geom_point(size=3) + geom_abline(linetype="dashed") + theme_bw() + xlab("True State") + ylab("Predicted State") + coord_equal()
 ```
 
-***********
+###Posterior Check
+
+Since I have simualted the data, it should fit as well as any random dataset drawn from the estimated parameters. An ideal fit would be posterior values sitting along the 1:1 line.
+
+```{r}
+#Define a function that computes new state for the model
+trajState<-function(alpha,beta,x,observed){
+  
+  #Bind together
+  fdat<-data.frame(alpha=alpha,beta=beta)
+  
+  #fit regression for each input estimate
+  sampletraj<-list()
+  for (s in 1:nrow(fdat)){
+    a<-fdat$alpha[s]
+    b<-fdat$beta[s]
+    yp=exp(a + (b*x$value))
+    
+    #compute pred value
+    state<-data.frame(x,State=rpois(length(yp),yp))
+    
+    #merge with observed state
+    mstate<-merge(state,observed,by=c("Bird","Plant"))
+    
+    #Compute chisquared
+    csq<-sum((mstate$Y-mstate$State)^2/(mstate$State+0.5))
+    
+    sampletraj[[s]]<-csq
+    }
+  
+  #return as a vector
+  return(unlist(sampletraj))
+  }
+
+
+#format the trait matrix
+it<-melt(traitmatch)
+colnames(it)<-c("Bird","Plant","value")
+
+#list of observed data
+orig<-obs.state
+colnames(orig)<-c("Bird","Plant","Month","Y")
+
+#create a replicated dataset from the parameters, assume a norma
+niave_fit<-trajState(alpha=rep(niavecoef[1],100),beta=rep(niavecoef[2],100),x=it,observed=orig)
+
+#create a replicated dataset from the parameters
+yp=exp(niavecoef[1] + (niavecoef[2]*it$value))
+
+pstate<-data.frame(it,Y=rpois(length(yp),yp))
+
+niave_fitnew<-trajState(alpha=rep(niavecoef[1],1000),beta=rep(niavecoef[2],1000),x=it,observed=pstate)
+
+discr_niave<-data.frame(fit=niave_fit,fitnew=niave_fitnew,model="Poisson GLM")
+```
+
+```{r,fig.height=4,fig.width=8}
+
+fitstat<-pars[pars$par %in% c("fit","fitnew"),]
+fitstat<-dcast(fitstat,Draw+Chain~par,value.var="estimate")
+fitstat$model<-"Occupancy Model"
+
+ddat<-rbind_all(list(fitstat,discr_niave))
+#add 1:1 line
+
+ymin<-log(round(min(c(ddat$fit,ddat$fitnew))))
+ymax<-log(round(max(c(ddat$fit,ddat$fitnew))))
+ab<-data.frame(x=ymin:ymax,y=ymin:ymax)
+p<-ggplot(ddat,aes(x=log(fit),y=log(fitnew))) + geom_point(aes(col=model)) + theme_bw() + coord_equal()
+psim4<-p  + labs(x="Log discrepancy of observed data",y="Log discrepancy of replicated data",col="Model") + geom_line(data=ab,aes(x=x,y=y)) + ggtitle("Simulations")
+
+psim4
+#Write Figures as panels
+jpeg("Figures/SimulationPosteriors.jpg",height=12,width=12,units="in",res=300)
+grid.arrange(psim,psim2,ncol=1,heights=c(3/4,1/4))
+dev.off()
+
+jpeg("Figures/SimPredict.jpg",height=6,width=7,units="in",res=300)
+grid.arrange(psim3)
+dev.off()
+```
 
 #Observed dataset
 
@@ -586,9 +627,9 @@ indat<-indat[!is.na(indat$value),]
 colnames(indat)<-c("Bird","Plant","Time","Yobs")
 ```
 
-```{r,eval=T,results='hide'}
+```{r,eval=F,results='hide'}
 
-runs<-70000
+runs<-80000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -697,6 +738,16 @@ ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=estimate)) + geom_h
 
 ```
 
+```{r,cache=FALSE,fig.width=11,fig.height=12}
+#Detection figure
+ggplot(pars[pars$par %in% c("detect"),],aes(x=as.factor(species),y=estimate)) + geom_violin(fill="grey10") + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") + coord_flip() + ylim(0,.3)
+
+parsp<-merge(pars,bindex,by.x="species",by.y="Index")
+ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Species,ncol=4) + xlab("Probability of Detection")
+ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
+```
+
+
 ```{r,cache=FALSE,eval=TRUE,fig.height=5,fig.width=13}
 
 ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
@@ -763,6 +814,8 @@ species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
 
 #plot and compare to original data
 ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~L1,scales="free",ncol=3) + labs(fill="Species") + geom_point(data=odat,aes(x=x,y=Yobs))
+
+ggsave("Figures/SpeciesPredictions.jpg",dpi=300,height=8,width=10)
 ```
 
 ###Overall predicted relationship 
@@ -780,6 +833,7 @@ predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=round(as.numeric(traitma
 
 #plot and compare to original data
 ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
+
 ```
 
 The red line is the posterior median with confidible intervals in shaded grey for the proposed bayesian model. The poisson glm that does not account for detectability or non-independence is in green.
@@ -787,7 +841,8 @@ The red line is the posterior median with confidible intervals in shaded grey fo
 **Conclusion:** Accounting for detection and non-independence greatly increases the accuracy of the predicted state. The poisson glm underestimates the strength of trait matching among hummingbirds and their foodplants.
 
 ###Poisson regression without detection bias
-```{r}
+
+```{r,fig.height=6,fig.width=9}
 
 niavedat<-as.data.frame(filter(m.datH,!is.na(Month)) %>% mutate(Time=paste(Month,Year)) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)))
 niavedat$x<-NULL
@@ -808,6 +863,8 @@ p<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alp
 
 pboth<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_ribbon(data=predy,aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(data=predy,aes(y=median),size=1.,col="red") + ggtitle("Accounting for detection bias")
 grid.arrange(p,pboth)
+
+ggsave(plot=pboth,"Figures/DetectionObs.jpg",dpi=300,height=4,width=5)
 ```
 
 ###Predicted Frequency
@@ -877,7 +934,8 @@ colnames(it)<-c("Bird","Plant","value")
 orig<-as.data.frame(group_by(m.datH,Hummingbird,Iplant_Double) %>% summarize(Y=sum(obs)))
 colnames(orig)<-c("Bird","Plant","Y")
 
-#create a replicated dataset from the parameters
+#create a replicated dataset from the parameters, assume a norma
+confint(niave)
 niave_fit<-trajState(alpha=rep(niavecoef[1],100),beta=rep(niavecoef[2],100),x=it,observed=orig)
 
 #create a replicated dataset from the parameters
@@ -890,6 +948,7 @@ niave_fitnew<-trajState(alpha=rep(niavecoef[1],1000),beta=rep(niavecoef[2],1000)
 discr_niave<-data.frame(fit=niave_fit,fitnew=niave_fitnew,model="Poisson GLM")
 
 ```
+
 ###Discrepancy 
 
 The goodness if of fit is a measured as chi-squared. The expected value for each month is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
@@ -898,17 +957,39 @@ Better fitting models are smaller values and closer to the 1:1 line. A perfect m
 ```{r,fig.height=4,fig.width=8}
 fitstat<-pars[pars$par %in% c("fit","fitnew"),]
 fitstat<-dcast(fitstat,Draw+Chain~par,value.var="estimate")
-fitstat$model<-"Bayesian Hierarchical Detection"
+fitstat$model<-"Occupancy Model"
 
 ddat<-rbind_all(list(fitstat,discr_niave))
 #add 1:1 line
 
-ymin<-round(min(c(ddat$fit,ddat$fitnew)))
-ymax<-round(min(c(ddat$fit,ddat$fitnew)))
+ymin<-log(round(min(c(ddat$fit,ddat$fitnew))))
+ymax<-log(round(max(c(ddat$fit,ddat$fitnew))))
 ab<-data.frame(x=ymin:ymax,y=ymin:ymax)
-p<-ggplot(ddat,aes(x=fit,y=fitnew)) + geom_point(aes(col=model)) + theme_bw()
-p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model") + geom_abline() + geom_abline(data=ab,aes(x=x,y=y))
+p<-ggplot(ddat,aes(x=log(fit),y=log(fitnew))) + geom_point(aes(col=model)) + theme_bw() + coord_equal()
+disc_obs<-p  + labs(x="Log discrepancy of observed data",y="Log discrepancy of replicated data",col="Model") + geom_line(data=ab,aes(x=x,y=y)) + ggtitle("Field Observations")
+jpeg("Figures/DiscrepancyBoth.jpeg",res=300,height=7,width=6,units="in")
+grid.arrange(psim4,disc_obs,nrow=2)
+dev.off()
 ```
+
+###Posterior p-value (worst term in the world.)
+
+We are interested in the mean number of interactions per species.
+
+```{r}
+hist(ddat$fitnew)
+hist(ddat$fit)
+```
+
+```{r}
+#Detection table
+
+dp<-group_by(pars[pars$par %in% c("detect"),],species) %>% summarise(mean=round(mean(estimate,na.rm=T),3)*100,lower=round(quantile(estimate,0.025,na.rm=T),3)*100,upper=round(quantile(estimate,0.975,na.rm=T),3)*100)
+
+tab<-merge(dp,bindex,by.x="species",by.y="Index")[,-1]
+write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
+```
+
 
 ```{r}
 save.image("Abundance.Rdata")
@@ -916,6 +997,10 @@ save.image("Abundance.Rdata")
 
 #Discussion
 
+  Species are difficult to observe in the natural world. By allowing for observation error, we can better estimate the underlying mechanisms shaping ecological communities. In this paper, i compared poisson generalized linear models with a hierarcichal bayesian approach that accounted for detection bias and non-independence among species. Both the estimate of trait-matching, as well as the model fit increased using the hierarcichal approach. 
+  By using the raw number of interactions among plants and pollinators, we assume that each species sampled evenly, and that each interaction was equally detectable. The automated cameras used to moniter the majority of these interactions turn on and off at dawn and dusk and provide a much longer duration of observation than is possible with a human observer(). Nevertheless, hummingbird-plant interactions were detected less than 20% of the sampling periods. This suggest that the problem of detection bias would be even more severe when the sampling window is even shorter. 
+  The occupancy models presented here can be extended to include time-varying components (Royle), and covariates. For example, detection may decrease as plant height increases, since observations may be harder to confirm at greater distances.
+  The underlyin
 #Similiar work
 
 * http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0069200
