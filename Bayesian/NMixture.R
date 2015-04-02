@@ -7,7 +7,7 @@ cat("
       for (j in 1:Plants){
       
       # True state model for the only partially observed true state    
-      log(lambda[i,j])<-alpha[i] + beta[i] * traitmatch[i,j] + polybeta[i] * pow(traitmatch[i,j],2)
+      log(lambda[i,j])<-alpha[i] + beta[i] * traitmatch[i,j]
       N[i,j] ~ dpois(lambda[i,j])
       
       for (k in 1:Months) {   
@@ -29,12 +29,10 @@ cat("
     detect[i] ~ dunif(0,1) # Detection for each bird species
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta[i] ~ dnorm(gamma,tau_beta)    
-    polybeta[i] ~ dnorm(polygamma,tau_polybeta)    
     }
     
     #Hyperpriors
     gamma~dnorm(0.001,0.001)
-    polygamma~dnorm(0.001,0.001)
     intercept~dnorm(0.001,0.001)
     
     tau_alpha ~ dgamma(0.001,0.001)
@@ -42,8 +40,6 @@ cat("
     tau_beta ~ dgamma(0.001,0.001)
     sigma_slope<-pow(1/tau_beta,0.5)
     
-    tau_polybeta ~ dgamma(0.001,0.001)
-    sigma_polyslope<-pow(1/tau_polybeta,0.5)
     
     #derived posterior check
     fit<-sum(E[,,]) #Discrepancy for the observed data
