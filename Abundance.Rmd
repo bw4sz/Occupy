@@ -24,7 +24,7 @@ opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,ca
 setwd("C:/Users/Ben/Documents/Occupy/")
 
 set.seed(11)
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation   
