@@ -181,7 +181,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -329,7 +329,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -770,7 +770,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-1500
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -878,7 +878,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T,results='hide'}
 
-runs<-1500
+runs<-50000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -1024,7 +1024,7 @@ odat<-merge(odat,odatT,by.x=c("Bird_Species","Plant_Species"),by.y=c("Bird","Pla
 colnames(odat)[1]<-"L1"
 ```
 
-```{r,fig.height=10,fig.width=11}
+```{r,fig.height=10,fig.width=11,eval=F}
 
 castdf<-dcast(parsObs[parsObs$par %in% c("beta","alpha","polybeta"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
@@ -1079,9 +1079,8 @@ Does accounting for non-independence and detection change our estimate of trait 
 
 ```{r,fig.height=4,fig.width=4}
 
-castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
 
-castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("gamma","intercept"),], Model+Chain + Draw~par,value.var="estimate")
 
 #calculated predicted y
 predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=round(as.numeric(traitmatchT),2))
