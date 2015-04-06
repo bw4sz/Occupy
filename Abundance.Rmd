@@ -181,7 +181,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-50000
+runs<-2000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -329,7 +329,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-50000
+runs<-2000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -770,7 +770,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-50000
+runs<-2000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -878,7 +878,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T,results='hide'}
 
-runs<-50000
+runs<-2000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -1059,18 +1059,25 @@ trajF<-function(alpha,beta,x){
 
 for(d in 1:length(species.split)){
   x<-species.split[[d]]
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,x=as.numeric(traitmatchT[d,]))
+  index<-unique(x$species)
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,x=as.numeric(traitmatchT[index,]))
   }
 
-names(species.traj)<-rownames(traitmatchT)
+names(species.traj)<-names(species.split)
 
 species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
 
+#split out names and model
+species.traj[,c("Index","Model")]<-colsplit(species.traj$L1,"\\.",c("Index","Model"))
 
+spe<-merge(species.traj,bindex,by.x="Index",by.y="Index")
+
+#match colnames
+names(odat)[1]<-"Species"
 #plot and compare to original data
-ggplot(data=species.traj,aes(x=x,fill=L1)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~L1,scales="free",ncol=3) + labs(fill="Species") + geom_point(data=odat,aes(x=x,y=Yobs))
+ggplot(data=spe,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=median,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Species,scales="free",ncol=3) + labs(fill="Model") + geom_point(data=odat,aes(x=x,y=Yobs))
 
-ggsave("Figures/SpeciesPredictions.jpg",dpi=300,height=8,width=10)
+ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
 ```
 
 ###Overall predicted relationship 
@@ -1079,29 +1086,21 @@ Does accounting for non-independence and detection change our estimate of trait 
 
 ```{r,fig.height=4,fig.width=4}
 
-
 castdf<-dcast(parsObs[parsObs$par %in% c("gamma","intercept"),], Model+Chain + Draw~par,value.var="estimate")
 
+castdf<-split(castdf,castdf$Model)
 #calculated predicted y
-predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=round(as.numeric(traitmatchT),2))
+predy<-rbind_all(lapply(castdf,function(i){
+  #calculate trajectory and append model
+  pr<-trajF(alpha=i$intercept,beta=i$gamma,x=round(as.numeric(traitmatchT),2))  
+  pr$Model<-unique(i$Model)
+  return(pr)
+}))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1,col="red") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
-
-```
-
-The red line is the posterior median with confidible intervals in shaded grey for the proposed bayesian model. The poisson glm that does not account for detectability or non-independence is in green.
-
-**Conclusion:** Accounting for detection and non-independence greatly increases the accuracy of the predicted state. The poisson glm underestimates the strength of trait matching among hummingbirds and their foodplants.
-
-```{r}
-#plot and compare to original data
-p<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + ggtitle("Without accounting for detection bias")
-
-pboth<-ggplot(data=predyniave,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=median),size=1.,col="blue") + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_ribbon(data=predy,aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(data=predy,aes(y=median),size=1.,col="red") + ggtitle("Accounting for detection bias")
-grid.arrange(p,pboth)
-
+ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
 ggsave(plot=pboth,"Figures/DetectionObs.jpg",dpi=300,height=4,width=5)
+
 ```
 
 ###Predicted Frequency
@@ -1109,12 +1108,12 @@ ggsave(plot=pboth,"Figures/DetectionObs.jpg",dpi=300,height=4,width=5)
 ```{r,eval=T,fig.height=7,fig.width=12,eval=T}
 
 #any given state
-predState<-group_by(pars,par) %>% filter(par=="N") %>% group_by(par,species,plant) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
+predState<-group_by(parsObs,par,Model) %>% filter(par=="N") %>% group_by(par,species,plant,Model) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
 
 predState<-merge(predState,bindex,by.x="species",by.y="Index")
 
 predState<-merge(predState,pindex,by.x="plant",by.y="Index")
-colnames(predState)<-c("plant","species","par","State","Bird","Plant")
+colnames(predState)<-c("plant","species","par","Model","State","Bird","Plant")
 
 #order it to show nestedness.
 b_ord<-group_by(predState,Bird) %>% summarize(I=sum(State)) %>% arrange(desc(I)) %>% select(Bird)
@@ -1124,44 +1123,12 @@ p_ord<-group_by(predState,Plant) %>% summarize(I=sum(State)) %>% arrange(I) %>% 
 predState$Bird<-factor(predState$Bird,levels=b_ord$Bird)
 predState$Plant<-factor(predState$Plant,levels=p_ord$Plant)
 
-predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted")
-
+predplot<-
+  ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model) + theme(axis.text.x = element_text(angle = 90))
 
 orig<-group_by(indat,Bird,Plant) %>% summarize(Y=sum(Yobs))
 
 finaldat<-merge(predState,orig,by.x=c("species","plant"),by.y=c("Bird","Plant"))
-```
-
-```{r}
-#Define a function that computes new state for the model
-trajState<-function(alpha,beta,x,observed){
-  
-  #Bind together
-  fdat<-data.frame(alpha=alpha,beta=beta)
-  
-  #fit regression for each input estimate
-  sampletraj<-list()
-  for (s in 1:nrow(fdat)){
-    a<-fdat$alpha[s]
-    b<-fdat$beta[s]
-    yp=exp(a + (b*x$value))
-    
-    #compute pred value
-    state<-data.frame(x,State=rpois(length(yp),yp))
-    
-    #merge with observed state
-    mstate<-merge(state,observed,by=c("Bird","Plant"))
-    
-    #Compute chisquared
-    csq<-sum((mstate$Y-mstate$State)^2/(mstate$State+0.5))
-    
-    sampletraj[[s]]<-csq
-    }
-  
-  #return as a vector
-  return(unlist(sampletraj))
-  }
-
 ```
 
 ###Discrepancy 
@@ -1183,7 +1150,6 @@ grid.arrange(psim4,disc_obs,nrow=2)
 dev.off()
 ```
 
-###Posterior p-value (worst term in the world.)
 
 ```{r}
 #Detection table
