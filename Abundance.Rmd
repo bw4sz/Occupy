@@ -181,7 +181,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-2000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -329,7 +329,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-2000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -770,7 +770,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-2000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -878,7 +878,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T,results='hide'}
 
-runs<-2000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
