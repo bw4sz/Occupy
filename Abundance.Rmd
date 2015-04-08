@@ -27,7 +27,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation   
@@ -212,7 +212,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N"
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- runs*.001   #thinning rate
-nb <- 0 # number to discard for burn-in
+nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -326,7 +326,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N"
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- runs*.001   #thinning rate
-nb <- 0 # number to discard for burn-in
+nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -723,7 +723,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- runs*.001   #thinning rate
-nb <- 0 # number to discard for burn-in
+nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -808,7 +808,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- runs*.001   #thinning rate
-nb <- 0 # number to discard for burn-in
+nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -1007,7 +1007,11 @@ write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 
 DIC Table
 ```{r}
-DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("Detection Estimated","No Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
+#calculate DIC by hand, need to specify burnin
+mods<-c(sim_niave,m,m2_niave,m2)
+DIC<-lapply(mods,function(x) dic.samples(x,n.iter=1000))
+
+DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("Detection Estimated","No Detection Estimated"),2)),DIC=,pD=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
 write.csv(dcast(DICtable,Data~Model),"Figures/DICtable.csv")
 ```
 
