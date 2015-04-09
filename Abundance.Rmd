@@ -1,6 +1,5 @@
 ---
-title: Accounting for detection bias increases trait-matching in a tropical plant-hummingbird
-network
+title: Accounting for detection bias increases trait-matching in a tropical plant-hummingbird network
 author: "Ben Weinstein - Stony Brook University"
 date: "Monday, March 16, 2015"
 output: html_document
@@ -184,7 +183,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1500
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -298,7 +297,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1500
+runs<-50000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -431,7 +430,7 @@ Does accounting for non-independence and detection change our estimate of trait 
 castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
 
 castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
-castdf<-castdf[sample(1:nrow(castdf),2000),]
+castdf<-castdf[sample(1:nrow(castdf),1500),]
 
 trajF<-function(alpha,beta,x){
   indat<-cbind(alpha,beta)
@@ -680,7 +679,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-1500
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -764,7 +763,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T,results='hide'}
 
-runs<-1500
+runs<-50000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -1007,11 +1006,9 @@ write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 
 DIC Table
 ```{r}
-#calculate DIC by hand, need to specify burnin
-mods<-c(sim_niave,m,m2_niave,m2)
-DIC<-lapply(mods,function(x) dic.samples(x,n.iter=1000))
 
-DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("Detection Estimated","No Detection Estimated"),2)),DIC=,pD=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
+
+DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
 write.csv(dcast(DICtable,Data~Model),"Figures/DICtable.csv")
 ```
 
