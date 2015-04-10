@@ -183,7 +183,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-50000
+runs<-20000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -281,7 +281,6 @@ ggsave("Figures/SimulationHNoDetect.jpg",dpi=300,height=4,width=10)
 castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
 
 castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
-castdf<-castdf[sample(1:nrow(castdf),1500),]
 
 #calculated predicted y
 predyniave<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=as.numeric(traitmatch))
@@ -297,7 +296,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-50000
+runs<-2000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -430,7 +429,6 @@ Does accounting for non-independence and detection change our estimate of trait 
 castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
 
 castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
-castdf<-castdf[sample(1:nrow(castdf),1500),]
 
 trajF<-function(alpha,beta,x){
   indat<-cbind(alpha,beta)
@@ -529,10 +527,13 @@ hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Hummin
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
+#start with just cameras
+int<-int[int$Type=="Camera",]
+
 #int$Month<-cut(int$Month,seq(0,12,2),labels=seq(1,11,2))
 
 #Melt the interaction frame and match it with the traits
-m.dat<-int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele")]
+m.dat<-int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")]
 
 m.dat$Year<-years(as.Date(m.dat$DateP))
 #Fix spacing to match clades
@@ -581,7 +582,7 @@ p<-p + coord_flip()
 ###Format data
 
 #remove species with less than  10 observations
-keep<-names(which(table(m.datH$Hummingbird) > 20))
+keep<-names(which(table(m.datH$Hummingbird) > 10))
 
 m.datH<-droplevels(m.datH[m.datH$Hummingbird %in% keep,])
 
@@ -632,11 +633,12 @@ Start by a hand drawn table - then move to quantitative
 ```{r}
 
 #1 is low elevation, #2 is high elevation, # 3 is both
-elevH<-data.frame(Species=keep,Range=c(1,3,3,2,2,2,1,2,1,2,1,3,3,1))
+elevH<-data.frame(Species=keep,Range=c(1,3,3,2,2,3,2,3,1,2,2,1,3,3,3,1))
 #merge to names
 elevH<-merge(bindex,elevH)
 
-elevP<-data.frame(Species=colnames(traitmatchT),Range=c(2,2,2,3,3,1,1,2,2,3,3,3,3,2,1,3,1,1,1,2,2,2,3,3,3,1,2,2,3,2,3,3,1,3,1,2))
+pr<-c(2,2,2,3,3,1,3,2,2,3,3,3,3,2,1,3,2,1,1,1,2,2,2,3,3,3,2,3,3,2,3,3,1,3,1)
+elevP<-data.frame(Species=colnames(traitmatchT),Range=pr)
 elevP<-merge(pindex,elevP)
 
 ```
@@ -668,6 +670,18 @@ for(x in 1:dim(indatlong)[3]){
     }
   }
 
+
+#remove any 0's when a bird never feeds on a plant, the interaction must occur at some point to be observed.
+for(x in 1:dim(indatlong)[1]){
+  for(y in 1:dim(indatlong)[2]){
+    a<-indatlong[x,y,]
+    suma<-sum(a,na.rm=T)
+    if(suma==0){
+      indatlong[x,y,]<-NA
+      }    
+    }
+  }
+
 #melt and remove Na's
 indat<-melt(indatlong)
 indat<-indat[!is.na(indat$value),]
@@ -679,7 +693,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-50000
+runs<-10000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -763,7 +777,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T,results='hide'}
 
-runs<-50000
+runs<-20000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -965,8 +979,7 @@ p_ord<-group_by(predState,Plant) %>% summarize(I=sum(State)) %>% arrange(I) %>% 
 predState$Bird<-factor(predState$Bird,levels=b_ord$Bird)
 predState$Plant<-factor(predState$Plant,levels=p_ord$Plant)
 
-predplot<-
-  ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model) + theme(axis.text.x = element_text(angle = 90))
+predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model) + theme(axis.text.x = element_text(angle = 90))
 
 orig<-group_by(indat,Bird,Plant) %>% summarize(Y=sum(Yobs))
 
@@ -1006,8 +1019,6 @@ write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 
 DIC Table
 ```{r}
-
-
 DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
 write.csv(dcast(DICtable,Data~Model),"Figures/DICtable.csv")
 ```
