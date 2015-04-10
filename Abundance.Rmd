@@ -58,8 +58,15 @@ $$\beta = N(-.01,.001)$$
 h_species=10
 plant_species=20
 months=24
-detection=runif(h_species,0,1)
 phenology=.75
+
+#Draw detection probability
+taudetect<-0.1
+  
+detectionprior<-runif(h_species,.1,1)
+detection<-t(sapply(detectionprior,function(x){rnorm(plant_species,mean=x,taudetect)}))
+
+#make sure no negative numbers
 
 #Bill sizes
 Bill<-rpois(h_species,10)
@@ -186,10 +193,10 @@ setwd("C:/Users/Ben/Documents/Occupy/")
 runs<-20000
 
 #Source model
-source("Bayesian/NoDetect.R")
+source("Bayesian/NoDetectHD.R")
 
 #print model
-print.noquote(readLines("Bayesian/NoDetect.R"))
+print.noquote(readLines("Bayesian/NoDetectHD.R"))
 
 #Input Data
 Dat <- list(
@@ -201,12 +208,12 @@ Dat <- list(
 
 #A blank Y matrix - all present
 initY<-array(dim=c(Dat$Birds,Dat$Plants),data=max(obs,na.rm=T))
-
+detect<-array(dim=c(Dat$Birds,Dat$Plants),data=.999)
 #Inits
-InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY,gamma=0)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detectprior=rep(.999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N","gamma","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N","gamma","fit","fitnew","detectprior")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -218,7 +225,7 @@ nc <- 2  # number of chains
 
 sim_niave = jags(inits=InitStage,
                  n.chains=nc,
-                 model.file="Bayesian/NoDetect.jags",
+                 model.file="Bayesian/NoDetectHD.jags",
                  working.directory=getwd(),
                  data=Dat,
                  parameters.to.save=ParsStage,
@@ -237,7 +244,7 @@ pars<-extract_par(sim_niave)
 ```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
 
 ###Chains
-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars[pars$par %in% c("detectprior","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
 ```
 
@@ -249,10 +256,10 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,cache=FALSE,fig.width=7,fig.height=5}
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars[pars$par %in% c("detectprior","alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
+tr<-melt(data.frame(species=1:length(detectionprior),detectprior=detectionprior,alpha=alpha,beta=beta),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 psim
@@ -296,13 +303,13 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-2000
+runs<-20000
 
 #Source model
-source("Bayesian/NMixture.R")
+source("Bayesian/NMixtureHD.R")
 
 #print model
-print.noquote(readLines("Bayesian/NMixture.R"))
+print.noquote(readLines("Bayesian/NMixtureHD.R"))
 
 #Input Data
 Dat <- list(
@@ -314,12 +321,13 @@ Dat <- list(
 
 #A blank Y matrix - all present
 initY<-array(dim=c(Dat$Birds,Dat$Plants),data=max(obs,na.rm=T))
+detect<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=.5)
 
 #Inits
-InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY,gamma=0)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY,gamma=0,detectprior=rep(.5,Dat$Birds))}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N","gamma","fit","fitnew")
+ParsStage <- c("detectprior","detect","alpha","beta","intercept","sigma_int","sigma_slope","N","gamma","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -331,7 +339,7 @@ nc <- 2  # number of chains
 
 m = jags(inits=InitStage,
          n.chains=nc,
-         model.file="Bayesian/NMixture.jags",
+         model.file="Bayesian/NMixtureHD.jags",
          working.directory=getwd(),
          data=Dat,
          parameters.to.save=ParsStage,
@@ -350,8 +358,7 @@ pars<-extract_par(m)
 ```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
 
 ###Chains
-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-
+ggplot(pars[pars$par %in% c("alpha","beta","detectprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11,eval=T}
@@ -362,10 +369,10 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,cache=FALSE,fig.width=7,fig.height=5}
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars[pars$par %in% c("detectprior","alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
+tr<-melt(data.frame(species=1:length(detectionprior),detectprior=detectionprior,alpha=alpha,beta=beta),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 #ggsave("Figures/SimulationPosteriors.jpg",dpi=300,height=8,width=8)
@@ -418,6 +425,25 @@ colnames(tr)<-c("value","par")
 psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col="black")
 psim2
 #ggsave("Figures/SimulationHBoth.jpg",dpi=300,height=4,width=10)
+```
+
+###Detection probabilities
+
+```{r,cache=FALSE,fig.width=11,fig.height=12}
+###Posterior Distributions
+spdetect<-filter(pars,par=="detect"& Model=="Detection") %>% group_by(species,plant) %>% summarise(mean=mean(estimate),Upper=quantile(estimate,0.975),Lower=quantile(estimate,0.025))
+
+p<-ggplot(spdetect,aes(x=plant)) + geom_linerange(aes(ymin=Lower,ymax=Upper)) + geom_point(aes(y=mean)) + facet_wrap(~species,scales="free")
+
+
+#Add true values
+tr<-melt(list(detection=detection))
+
+colnames(tr)<-c("species","plant","value","par")
+
+p+ geom_point(data=tr,aes(y=value),linetype='dashed',size=2,col="red")
+
+ggsave("Figures/Simdetection.jpg",width=7,height=9)
 ```
 
 ###Predicted Relationship 
@@ -693,13 +719,13 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-10000
+runs<-20000
 
 #Source model
-source("Bayesian/NoDetectRagged.R")
+source("Bayesian/NoDetectRaggedHD.R")
 
 #print model
-print.noquote(readLines("Bayesian/NoDetectRagged.R"))
+print.noquote(readLines("Bayesian/NoDetectRaggedHD.R"))
 
 #ragged index data
 
@@ -715,23 +741,14 @@ Dat <- list(
   )
 
 
-# # #Input Data 
-#  Dat <- list(
-#    Y=indatlong,
-#    Birds=dim(indatlong)[1],
-#    Plants=dim(indatlong)[2],
-#    Months=dim(indatlong)[3],
-#    traitmatch=traitmatchT
-#    )
-
 #A blank Y matrix - all present
 initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
 
 #Inits
-InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.999,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detectprior=rep(.999,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","fit","fitnew","detectprior","taudetect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -743,7 +760,7 @@ nc <- 2  # number of chains
 
 m2_niave = jags(inits=InitStage,
                 n.chains=nc,
-                model.file="Bayesian/NoDetectRagged.jags",
+                model.file="Bayesian/NoDetectRaggedHD.jags",
                 working.directory=getwd(),
                 data=Dat,
                 parameters.to.save=ParsStage,
@@ -765,12 +782,12 @@ pars_niave$Model<-"Without Detection"
 ```{r,cache=FALSE,eval=TRUE,fig.width=13,fig.height=5}
 
 ###Chains
-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_niave[pars_niave$par %in% c("detectprior","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
 ```
 
 ```{r,fig.height=5,fig.width=11,eval=T}
-ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ###With Detection
@@ -780,10 +797,10 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 runs<-20000
 
 #Source model
-source("Bayesian/NMixtureRagged.R")
+source("Bayesian/NMixtureRaggedHD.R")
 
 #print model
-print.noquote(readLines("Bayesian/NMixtureRagged.R"))
+print.noquote(readLines("Bayesian/NMixtureRaggedHD.R"))
 
 
 #ragged index data
@@ -813,10 +830,10 @@ Dat <- list(
 initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
 
 #Inits
-InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detectprior=rep(.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","fit","fitnew","detectprior","taudetect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -828,7 +845,7 @@ nc <- 2  # number of chains
 
 m2 = jags(inits=InitStage,
           n.chains=nc,
-          model.file="Bayesian/NMixtureRagged.jags",
+          model.file="Bayesian/NMixtureRaggedHD.jags",
           working.directory=getwd(),
           data=Dat,
           parameters.to.save=ParsStage,
@@ -850,7 +867,7 @@ pars$Model<-"Detection"
 ```{r,cache=FALSE,eval=TRUE,fig.width=13,fig.height=5}
 
 ###Chains
-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars[pars$par %in% c("detectprior","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
 ```
 
@@ -867,8 +884,17 @@ parsObs<-rbind(pars,pars_niave)
 
 ```{r,cache=FALSE,fig.width=11,fig.height=12}
 ###Posterior Distributions
-ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
+ggplot(parsObs[parsObs$par %in% c("detectprior","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
 
+```
+
+
+```{r,cache=FALSE,fig.width=11,fig.height=12}
+###Posterior Distributions
+spdetect<-filter(parsObs,par=="detect"& Model=="Detection") %>% group_by(species,plant) %>% summarise(mean=mean(estimate),Upper=quantile(estimate,0.975),Lower=quantile(estimate,0.025))
+
+ggplot(spdetect,aes(x=plant)) + geom_linerange(aes(ymin=Lower,ymax=Upper)) + geom_point(aes(y=mean)) + facet_wrap(~species,scales="free")
+ggsave("Figures/SpeciesDetection.jpg",width=7,height=9)
 ```
 
 ```{r,cache=FALSE,fig.width=6,fig.height=7}

@@ -1,7 +1,4 @@
 
-sink("Bayesian/NMixtureHD.jags")
-
-cat("
     model {
     for (i in 1:Birds){
       for (j in 1:Plants){
@@ -50,6 +47,4 @@ cat("
     fitnew<-sum(E.new[,,])
     
     }
-    ",fill=TRUE)
-
-sink()
+    
