@@ -1,5 +1,5 @@
 
-sink("Bayesian/NMixtureHD.jags")
+sink("Bayesian/NMixture.jags")
 
 cat("
     model {
@@ -26,11 +26,10 @@ cat("
     }
     
     for (i in 1:Birds){
-      for (j in 1:Plants){
-          detect[i,j] ~ dnorm(detectprior[i],taudetect[i]) # Detection for each bird species
+      for (y in 1:Plants){
+          detect[i,j] ~ dnorm(detectprior,.001) # Detection for each bird species
         }
-    detectprior[i] ~ dunif(0,1)
-    taudetect[i] ~ dgamma(0.0001,0.0001)
+    detectprior[i]~dunif(0,0.5)
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta[i] ~ dnorm(gamma,tau_beta)    
     }
