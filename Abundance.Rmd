@@ -190,7 +190,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-20000
+runs<-10000
 
 #Source model
 source("Bayesian/NoDetectHD.R")
@@ -209,8 +209,9 @@ Dat <- list(
 #A blank Y matrix - all present
 initY<-array(dim=c(Dat$Birds,Dat$Plants),data=max(obs,na.rm=T))
 detect<-array(dim=c(Dat$Birds,Dat$Plants),data=.999)
+
 #Inits
-InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detectprior=rep(.999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY,gamma=0)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detectprior=rep(.999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY,gamma=0,detect=detect)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N","gamma","fit","fitnew","detectprior")
@@ -303,7 +304,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-20000
+runs<-10000
 
 #Source model
 source("Bayesian/NMixtureHD.R")
@@ -743,9 +744,10 @@ Dat <- list(
 
 #A blank Y matrix - all present
 initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
+detect<-array(dim=c(Dat$Birds,Dat$Plants),data=.999)
 
 #Inits
-InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detectprior=rep(.999,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detectprior=rep(.999,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY,detect=detect)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","fit","fitnew","detectprior","taudetect")
