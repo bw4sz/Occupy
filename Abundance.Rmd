@@ -26,7 +26,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation   
@@ -296,7 +296,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-2000
+runs<-20000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -528,7 +528,7 @@ hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Hummin
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
 #start with just cameras
-int<-int[int$Type=="Camera",]
+#int<-int[int$Type=="Transect",]
 
 #int$Month<-cut(int$Month,seq(0,12,2),labels=seq(1,11,2))
 
@@ -614,14 +614,15 @@ bindex<-data.frame(Index=1:length(rownames(traitmatchT)),Species=rownames(traitm
 
 pindex<-data.frame(Index=1:length(colnames(traitmatchT)),Species=colnames(traitmatchT))
 
-indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) 
+indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time,Type) %>% summarize(Yobs=sum(obs)) 
 
 indat$Time<-as.numeric(factor(indat$Time))
 
+indatT<-dcast(indat,...~Type,value.var="Yobs")
 #add in non-detection 0's
 #this involves some ugly data management, where we have to figure out which plants were sampled in which periods, and if it was sampled, the non-detections are 0 if it wasn't the non-detections are NA. then remove all the Na's.
 
-indatlong<-acast(indat,Bird~Plant~Time,value.var="Yobs",fill=0)
+indatlong<-acast(indat[indat$Type=="Camera",],Bird~Plant~Time,value.var="Yobs",fill=0)
 ```
 
 
@@ -629,15 +630,18 @@ indatlong<-acast(indat,Bird~Plant~Time,value.var="Yobs",fill=0)
 
 Create a binary variable whether each observation was in a low elevation or high elevation transect. We have some species that just occur at the top of the gradient, and are not present in the sampling window of flowers at the low elevation.
 
-Start by a hand drawn table - then move to quantitative
 ```{r}
 
 #1 is low elevation, #2 is high elevation, # 3 is both
-elevH<-data.frame(Species=keep,Range=c(1,3,3,2,2,3,2,3,1,2,2,1,3,3,3,1))
+#br<-c(1,3,3,2,2,3,2,3,1,2,2,1,3,3,3,1)
+br<-c(3,2,2,2,3,2,1,3,3)
+elevH<-data.frame(Species=keep,Range=br)
 #merge to names
 elevH<-merge(bindex,elevH)
 
-pr<-c(2,2,2,3,3,1,3,2,2,3,3,3,3,2,1,3,2,1,1,1,2,2,2,3,3,3,2,3,3,2,3,3,1,3,1)
+#pr<-c(2,2,2,3,3,1,3,2,2,3,3,3,3,2,1,3,2,1,1,1,2,2,2,3,3,3,2,3,3,2,3,3,1,3,1)
+pr<-c(2,3,3,3,3,2,3,2,3,2,3,2,1,1,2,2,2,3,3,3,2,3,3,2,3,3,1,3,1,2,1)
+
 elevP<-data.frame(Species=colnames(traitmatchT),Range=pr)
 elevP<-merge(pindex,elevP)
 
@@ -693,7 +697,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-10000
+runs<-20000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -709,20 +713,10 @@ Dat <- list(
   Bird=indat$Bird,
   Plant=indat$Plant,
   Birds=length(unique(indat$Bird)),
-  Plants=length(unique(indat$Plant)),
+  Plants=max(indat$Plant),
   Nobs=length(indat$Yobs),
   traitmatch=traitmatchT
   )
-
-
-# # #Input Data 
-#  Dat <- list(
-#    Y=indatlong,
-#    Birds=dim(indatlong)[1],
-#    Plants=dim(indatlong)[2],
-#    Months=dim(indatlong)[3],
-#    traitmatch=traitmatchT
-#    )
 
 #A blank Y matrix - all present
 initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
@@ -794,20 +788,10 @@ Dat <- list(
   Bird=indat$Bird,
   Plant=indat$Plant,
   Birds=length(unique(indat$Bird)),
-  Plants=length(unique(indat$Plant)),
+  Plants=max(indat$Plant),
   Nobs=length(indat$Yobs),
   traitmatch=traitmatchT
   )
-
-
-# # #Input Data 
-#  Dat <- list(
-#    Y=indatlong,
-#    Birds=dim(indatlong)[1],
-#    Plants=dim(indatlong)[2],
-#    Months=dim(indatlong)[3],
-#    traitmatch=traitmatchT
-#    )
 
 #A blank Y matrix - all present
 initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
