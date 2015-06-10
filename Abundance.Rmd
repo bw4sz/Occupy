@@ -26,7 +26,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation   
@@ -855,12 +855,12 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill
 
 ```
 
-```{r,cache=FALSE,fig.width=6,fig.height=7}
+```{r,cache=FALSE,fig.width=9,fig.height=7}
 #Detection figure
 ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
 
 parsp<-merge(pars,bindex,by.x="species",by.y="Index")
-ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Species,ncol=4) + xlab("Probability of Detection")
+ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Species,ncol=5) + xlab("Probability of Detection")
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
