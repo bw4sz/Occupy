@@ -614,15 +614,15 @@ bindex<-data.frame(Index=1:length(rownames(traitmatchT)),Species=rownames(traitm
 
 pindex<-data.frame(Index=1:length(colnames(traitmatchT)),Species=colnames(traitmatchT))
 
-indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time,Type) %>% summarize(Yobs=sum(obs)) 
+indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) 
 
 indat$Time<-as.numeric(factor(indat$Time))
 
-indatT<-dcast(indat,...~Type,value.var="Yobs")
+indatT<-dcast(indat,...~Time,value.var="Yobs")
 #add in non-detection 0's
 #this involves some ugly data management, where we have to figure out which plants were sampled in which periods, and if it was sampled, the non-detections are 0 if it wasn't the non-detections are NA. then remove all the Na's.
 
-indatlong<-acast(indat[indat$Type=="Camera",],Bird~Plant~Time,value.var="Yobs",fill=0)
+indatT[is.na(indatT)]<-0
 ```
 
 
@@ -634,15 +634,19 @@ Create a binary variable whether each observation was in a low elevation or high
 
 #1 is low elevation, #2 is high elevation, # 3 is both
 #br<-c(1,3,3,2,2,3,2,3,1,2,2,1,3,3,3,1)
-br<-c(3,2,2,2,3,2,1,3,3)
+br<-c(1,3,3,2,2,3,2,3,1,2,2,3,3,2,1,3,3,3,3)
 elevH<-data.frame(Species=keep,Range=br)
 #merge to names
 elevH<-merge(bindex,elevH)
 
-#pr<-c(2,2,2,3,3,1,3,2,2,3,3,3,3,2,1,3,2,1,1,1,2,2,2,3,3,3,2,3,3,2,3,3,1,3,1)
-pr<-c(2,3,3,3,3,2,3,2,3,2,3,2,1,1,2,2,2,3,3,3,2,3,3,2,3,3,1,3,1,2,1)
+#remove plant species without dual names
+keepp<-colnames(traitmatchT)[which(!sapply(strsplit(colnames(traitmatchT), " "), length)==1)]
 
-elevP<-data.frame(Species=colnames(traitmatchT),Range=pr)
+#high elevation or low elevation
+
+pr<-c(2,2,3,3,3,1,3,1,2,2,3,3,3,3,3,2,1,3,2,1,3,1,2,2,2,2,3,3,2,3,1,2,3,3,1,3,1,3,1)
+
+elevP<-data.frame(Species=keepp,Range=pr)
 elevP<-merge(pindex,elevP)
 
 ```
@@ -697,7 +701,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ```{r,eval=T,results='hide'}
 
-runs<-200000
+runs<-500000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -771,7 +775,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T,results='hide'}
 
-runs<-200000
+runs<-500000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -840,6 +844,9 @@ ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col
 
 ```{r,fig.height=5,fig.width=11,eval=T}
 ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggsave("Figures/BothObs.svg",height=5,width=7)
+ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
+
 ```
 
 ```{r}
