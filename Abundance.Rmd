@@ -87,7 +87,7 @@ true_interactions<-sapply(lambda,function(x){rpois(1,x)})
 #convert to matrix
 true_interactions<-matrix(nrow=h_species,ncol=plant_species,data=true_interactions)
 
-#combine and melt into a single dataframe
+#combine and melt into a single datafFrame
 mdat<-dcast(melt(list(y=true_interactions,x=traitmatch)),Var1+Var2~L1)
 
 ggplot(mdat,aes(x=x,y=y,col=as.factor(Var1))) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson",formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Correlation in Simulated Data") + labs(col="Species")
@@ -183,7 +183,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-30000
+runs<-20000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -296,7 +296,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-30000
+runs<-20000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -487,7 +487,7 @@ Since I have simualted the data, it should fit as well as any random dataset dra
 
 ```{r,fig.height=4,fig.width=8}
 
-fitstat<-parsall[parsall$par %in% c("fit","fitnew"),]
+fitstat<-droplevels(parsall[parsall$par %in% c("fit","fitnew"),])
 fitstat<-dcast(fitstat,Draw+Chain+Model~par,value.var="estimate")
 
 #add 1:1 line
@@ -634,6 +634,9 @@ elevH<-merge(bindex,elevH,by.x="Species",by.y="Hummingbird")
 #remove plant species without dual names
 keepp<-colnames(traitmatchT)[which(!sapply(strsplit(colnames(traitmatchT), " "), length)==1)]
 
+#must have atleast 10 observations
+keepp<-keepp[keepp %in% names(which(table(m.datH$Iplant_Double) >  10))]
+  
 #high elevation or low elevation
 elevP<-read.csv("PlantElevation.csv",row.names=1)
 elevP<-elevP[elevP$Iplant_Double %in% keepp,]
@@ -645,8 +648,7 @@ elevP<-merge(pindex,elevP,by.x="Species",by.y="Iplant_Double")
 ```{r}
 
 #remove species not in the elevation dataset
-
-indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) %>% filter(Plant %in% elevP$Index)
+indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=paste(Month,Year,sep=".")) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) %>% filter(Plant %in% elevP$Index)
 
 indat$Time<-as.numeric(factor(indat$Time))
 
@@ -675,25 +677,13 @@ for(x in 1:dim(indatlong)[3]){
       #Plant range
       pr<-elevP[elevP$Index %in% pres[y],"Elevation"]
       if(!pr==3){
-        helim<-elevH[!elevH$Range %in% c(pr,3),"Elevation"]
-        #print(paste(x,"=",sum(indatlong[helim,pres[y],x])))
+        helim<-elevH[!elevH$Elevation %in% c(pr,3),"Index"]
         indatlong[helim,colnames(a) %in% pres[y],x]<-NA
         }
       }  
     }
   }
 
-
-#remove any 0's when a bird never feeds on a plant, the interaction must occur at some point to be observed.
-for(x in 1:dim(indatlong)[1]){
-  for(y in 1:dim(indatlong)[2]){
-    a<-indatlong[x,y,]
-    suma<-sum(a,na.rm=T)
-    if(suma==0){
-      indatlong[x,y,]<-NA
-      }    
-    }
-  }
 
 #melt and remove Na's
 indat<-melt(indatlong)
@@ -780,7 +770,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T,results='hide'}
 
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")

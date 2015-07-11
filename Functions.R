@@ -12,7 +12,7 @@ l<-levels(parsO$parameter)
 #parameters to save
 totrack<-x$parameters.to.save
 
-sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,paste(totrack,collapse="|")))
+sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,"\\w+"))
 
 colnames(sp_pl)<-c("parameter","species","plant","par")
 
