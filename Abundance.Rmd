@@ -694,7 +694,7 @@ colnames(indat)<-c("Bird","Plant","Time","Yobs")
 
 ###Without detection
 
-```{r,eval=T,results='hide'}
+```{r,eval=T}
 
 runs<-20000
 
@@ -768,7 +768,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ###With Detection
 
-```{r,eval=T,results='hide'}
+```{r,eval=T}
 
 runs<-200000
 
