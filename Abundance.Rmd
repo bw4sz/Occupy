@@ -1013,7 +1013,9 @@ write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 DIC Table
 ```{r}
 DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
-write.csv(dcast(DICtable,Data~Model),"Figures/DICtable.csv")
+h<-dcast(DICtable,Data~Model)
+h
+write.csv(h,"Figures/DICtable.csv")
 ```
 
 ```{r}
