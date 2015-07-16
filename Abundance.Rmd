@@ -26,7 +26,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation   
@@ -527,6 +527,8 @@ hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Hummin
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
+#
+
 #start with just cameras
 #int<-int[int$Type=="Transect",]
 
@@ -536,6 +538,9 @@ int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/Humm
 m.dat<-int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")]
 
 m.dat$Year<-years(as.Date(m.dat$DateP))
+#one missing date
+m.dat$Year[m.dat$Year %in% 2012]<-2013
+
 #Fix spacing to match clades
 
 #Which are matching
@@ -648,7 +653,7 @@ elevP<-merge(pindex,elevP,by.x="Species",by.y="Iplant_Double")
 ```{r}
 
 #remove species not in the elevation dataset
-indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=paste(Month,Year,sep=".")) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) %>% filter(Plant %in% elevP$Index)
+indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) %>% filter(Plant %in% elevP$Index)
 
 indat$Time<-as.numeric(factor(indat$Time))
 
