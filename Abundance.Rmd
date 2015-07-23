@@ -528,14 +528,6 @@ hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Hummin
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
-#
-
-#start with just cameras
-#int<-int[int$Type=="Transect",]
-
-#int$Month<-cut(int$Month,seq(0,12,2),labels=seq(1,11,2))
-
-#Melt the interaction frame and match it with the traits
 m.dat<-int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")]
 
 m.dat$Year<-years(as.Date(m.dat$DateP))
@@ -620,7 +612,7 @@ bindex<-data.frame(Index=1:length(rownames(traitmatchT)),Species=rownames(traitm
 
 pindex<-data.frame(Index=1:length(colnames(traitmatchT)),Species=colnames(traitmatchT))
 
-````
+```
 
 ###Elevation ranges
 
@@ -652,9 +644,13 @@ elevP<-merge(pindex,elevP,by.x="Species",by.y="Iplant_Double")
 ```
 
 ```{r}
+#get each sampling event
 
-#remove species not in the elevation dataset
-indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=DateP) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) %>% filter(Plant %in% elevP$Index)
+#ID for NA is 1
+m.datH$ID<-as.character(m.datH$ID)
+m.datH[which(is.na(m.datH$ID)),"ID"]<-m.datH$TransectID[which(is.na(m.datH$ID))]
+
+indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=ID) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) %>% filter(Plant %in% elevP$Index)
 
 indat$Time<-as.numeric(factor(indat$Time))
 
