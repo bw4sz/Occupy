@@ -26,7 +26,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation   
@@ -633,7 +633,7 @@ elevH<-merge(bindex,elevH,by.x="Species",by.y="Hummingbird")
 keepp<-colnames(traitmatchT)[which(!sapply(strsplit(colnames(traitmatchT), " "), length)==1)]
 
 #must have atleast 10 observations
-keepp<-keepp[keepp %in% names(which(table(m.datH$Iplant_Double) >  10))]
+keepp<-keepp[keepp %in% names(which(table(m.datH$Iplant_Double) >  5))]
   
 #high elevation or low elevation
 elevP<-read.csv("PlantElevation.csv",row.names=1)
@@ -645,14 +645,15 @@ elevP<-merge(pindex,elevP,by.x="Species",by.y="Iplant_Double")
 
 ```{r}
 #get each sampling event
+m.datH %>% group_by(Bird,Plant,ID) %>% summarize(n=sum(obs)) %>% ungroup %>%  arrange(desc(n))
 
 #ID for NA is 1
-m.datH$ID<-as.character(m.datH$ID)
-m.datH[which(is.na(m.datH$ID)),"ID"]<-m.datH$TransectID[which(is.na(m.datH$ID))]
+#m.datH$ID<-as.character(m.datH$ID)
+#m.datH[which(is.na(m.datH$ID)),"ID"]<-m.datH$TransectID[which(is.na(m.datH$ID))]
 
-indat<-filter(m.datH,!is.na(DateP)) %>% mutate(Time=ID) %>% group_by(Bird,Plant,Time) %>% summarize(Yobs=sum(obs)) %>% filter(Plant %in% elevP$Index)
+m.datH<-m.datH[!is.na(m.datH$ID),]
 
-indat$Time<-as.numeric(factor(indat$Time))
+indat<- m.datH %>% group_by(Bird,Plant,DateP,ID) %>% summarize(Yobs=n()) %>% filter(Plant %in% elevP$Index) %>% ungroup() %>% arrange(desc(Yobs)) %>% mutate(Time=ID)
 
 indatlong<-acast(indat,Bird~Plant~Time,value.var="Yobs")
 
@@ -772,7 +773,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T}
 
-runs<-200000
+runs<-100000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -988,7 +989,7 @@ fitstat<-dcast(fitstat,Model+Draw+Chain~par,value.var="estimate")
 ymin<-round(min(fitstat$fit))
 ymax<-round(max(fitstat$fit))
 ab<-data.frame(x=0:ymax,y=0:ymax)
-disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Field Observations") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=ymax) + xlim(xmin=0,xmax=ymax)
+disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Field Observations") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
 disc_obs
 jpeg("Figures/ObsDiscrepancy.jpeg",res=300,height=7,width=6,units="in")
 grid.arrange(psim4,disc_obs,nrow=2)
@@ -1005,6 +1006,12 @@ dp<-group_by(pars[pars$par %in% c("detect"),],species) %>% summarise(mean=round(
 tab<-merge(dp,bindex,by.x="species",by.y="Index")[,-1]
 tab[,c(4,1,2,3)]
 write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
+```
+
+Number of samples per species
+
+```{r}
+table(m.datH$Hummingbird)
 ```
 
 DIC Table
