@@ -653,7 +653,7 @@ m.datH %>% group_by(Bird,Plant,ID) %>% summarize(n=sum(obs)) %>% ungroup %>%  ar
 
 m.datH<-m.datH[!is.na(m.datH$ID),]
 
-indat<- m.datH %>% group_by(Bird,Plant,DateP,ID) %>% summarize(Yobs=n()) %>% filter(Plant %in% elevP$Index) %>% ungroup() %>% arrange(desc(Yobs)) %>% mutate(Time=ID)
+indat<- m.datH %>% group_by(Bird,Plant,DateP,ID) %>% summarize(Yobs=n()) %>% filter(Plant %in% elevP$Index) %>% ungroup() %>% arrange(desc(Yobs)) %>% mutate(Time=paste(ID,DateP))
 
 indatlong<-acast(indat,Bird~Plant~Time,value.var="Yobs")
 
