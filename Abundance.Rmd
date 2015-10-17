@@ -183,7 +183,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-20000
+runs<-1000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -296,7 +296,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-20000
+runs<-1000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -455,9 +455,9 @@ psim3
 ggsave("Figures/SimulationResults.jpg",height=5,width=6,dpi=300)
 ```
 
-Black line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The poisson glm that does not account for detectability or non-independence is in blue.
+Black line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The blue line is the same model, but assuming perfect detection rates.
 
-**Conclusion:** Accounting for detection and non-independence greatly increases the accuracy of the predicted state. The poisson glm underestimates the strength of trait matching among hummingbirds and their foodplants.
+**Conclusion:** Accounting for detection and non-independence greatly increases the accuracy of the predicted state. The perfect detection model underestimates the strength of trait matching among hummingbirds and their foodplants.
 
 ###Predicted Frequency
 
@@ -512,9 +512,8 @@ dev.off()
 ```
 
 #Observed dataset
-
+#Read in Data
 ```{r}
-###Read in data
 #read in flower morphology data, comes from Nectar.R
 droppath<-"C:/Users/Ben/Dropbox/"
 fl.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerMorphology.csv",sep=""))
@@ -528,19 +527,26 @@ hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Hummin
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
-m.dat<-int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")]
+#Correct known taxonomic errors
+int[int$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
+int[int$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
+int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
+int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
+
+m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
+
+#Does the data come from camera or transect?
+m.dat$Type<-(is.na(m.dat$TransectID))*1
+
+#m.dat<-m.dat[m.dat$Type==1,]
 
 m.dat$Year<-years(as.Date(m.dat$DateP))
 #one missing date
 m.dat$Year[m.dat$Year %in% 2012]<-2013
 
 #Fix spacing to match clades
-
 #Which are matching
 levels(m.dat$Hummingbird)[!levels(m.dat$Hummingbird) %in% hum.morph$English]
-
-#This needs to be checked
-#print(paste(levels(m.dat$Hummingbird)[!levels(m.dat$Hummingbird) %in% hum.morph$English],"not matched"))
 
 #Number of bird species
 h_species<-nlevels(m.dat$Hummingbird)
@@ -548,41 +554,29 @@ h_species<-nlevels(m.dat$Hummingbird)
 #Number of plant species
 plant_species<-nlevels(m.dat$Iplant_Double)
 
-#levels(m.dat$Hummingbird)[!levels(m.dat$Hummingbird) %in% hum.morph$English]<-c("Green-crowned Woodnymph")
-m.datH<-merge(m.dat,hum.morph, by.x="Hummingbird",by.y="English")
+#Get english name
+dath<-merge(m.dat,hum.morph, by.x="Hummingbird",by.y="English",keep=all)
 
 #Merge to flowers
-int.FLlevels<-levels(factor(m.datH$Iplant_Double))
+int.FLlevels<-levels(factor(dath$Iplant_Double))
 
 #Which flowers are we missing info for?
 missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 
-#print(paste("Missing Trait Information:",missingTraits))
-m.datH<-merge(m.datH,fl.morph, by.x="Iplant_Double",by.y="X")
+print(paste("Missing Trait Information:",missingTraits))
+dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
-m.datH<-m.datH[!m.datH$Pierce %in% c("y","Y"),]
-
-p<-ggplot(m.datH[!is.na(m.datH$Month),],aes(x=factor(Total_Culmen),TotalCorolla,col=Hummingbird)) + geom_point() 
-p<-p + geom_smooth(aes(group=1),method="lm") + facet_wrap(~Month) + theme_bw()
-
-p<-ggplot(m.datH[!is.na(m.datH$Month),],aes(x=Total_Culmen,TotalCorolla,col=Month)) + geom_point() 
-p<-p + geom_smooth(aes(group=Month),method="lm") + theme_bw() + scale_color_continuous(low="blue",high="red")
-
-#Difference Between Corolla and Bill Length of interactions measured
-m.datH$BD<-abs(m.datH$Total_Culmen-m.datH$TotalCorolla)
-p<-ggplot(m.datH,aes(y=BD,x=Hummingbird)) + geom_boxplot(position="dodge")
-p<-p + coord_flip()
-
+dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
+##Match Species to Morphology
+
 ```{r}
-###Format data
-
 #remove species with less than  10 observations
-keep<-names(which(table(m.datH$Hummingbird) > 30))
+keep<-names(which(table(dath$Hummingbird) > 10))
 
-m.datH<-droplevels(m.datH[m.datH$Hummingbird %in% keep,])
+dath<-droplevels(dath[dath$Hummingbird %in% keep,])
 
 #observed traitmatching
 traitmatchF<-abs(t(sapply(hum.morph$Bill,function(x){x-fl.morph$TotalCorolla})))
@@ -595,23 +589,9 @@ colnames(traitmatchF)<-fl.morph$Group.1
 #match names
 #Round to 2 decimals
 #Convert to cm for winbugs, avoids numerical underflow
-traitmatchT<-round(traitmatchF[rownames(traitmatchF) %in% m.datH$Hummingbird,colnames(traitmatchF) %in% m.datH$Iplant_Double],2)/10
-```
-
-```{r}
-#Formatting indexes
-m.datH$Bird<-as.numeric(factor(m.datH$Hummingbird,sort(unique(m.datH$Hummingbird))))
-m.datH$Plant<-as.numeric(factor(m.datH$Iplant_Double,sort(unique(m.datH$Iplant_Double))))
-m.datH$obs<-1
+traitmatchT<-round(traitmatchF[rownames(traitmatchF) %in% dath$Hummingbird,colnames(traitmatchF) %in% dath$Iplant_Double],2)/10
 
 traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))]
-
-#Create an index to connect to species names
-#remerge species levels
-bindex<-data.frame(Index=1:length(rownames(traitmatchT)),Species=rownames(traitmatchT))
-
-pindex<-data.frame(Index=1:length(colnames(traitmatchT)),Species=colnames(traitmatchT))
-
 ```
 
 ###Elevation ranges
@@ -619,47 +599,106 @@ pindex<-data.frame(Index=1:length(colnames(traitmatchT)),Species=colnames(traitm
 Create a binary variable whether each observation was in a low elevation or high elevation transect. We have some species that just occur at the top of the gradient, and are not present in the sampling window of flowers at the low elevation.
 
 Accounting for non-availability.
-We have to figure out which plants were sampled in which periods, and if it was sampled, the non-detections are 0 if it wasn't the non-detections are NA. then remove all the Na's.
+We have to figure out which plants were sampled in which periods, and if it was sampled, the non-detection are 0 if it wasn't the non-detection are NA. then remove all the Na's.
 
 ```{r}
-elevH<-read.csv("HummingbirdElevation.csv",row.names=1)
+elevH<-read.csv("InputData/HummingbirdElevation.csv",row.names=1)
 head(elevH)
 colnames(elevH)[5]<-"Elevation"
+elevH$Bird<-1:nrow(elevH)
 
-#merge to names
-elevH<-merge(bindex,elevH,by.x="Species",by.y="Hummingbird")
-
-#remove plant species without dual names
-keepp<-colnames(traitmatchT)[which(!sapply(strsplit(colnames(traitmatchT), " "), length)==1)]
-
-#must have atleast 10 observations
-keepp<-keepp[keepp %in% names(which(table(m.datH$Iplant_Double) >  5))]
-  
 #high elevation or low elevation
-elevP<-read.csv("PlantElevation.csv",row.names=1)
-elevP<-elevP[elevP$Iplant_Double %in% keepp,]
+elevP<-read.csv("InputData/PlantElevation.csv",row.names=1)
 colnames(elevP)[5]<-"Elevation"
+elevP$Plant<-1:nrow(elevP)
+elevP$Iplant_Double<-as.character(elevP$Iplant_Double)
 
-elevP<-merge(pindex,elevP,by.x="Species",by.y="Iplant_Double")
+#Correct known taxonomic errors
+elevP[elevP$Iplant_Double %in% "Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
+elevP[elevP$Iplant_Double %in% "Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
+elevP[elevP$Iplant_Double %in% "Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
+elevP[elevP$Iplant_Double %in% "Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
+elevP[elevP$Iplant_Double %in% "Alloplectus tenuis","Iplant_Double"]<-"Drymonia tenuis"
+
+#Merge to observed Data
+#plants
+dathp<-merge(dath,elevP,by="Iplant_Double")
+
+#birds
+datph<-merge(dathp,elevH,by="Hummingbird")
+
+```
+
+### Summarize Observations
+
+```{r}
+#ID for NA is holger transects, make the id's 1:n for each day of transect at each elevation, assuming no elevation was split across days.
+datph$ID<-as.character(datph$ID)
+
+noid<-datph[is.na(datph$ID),]
+
+id_topaste<-paste(noid$Transect_R,noid$DateP,"Transect",sep="_")
+datph[which(is.na(datph$ID)),"ID"]<-id_topaste
+  
+indatraw<- datph %>% group_by(Bird,Plant,ID,DateP) %>% summarize(Yobs=n(),Elev=mean(ele,na.rm=T),Transect_R=unique(Transect_R)) 
+
+indatraw[order(indatraw$Yobs,decreasing=T),]
+#add unique ID
+indatraw$Time<-1:nrow(indatraw)
+
+#add months and years
+indatraw$Month<-as.numeric(factor(months(strptime(indatraw$DateP,format="%Y-%m-%d")),levels=month.name))
+indatraw$Year<-years(indatraw$DateP)
+
+#Species names
+for (x in 1:nrow(indatraw)){
+  indatraw$Hummingbird[x]<-as.character(elevH[elevH$Bird %in% indatraw$Bird[x],"Hummingbird"])
+  indatraw$Iplant_Double[x]<-as.character(elevP[elevP$Plant %in% indatraw$Plant[x],"Iplant_Double"])
+}
+```
+
+What elevation transect is each observation in?
+The camera data need to be inferred from the GPS point.
+
+```{r}
+#which elevation bin is each observation within
+labs<-paste(seq(1300,2500,200),seq(1500,2700,200),sep="_")
+indatraw[is.na(indatraw$Transect_R),"Transect_R"]<-cut(indatraw[is.na(indatraw$Transect_R),]$Elev,seq(1300,2700,200),labels=labs)
 ```
 
 ```{r}
-#get each sampling event
-m.datH %>% group_by(Bird,Plant,ID) %>% summarize(n=sum(obs)) %>% ungroup %>%  arrange(desc(n))
-
-#ID for NA is 1
-#m.datH$ID<-as.character(m.datH$ID)
-#m.datH[which(is.na(m.datH$ID)),"ID"]<-m.datH$TransectID[which(is.na(m.datH$ID))]
-
-m.datH<-m.datH[!is.na(m.datH$ID),]
-
-indat<- m.datH %>% group_by(Bird,Plant,DateP,ID) %>% summarize(Yobs=n()) %>% filter(Plant %in% elevP$Index) %>% ungroup() %>% arrange(desc(Yobs)) %>% mutate(Time=paste(ID,DateP))
-
-indatlong<-acast(indat,Bird~Plant~Time,value.var="Yobs")
-
+indatlong<-acast(indatraw,Bird~Plant~Time~Transect_R,value.var="Yobs")
 indatlong[is.na(indatlong)]<-0
 ```
 
+
+```{r}
+#match the traits
+traitmelt<-melt(traitmatchT)
+colnames(traitmelt)<-c("Hummingbird","Iplant_Double","Traitmatch")
+
+obs<-merge(indatraw,traitmelt,by=c("Hummingbird","Iplant_Double"))
+```
+
+##Elevation ranges
+How much do the bird and plant elevation range match? Using the transect data we will take the absolute value of the difference in mean elevation for each species pair.
+
+```{r}
+obs$ElevD<-NA
+
+#Difference in mean elevations
+
+for (x in 1:nrow(obs)){
+  b<-obs[x,"Bird"]
+  p<-obs[x,"Plant"]
+  d<-abs(elevP[elevP$Plant %in% p,"m"] - elevH[elevH$Bird %in% b,"m"])
+  obs[x,"ElevD"]<-d
+}
+```
+
+#Absences - accounting for non-detection
+
+We have more information than just the presences, given species elevation ranges, we have absences as well. Absences are birds that occur at the elevation of the plant sample, but were not recorded feeding on the flower.
 
 ```{r}
 #Only non-detections are real 0's, the rest are NA's and are removed.
@@ -668,38 +707,84 @@ indatlong[is.na(indatlong)]<-0
 
 for(x in 1:dim(indatlong)[3]){
   #Remove non sampled plants 
-  a<-indatlong[,,x]
-  toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
-  pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
+  a<-indatlong[,,x,]
   
-  indatlong[,colnames(a) %in% toNA,x]<-NA
+  #for each elevation
+  for (j in 1:dim(a)[3]){
+    #No observations at that plant
+    toNA<-as.numeric(names(which(apply(a[,,j],2,sum)==0)))
+    pres<-as.numeric(names(which(!apply(a[,,j],2,sum)==0)))
+    indatlong[,colnames(a[,,j]) %in% toNA,x,j]<-NA
   
   #match elevation if there were presences, slightly terse code.
   if(length(pres)>0){
     for (y in 1:length(pres)){
       #Plant range
-      pr<-elevP[elevP$Index %in% pres[y],"Elevation"]
-      if(!pr==3){
+      pr<-elevP[elevP$Plant %in% pres[y],"Elevation"]
+      #if there is not enough elevation area, make NA
+      if(is.na(pr)|!pr==3){
         helim<-elevH[!elevH$Elevation %in% c(pr,3),"Index"]
-        indatlong[helim,colnames(a) %in% pres[y],x]<-NA
+        indatlong[helim,colnames(a) %in% pres[y],x,j]<-NA
         }
       }  
     }
   }
-
+}
 
 #melt and remove Na's
 indat<-melt(indatlong)
 indat<-indat[!is.na(indat$value),]
 
-colnames(indat)<-c("Bird","Plant","Time","Yobs")
+colnames(indat)<-c("Bird","Plant","Time","Transect_R","Yobs")
+
+#remerge the time period data
+Timelookup<-indatraw %>% dplyr::select(Time,DateP,Transect_R,Month,Year)%>% group_by(Time,DateP,Transect_R,Month,Year) %>% distinct() %>% arrange(Time)
+
+#Get time information
+indat<-merge(indat,Timelookup[,!colnames(Timelookup) %in% c("Bird","Plant")],by=c("Time","Transect_R"),all.x=T)
+#Get flower information
+
+#Species names
+for (x in 1:nrow(indat)){
+  indat$Hummingbird[x]<-as.character(elevH[elevH$Bird %in% indat$Bird[x],"Hummingbird"])
+  indat$Iplant_Double[x]<-as.character(elevP[elevP$Plant %in% indat$Plant[x],"Iplant_Double"])
+}
+
+#Get trait information
+#match the traits
+indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
+
+indat$ElevD<-NA
+
+#Difference in mean elevations
+
+for (x in 1:nrow(indat)){
+  b<-indat[x,"Bird"]
+  p<-indat[x,"Plant"]
+  d<-abs(elevP[elevP$Plant %in% p,"m"] - elevH[elevH$Bird %in% b,"m"])
+  indat[x,"ElevD"]<-d
+}
+```
+
+Reformat index for jags.
+Jags needs a vector of input species 1:n with no breaks.
+
+```{r}
+indat$Hummingbird<-as.factor(indat$Hummingbird)
+indat$Iplant_Double<-as.factor(indat$Iplant_Double)
+indat$jBird<-as.numeric(indat$Hummingbird)
+indat$jPlant<-as.numeric(indat$Iplant_Double)
+
+jagsIndexBird<-data.frame(Hummingbird=levels(indat$Hummingbird),jBird=1:length(levels(indat$Hummingbird)))
+ 
+jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:length(levels(indat$Iplant_Double)))
 ```
 
 ###Without detection
 
 ```{r,eval=T}
 
-runs<-20000
+runs<-1000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -712,10 +797,10 @@ print.noquote(readLines("Bayesian/NoDetectRagged.R"))
 #Input Data
 Dat <- list(
   Y=indat$Yobs,
-  Bird=indat$Bird,
-  Plant=indat$Plant,
-  Birds=length(unique(indat$Bird)),
-  Plants=max(indat$Plant),
+  Bird=indat$jBird,
+  Plant=indat$jPlant,
+  Birds=max(indat$jBird),
+  Plants=max(indat$jPlant),
   Nobs=length(indat$Yobs),
   traitmatch=traitmatchT
   )
@@ -759,10 +844,8 @@ pars_niave$Model<-"Without Detection"
 ###Assess Convergence
 
 ```{r,cache=FALSE,eval=TRUE,fig.width=13,fig.height=5}
-
 ###Chains
 ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-
 ```
 
 ```{r,fig.height=5,fig.width=11,eval=T}
@@ -773,7 +856,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T}
 
-runs<-100000
+runs<-10000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -787,10 +870,10 @@ print.noquote(readLines("Bayesian/NMixtureRagged.R"))
 #Input Data
 Dat <- list(
   Y=indat$Yobs,
-  Bird=indat$Bird,
-  Plant=indat$Plant,
-  Birds=length(unique(indat$Bird)),
-  Plants=max(indat$Plant),
+  Bird=indat$jBird,
+  Plant=indat$jPlant,
+  Birds=max(indat$jBird),
+  Plants=max(indat$jPlant),
   Nobs=length(indat$Yobs),
   traitmatch=traitmatchT
   )
@@ -880,8 +963,8 @@ ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope")
 
 ```{r}
 #orignal data to plot as ppints
-odat<-merge(indat,bindex,by.x="Bird",by.y="Index")
-odat<-merge(odat,pindex,by.x="Plant",by.y="Index")
+odat<-merge(indat,jagsIndexBird,by="jBird")
+odat<-merge(odat,jagsIndexPlants,by="jPlant")
 
 #Append the traits
 odatT<-melt(traitmatchT)
@@ -916,7 +999,7 @@ species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
 #split out names and model
 species.traj[,c("Index","Model")]<-colsplit(species.traj$L1,"\\.",c("Index","Model"))
 
-spe<-merge(species.traj,bindex,by.x="Index",by.y="Index")
+spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="Index")
 
 #match colnames
 names(odat)[1]<-"Species"
