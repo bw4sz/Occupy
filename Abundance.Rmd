@@ -183,7 +183,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -296,7 +296,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -784,7 +784,7 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 
 ```{r,eval=T}
 
-runs<-1000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -856,7 +856,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T}
 
-runs<-10000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -948,8 +948,8 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill
 #Detection figure
 ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
 
-parsp<-merge(pars,bindex,by.x="species",by.y="Index")
-ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Species,ncol=5) + xlab("Probability of Detection")
+parsp<-merge(pars,elevH,by.x="species",by.y="Bird")
+ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
@@ -960,20 +960,6 @@ ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope")
 ```
 
 ###Species Predictions
-
-```{r}
-#orignal data to plot as ppints
-odat<-merge(indat,jagsIndexBird,by="jBird")
-odat<-merge(odat,jagsIndexPlants,by="jPlant")
-
-#Append the traits
-odatT<-melt(traitmatchT)
-colnames(odatT)<-c("Bird","Plant","x")
-colnames(odat)<-c("Plant","Bird","Time","Yobs","Bird_Species","Plant_Species")
-odat<-merge(odat,odatT,by.x=c("Bird_Species","Plant_Species"),by.y=c("Bird","Plant"))
-#rename the column to match
-colnames(odat)[1]<-"L1"
-```
 
 ```{r,fig.height=10,fig.width=11,eval=T}
 
@@ -999,14 +985,13 @@ species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
 #split out names and model
 species.traj[,c("Index","Model")]<-colsplit(species.traj$L1,"\\.",c("Index","Model"))
 
-spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="Index")
+spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 
 #match colnames
-names(odat)[1]<-"Species"
-#plot and compare to original data
-p<-ggplot(data=spe[,],aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Species,scales="free",ncol=3) + labs(fill="Model") + geom_point(data=odat,aes(x=x,y=Yobs))
 
-print(p)
+#plot and compare to original data
+ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model") 
+
 ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
 ```
 
@@ -1028,7 +1013,7 @@ predy<-rbind_all(lapply(castdf,function(i){
   }))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=odat,aes(x=x,y=Yobs),col="black",fill="black")
+ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),col="black",fill="black")
 ggsave("Figures/ObsResults.jpg",dpi=300,height=5,width=7)
 
 ```
@@ -1040,18 +1025,13 @@ ggsave("Figures/ObsResults.jpg",dpi=300,height=5,width=7)
 #any given state
 predState<-group_by(parsObs,par,Model) %>% filter(par=="N") %>% group_by(par,species,plant,Model) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
 
-predState<-merge(predState,bindex,by.x="species",by.y="Index")
-
-predState<-merge(predState,pindex,by.x="plant",by.y="Index")
-colnames(predState)<-c("plant","species","par","Model","State","Bird","Plant")
-
 #order it to show nestedness.
-b_ord<-group_by(predState,Bird) %>% summarize(I=sum(State)) %>% arrange(desc(I)) %>% select(Bird)
+b_ord<-group_by(predState,species) %>% summarize(I=sum(State)) %>% arrange(desc(I)) %>% select(species)
 
-p_ord<-group_by(predState,Plant) %>% summarize(I=sum(State)) %>% arrange(I) %>% select(Plant)
+p_ord<-group_by(predState,plant) %>% summarize(I=sum(State)) %>% arrange(I) %>% select(plant)
 
-predState$Bird<-factor(predState$Bird,levels=b_ord$Bird)
-predState$Plant<-factor(predState$Plant,levels=p_ord$Plant)
+predState$Bird<-factor(predState$species,levels=b_ord$species)
+predState$Plant<-factor(predState$plant,levels=p_ord$plant)
 
 predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model) + theme(axis.text.x = element_text(angle = 90))
 
@@ -1086,7 +1066,7 @@ Tables
 
 dp<-group_by(pars[pars$par %in% c("detect"),],species) %>% summarise(mean=round(mean(estimate,na.rm=T),3)*100,lower=round(quantile(estimate,0.025,na.rm=T),3)*100,upper=round(quantile(estimate,0.975,na.rm=T),3)*100)
 
-tab<-merge(dp,bindex,by.x="species",by.y="Index")[,-1]
+tab<-merge(dp,elevH,by.x="species",by.y="Bird")[,-1]
 tab[,c(4,1,2,3)]
 write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 ```
@@ -1094,7 +1074,7 @@ write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 Number of samples per species
 
 ```{r}
-table(m.datH$Hummingbird)
+table(indat$Hummingbird)
 ```
 
 DIC Table

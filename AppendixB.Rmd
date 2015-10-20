@@ -47,8 +47,8 @@ detectd<-lapply(ts,function(x){
 
 md<-melt(detectd,id.var="Days")
 md<-dcast(md,...~variable)
-ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1) + geom_hline (yintercept=.95,linetype="dashed") + ylab("Probability of Detection") + scale_fill_discrete(guide="none") + theme_bw()
+ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1) + geom_hline (yintercept=.5,linetype="dashed") + ylab("Probability of Detection") + scale_fill_discrete(guide="none") + theme_bw()
 ggsave("Figures/AppendixB.jpeg",height=7,width=7,dpi=300)
 ```
 
-The number of days it would take to have 95% confidence you have sampled enough to capture known interactions is the x axis value where the dotted line hits the curve.
+The number of days it would take to have 50% confidence you have sampled enough to capture known interactions is the x axis value where the dotted line hits the curve.
