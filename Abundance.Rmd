@@ -59,7 +59,7 @@ h_species=10
 plant_species=20
 months=24
 detection=runif(h_species,0,1)
-phenology=.75
+phenology=1
 
 #Bill sizes
 Bill<-rpois(h_species,10)
@@ -183,7 +183,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-50000
+runs<-30000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -235,7 +235,6 @@ pars<-extract_par(sim_niave)
 ###Assess Convergence
 
 ```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
-
 ###Chains
 ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
@@ -296,7 +295,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-50000
+runs<-30000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -372,7 +371,6 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 ```
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
-
 p<-ggplot(pars[pars$par %in% c("gamma","polygamma","intercept","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
@@ -533,6 +531,10 @@ int[int$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
 int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 
+#Some reasonable level of presences, 10 points
+keep<-names(which(table(int$Hummingbird) > 15))
+int<-int[int$Hummingbird %in% keep, ]
+
 m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
 
 #Does the data come from camera or transect?
@@ -671,7 +673,6 @@ indatlong<-acast(indatraw,Bird~Plant~Time~Transect_R,value.var="Yobs")
 indatlong[is.na(indatlong)]<-0
 ```
 
-
 ```{r}
 #match the traits
 traitmelt<-melt(traitmatchT)
@@ -770,6 +771,8 @@ Reformat index for jags.
 Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
+
+
 indat$Hummingbird<-as.factor(indat$Hummingbird)
 indat$Iplant_Double<-as.factor(indat$Iplant_Double)
 indat$jBird<-as.numeric(indat$Hummingbird)
@@ -784,7 +787,7 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 
 ```{r,eval=T}
 
-runs<-50000
+runs<-30000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -856,7 +859,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T}
 
-runs<-50000
+runs<-30000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
