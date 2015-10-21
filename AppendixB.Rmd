@@ -32,12 +32,12 @@ $$ 1-(1-p)^n $$
 $$ p = probability of detection$$
 $$ n = days sample $$
 
-```{r}
+```{r,fig.width=12,fig.height=10}
 dp<-function(n,p){
   1-((1-p)^n)
 }
 
-ts<-split(tab,tab$Species)
+ts<-split(tab,tab$Hummingbird,drop=T)
 detectd<-lapply(ts,function(x){
   meanD<-dp(n=1:25,p=x$mean/100)
   lowerD<-dp(n=1:25,p=x$lower/100)
