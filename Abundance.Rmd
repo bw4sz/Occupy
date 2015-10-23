@@ -533,6 +533,9 @@ int[int$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
 int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 
+#crowned woodnymph is a species name change.
+int[int$Hummingbird %in% "Green-crowned Woodnymph","Hummingbird"]<-"Crowned Woodnymph"
+
 #Some reasonable level of presences, 10 points
 keep<-names(which(table(int$Hummingbird) > 15))
 int<-int[int$Hummingbird %in% keep, ]
@@ -774,7 +777,6 @@ Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
 
-
 indat$Hummingbird<-as.factor(indat$Hummingbird)
 indat$Iplant_Double<-as.factor(indat$Iplant_Double)
 indat$jBird<-as.numeric(indat$Hummingbird)
@@ -839,12 +841,10 @@ m2_niave = jags(inits=InitStage,
                 DIC=T)
 ```
 
-
 ```{r}
 pars_niave<-extract_par(m2_niave)
 pars_niave$Model<-"Without Detection"
 ```
-
 
 ###Assess Convergence
 
@@ -958,7 +958,6 @@ ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + 
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
-
 ```{r,cache=FALSE,eval=TRUE,fig.height=5,fig.width=13}
 
 ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
@@ -1071,7 +1070,7 @@ Tables
 
 dp<-group_by(pars[pars$par %in% c("detect"),],species) %>% summarise(mean=round(mean(estimate,na.rm=T),3)*100,lower=round(quantile(estimate,0.025,na.rm=T),3)*100,upper=round(quantile(estimate,0.975,na.rm=T),3)*100)
 
-tab<-merge(dp,elevH,by.x="species",by.y="Bird")[,-1]
+tab<-merge(dp,jagsIndexBird,by.x="species",by.y="jBird")[,-1]
 tab[,c(4,1,2,3)]
 write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 ```
@@ -1086,15 +1085,48 @@ print(h)
 write.csv(h,"Figures/DICtable.csv")
 ```
 
-#Compared to a multomial
+#Compared to a multomial fit
 
-Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities.
+Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. For the observed matrix, i took the mean interaction intensity for each bird plant combination.
 
 ```{r}
 m<-traitmatchT/sum(traitmatchT)
-mat<-acast(obs,Hummingbird~Iplant_Double,value.var="Yobs",fun.aggregate = sum)
+mat<-obs %>% group_by(Hummingbird,Iplant_Double) %>% summarize(n=mean(Yobs))
+mat<-acast(mat,Hummingbird~Iplant_Double,fill=0)
+
+#trait liklihood
 dmultinom(mat,prob=m,log=T)
-r<-mgen(m)
+paste("Correlation coefficient is:", round(cor(c(mat),c(r),method="spearman"),2))
+```
+
+What is the discrepancy of a multinomial approach?
+
+Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0.
+
+```{r}
+nullm<-function(){
+chisq<-function(o,e){(o-e)^2/(e+0.5)}
+r<-mgen(m,sum(mat))
+
+#output holder
+out<-matrix(nrow=nrow(r),ncol=ncol(r),data=NA)
+
+for (x in 1:nrow(r)){
+  for (y in 1:ncol(r)){
+    out[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+  }
+}
+
+#sum of chisq discrepancy
+return(sum(out))}
+
+multi_disc<-replicate(2397,nullm())
+qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood")
+
+#compared to bayesian
+ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=fitstat[fitstat$Model %in% "Detection",],aes(x=fit),fill="red",alpha=.4) + theme_bw() + geom_vline(xintercept=mean(fitstat[fitstat$Model %in% "Detection","fit"]),linetype="dashed",col="black")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+
+ggsave("Figures/MultinomialDiscrep.svg",height=5,width=5)
 ```
 
 ```{r}
