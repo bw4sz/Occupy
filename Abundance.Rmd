@@ -1127,6 +1127,8 @@ qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood")
 ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=fitstat[fitstat$Model %in% "Detection",],aes(x=fit),fill="red",alpha=.4) + theme_bw() + geom_vline(xintercept=mean(fitstat[fitstat$Model %in% "Detection","fit"]),linetype="dashed",col="black")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
 
 ggsave("Figures/MultinomialDiscrep.svg",height=5,width=5)
+
+ggsave("Figures/MultinomialDiscrep.jpeg",height=5,width=5)
 ```
 
 ```{r}
