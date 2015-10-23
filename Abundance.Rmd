@@ -18,7 +18,7 @@ library(boot)
 library(picante)
 library(bipartite)
 
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=TRUE,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
@@ -142,7 +142,9 @@ ob1<-ggplot(obs.state[obs.state$Month==12,],aes(x=Hummingbird,y=Plant,fill=Detec
 
 ob2<-ggplot(obs.state[obs.state$Month==18,],aes(x=Hummingbird,y=Plant,fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red",limits=c(0,max(mdat$True_State))) + ylab("Plant") + ggtitle("Example 2") + xlab("Hummingbird")
 
-grid.arrange(trueplot,ob1,ob2,nrow=1)
+ob1
+ob2
+trueplot
 ```
 
 The left hand panel is the true state for each hummingbird plant combination. The middle and right hand panel are two realizations that might result from a month of sampling given incomplete detection and phenology.
@@ -565,7 +567,7 @@ int.FLlevels<-levels(factor(dath$Iplant_Double))
 #Which flowers are we missing info for?
 missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 
-print(paste("Missing Trait Information:",missingTraits))
+#print(paste("Missing Trait Information:",missingTraits))
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
@@ -859,7 +861,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T}
 
-runs<-30000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -1076,16 +1078,23 @@ write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 
 Number of samples per species
 
-```{r}
-table(indat$Hummingbird)
-```
-
 DIC Table
 ```{r}
 DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
 h<-dcast(DICtable,Data~Model)
 print(h)
 write.csv(h,"Figures/DICtable.csv")
+```
+
+#Compared to a multomial
+
+Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities.
+
+```{r}
+m<-traitmatchT/sum(traitmatchT)
+mat<-acast(obs,Hummingbird~Iplant_Double,value.var="Yobs",fun.aggregate = sum)
+dmultinom(mat,prob=m,log=T)
+r<-mgen(m)
 ```
 
 ```{r}
