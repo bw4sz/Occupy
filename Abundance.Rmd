@@ -26,7 +26,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation   
@@ -861,7 +861,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T}
 
-runs<-50000
+runs<-40000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -1091,38 +1091,56 @@ Several studies follow Vasquez 2009 in fitting a multinomial relationship to fre
 
 ```{r}
 m<-traitmatchT/sum(traitmatchT)
-mat<-obs %>% group_by(Hummingbird,Iplant_Double) %>% summarize(n=mean(Yobs))
+mat<-obs %>% group_by(Hummingbird,Iplant_Double) %>% summarize(n=sum(Yobs))
 mat<-acast(mat,Hummingbird~Iplant_Double,fill=0)
 
 #trait liklihood
 dmultinom(mat,prob=m,log=T)
-paste("Correlation coefficient is:", round(cor(c(mat),c(r),method="spearman"),2))
+paste("Correlation coefficient is:", round(cor(c(mat),c(m),method="spearman"),2))
+
 ```
 
 What is the discrepancy of a multinomial approach?
 
-Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0.
+Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus mean observed.
 
 ```{r}
 nullm<-function(){
 chisq<-function(o,e){(o-e)^2/(e+0.5)}
-r<-mgen(m,sum(mat))
+r<-mgen(m,sum(indat$Yobs))
+r<-melt(r)
+colnames(r)<-c("Bird","Plant","Pred")
 
-#output holder
-out<-matrix(nrow=nrow(r),ncol=ncol(r),data=NA)
+rmerge<-merge(r,indat,by=c("Bird","Plant"))
+rmerge$Chisq<-chisq(o=rmerge$Yobs,e=rmerge$Pred)
 
-for (x in 1:nrow(r)){
-  for (y in 1:ncol(r)){
-    out[x,y]<-chisq(o=mat[x,y],e=r[x,y])
-  }
-}
-
-#sum of chisq discrepancy
-return(sum(out))}
+#sum of chisq driscrepancy
+return(sum(rmerge$Chisq))}
 
 multi_disc<-replicate(2397,nullm())
 qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood")
 
+#visualize multinomial prediction
+mats<-list()
+for (x in 1:2397){
+  mats[[x]]<-mgen(m,sum(indat$Yobs))
+}
+mats<-melt(mats)
+colnames(mats)<-c("Bird","Plant","Pred","Iteration")
+
+multp<-merge(mats,indat,by=c("Bird","Plant"))
+
+pmats<-mats %>% group_by(Bird,Plant) %>% summarize(mean=mean(Pred),High=quantile(probs=0.95,Pred),Low=quantile(probs=0.05,Pred)) 
+
+p<-merge(pmats,indat,by=c("Bird","Plant"))
+ggplot(p,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Low,ymax=High),alpha=.5) + geom_line(aes(y=mean),linetype="dashed")+ geom_point(aes(y=Yobs),col="red") + theme_bw() + ggtitle("Multinomial Best Fit")
+```
+
+To make this a comparable statistic, calculated Bayesian occupancy discrepancy statistic for the mean observations.
+
+##Compare Bayesian Occupancy and multinomial
+
+```{r}
 #compared to bayesian
 ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=fitstat[fitstat$Model %in% "Detection",],aes(x=fit),fill="red",alpha=.4) + theme_bw() + geom_vline(xintercept=mean(fitstat[fitstat$Model %in% "Detection","fit"]),linetype="dashed",col="black")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
 
