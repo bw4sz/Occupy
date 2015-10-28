@@ -26,7 +26,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation   
