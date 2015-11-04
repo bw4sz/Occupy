@@ -58,7 +58,7 @@ $$\beta = N(-.01,.001)$$
 h_species=10
 plant_species=20
 months=24
-detection=runif(h_species,0,1)
+detection=runif(h_species,0,.5)
 phenology=1
 
 #Bill sizes
