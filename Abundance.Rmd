@@ -536,8 +536,8 @@ int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teusc
 #crowned woodnymph is a species name change.
 int[int$Hummingbird %in% "Green-crowned Woodnymph","Hummingbird"]<-"Crowned Woodnymph"
 
-#Some reasonable level of presences, 10 points
-keep<-names(which(table(int$Hummingbird) > 15))
+#Some reasonable level of presences, 20 points
+keep<-names(which(table(int$Hummingbird) > 20))
 int<-int[int$Hummingbird %in% keep, ]
 
 m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
