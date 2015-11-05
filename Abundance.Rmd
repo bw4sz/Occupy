@@ -729,7 +729,7 @@ for(x in 1:dim(indatlong)[3]){
       pr<-elevP[elevP$Plant %in% pres[y],"Elevation"]
       #if there is not enough elevation area, make NA
       if(is.na(pr)|!pr==3){
-        helim<-elevH[!elevH$Elevation %in% c(pr,3),"Index"]
+        helim<-elevH[!elevH$Elevation %in% c(pr,3),"Bird"]
         indatlong[helim,colnames(a) %in% pres[y],x,j]<-NA
         }
       }  
