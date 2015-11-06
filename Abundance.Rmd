@@ -730,7 +730,7 @@ for(x in 1:dim(indatlong)[3]){
       #if there is not enough elevation area, make NA
       if(is.na(pr)|!pr==3){
         helim<-elevH[!elevH$Elevation %in% c(pr,3),"Bird"]
-        indatlong[helim,colnames(a) %in% pres[y],x,j]<-NA
+        indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x,j]<-NA
         }
       }  
     }
@@ -1085,7 +1085,7 @@ print(h)
 write.csv(h,"Figures/DICtable.csv")
 ```
 
-#Compared to a multomial fit
+#Compared to a multinomial fit
 
 Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. For the observed matrix, i took the mean interaction intensity for each bird plant combination.
 
@@ -1135,8 +1135,6 @@ pmats<-mats %>% group_by(Bird,Plant) %>% summarize(mean=mean(Pred),High=quantile
 p<-merge(pmats,indat,by=c("Bird","Plant"))
 ggplot(p,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Low,ymax=High),alpha=.5) + geom_line(aes(y=mean),linetype="dashed")+ geom_point(aes(y=Yobs),col="red") + theme_bw() + ggtitle("Multinomial Best Fit")
 ```
-
-To make this a comparable statistic, calculated Bayesian occupancy discrepancy statistic for the mean observations.
 
 ##Compare Bayesian Occupancy and multinomial
 
