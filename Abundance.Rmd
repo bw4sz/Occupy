@@ -674,11 +674,6 @@ indatraw[is.na(indatraw$Transect_R),"Transect_R"]<-cut(indatraw[is.na(indatraw$T
 ```
 
 ```{r}
-indatlong<-acast(indatraw,Bird~Plant~Time~Transect_R,value.var="Yobs")
-indatlong[is.na(indatlong)]<-0
-```
-
-```{r}
 #match the traits
 traitmelt<-melt(traitmatchT)
 colnames(traitmelt)<-c("Hummingbird","Iplant_Double","Traitmatch")
@@ -707,20 +702,23 @@ for (x in 1:nrow(obs)){
 We have more information than just the presences, given species elevation ranges, we have absences as well. Absences are birds that occur at the elevation of the plant sample, but were not recorded feeding on the flower.
 
 ```{r}
+indatlong<-acast(indatraw,Bird~Plant~Time,value.var="Yobs")
+indatlong[is.na(indatlong)]<-0
+```
+
+```{r}
 #Only non-detections are real 0's, the rest are NA's and are removed.
 #Plants not surveyed in that time period
 #Hummingbirds not present at that site
 
 for(x in 1:dim(indatlong)[3]){
   #Remove non sampled plants 
-  a<-indatlong[,,x,]
+  a<-indatlong[,,x]
   
-  #for each elevation
-  for (j in 1:dim(a)[3]){
-    #No observations at that plant
-    toNA<-as.numeric(names(which(apply(a[,,j],2,sum)==0)))
-    pres<-as.numeric(names(which(!apply(a[,,j],2,sum)==0)))
-    indatlong[,colnames(a[,,j]) %in% toNA,x,j]<-NA
+  #No observations at that plant
+  toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
+  pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
+  indatlong[,colnames(a) %in% toNA,x]<-NA
   
   #match elevation if there were presences, slightly terse code.
   if(length(pres)>0){
@@ -730,25 +728,28 @@ for(x in 1:dim(indatlong)[3]){
       #if there is not enough elevation area, make NA
       if(is.na(pr)|!pr==3){
         helim<-elevH[!elevH$Elevation %in% c(pr,3),"Bird"]
-        indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x,j]<-NA
+        #sanity check, make sure rows don't have values
+        sums<-indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x]
+        #set to NA if they are outside of elevation and are blank
+        indatlong[rownames(a) %in% helim & sums==0 ,colnames(a) %in% pres[y],x]<-NA
         }
       }  
     }
   }
-}
 
 #melt and remove Na's
 indat<-melt(indatlong)
 indat<-indat[!is.na(indat$value),]
 
-colnames(indat)<-c("Bird","Plant","Time","Transect_R","Yobs")
+colnames(indat)<-c("Bird","Plant","Time","Yobs")
+```
 
+```{r}
 #remerge the time period data
 Timelookup<-indatraw %>% dplyr::select(Time,DateP,Transect_R,Month,Year)%>% group_by(Time,DateP,Transect_R,Month,Year) %>% distinct() %>% arrange(Time)
 
 #Get time information
-indat<-merge(indat,Timelookup[,!colnames(Timelookup) %in% c("Bird","Plant")],by=c("Time","Transect_R"),all.x=T)
-#Get flower information
+indat<-merge(indat,Timelookup[,!colnames(Timelookup) %in% c("Bird","Plant")],by=c("Time"),all.x=T)
 
 #Species names
 for (x in 1:nrow(indat)){
@@ -1038,7 +1039,7 @@ predState$Bird<-factor(predState$species,levels=b_ord$species)
 predState$Plant<-factor(predState$plant,levels=p_ord$plant)
 
 predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model) + theme(axis.text.x = element_text(angle = 90))
-
+predplot
 orig<-group_by(indat,Bird,Plant) %>% summarize(Y=sum(Yobs))
 
 finaldat<-merge(predState,orig,by.x=c("species","plant"),by.y=c("Bird","Plant"))
@@ -1091,7 +1092,7 @@ Several studies follow Vasquez 2009 in fitting a multinomial relationship to fre
 
 ```{r}
 m<-traitmatchT/sum(traitmatchT)
-mat<-obs %>% group_by(Hummingbird,Iplant_Double) %>% summarize(n=sum(Yobs))
+mat<-indat %>% group_by(Hummingbird,Iplant_Double) %>% summarize(n=sum(Yobs))
 mat<-acast(mat,Hummingbird~Iplant_Double,fill=0)
 
 #trait liklihood
@@ -1117,12 +1118,16 @@ rmerge$Chisq<-chisq(o=rmerge$Yobs,e=rmerge$Pred)
 #sum of chisq driscrepancy
 return(sum(rmerge$Chisq))}
 
-multi_disc<-replicate(2397,nullm())
-qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood")
+#same number of draws as bayesian
 
+multi_disc<-replicate(length(fitstat[fitstat$Model %in% "Detection","fit"]),nullm())
+qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
+```
+
+```{r}
 #visualize multinomial prediction
 mats<-list()
-for (x in 1:2397){
+for (x in 1:length(fitstat[fitstat$Model %in% "Detection","fit"])){
   mats[[x]]<-mgen(m,sum(indat$Yobs))
 }
 mats<-melt(mats)
