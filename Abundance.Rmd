@@ -7,6 +7,8 @@ output: html_document
 
 ```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
 library(reshape2)
+library(foreach)
+library(doSNOW)
 library(chron)
 library(ggplot2)
 library(knitr)
@@ -26,7 +28,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation   
@@ -214,7 +216,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N"
 ni <- runs  # number of draws from the posterior
 nt <- runs*.001   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
-nc <- 3  # number of chains
+nc <- 2  # number of chains
 
 #Jags
 
@@ -326,7 +328,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N"
 ni <- runs  # number of draws from the posterior
 nt <- runs*.001   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
-nc <- 3  # number of chains
+nc <- 2  # number of chains
 
 #Jags
 
@@ -537,9 +539,9 @@ int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teusc
 int[int$Hummingbird %in% "Green-crowned Woodnymph","Hummingbird"]<-"Crowned Woodnymph"
 
 #Some reasonable level of presences, 20 points
-keep<-names(which(table(int$Hummingbird) > 20))
+keep<-names(which(table(int$Hummingbird) > 10))
 int<-int[int$Hummingbird %in% keep, ]
-
+dim(int)
 m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
 
 #Does the data come from camera or transect?
@@ -826,7 +828,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 ni <- runs  # number of draws from the posterior
 nt <- runs*.001   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
-nc <- 3  # number of chains
+nc <- 2  # number of chains
 
 #Jags
 
@@ -897,7 +899,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 ni <- runs  # number of draws from the posterior
 nt <- runs*.001   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
-nc <- 3  # number of chains
+nc <- 2  # number of chains
 
 #Jags
 
@@ -954,7 +956,7 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill
 #Detection figure
 ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
 
-parsp<-merge(pars,elevH,by.x="species",by.y="Bird")
+parsp<-merge(pars,jagsIndexBird,by.x="species",by.y="jBird")
 ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
@@ -979,8 +981,9 @@ species.traj<-list()
 
 for(d in 1:length(species.split)){
   x<-species.split[[d]]
-  index<-unique(x$species)
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,x=as.numeric(traitmatchT[index,]))
+  index<-jagsIndexBird[unique(x$species),"Hummingbird"]
+  
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,x=as.numeric(traitmatchT[rownames(traitmatchT) %in% index,]))
   }
 
 names(species.traj)<-names(species.split)
@@ -1064,11 +1067,9 @@ grid.arrange(psim4,disc_obs,nrow=2)
 dev.off()
 ```
 
-Tables
+##Detection table
 
 ```{r}
-#Detection table
-
 dp<-group_by(pars[pars$par %in% c("detect"),],species) %>% summarise(mean=round(mean(estimate,na.rm=T),3)*100,lower=round(quantile(estimate,0.025,na.rm=T),3)*100,upper=round(quantile(estimate,0.975,na.rm=T),3)*100)
 
 tab<-merge(dp,jagsIndexBird,by.x="species",by.y="jBird")[,-1]
@@ -1078,7 +1079,8 @@ write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 
 Number of samples per species
 
-DIC Table
+##DIC Table
+
 ```{r}
 DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
 h<-dcast(DICtable,Data~Model)
@@ -1106,9 +1108,11 @@ What is the discrepancy of a multinomial approach?
 Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus mean observed.
 
 ```{r}
-nullm<-function(){
+#define discrep function
 chisq<-function(o,e){(o-e)^2/(e+0.5)}
-r<-mgen(m,sum(indat$Yobs))
+
+nullm<-function(){
+r<-mgen(m,sum(indat$Yobs),keep.species = F)
 r<-melt(r)
 colnames(r)<-c("Bird","Plant","Pred")
 
@@ -1116,12 +1120,47 @@ rmerge<-merge(r,indat,by=c("Bird","Plant"))
 rmerge$Chisq<-chisq(o=rmerge$Yobs,e=rmerge$Pred)
 
 #sum of chisq driscrepancy
-return(sum(rmerge$Chisq))}
+return(rmerge)}
 
 #same number of draws as bayesian
+cl<-makeCluster(12,"SOCK")
+registerDoSNOW(cl)
+mats<-foreach(x=1:length(fitstat[fitstat$Model %in% "Detection","fit"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
+stopCluster(cl)
 
-multi_disc<-replicate(length(fitstat[fitstat$Model %in% "Detection","fit"]),nullm())
+multi_disc<-sapply(mats,function(x) sum(x$Chisq))
+
 qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
+```
+
+Exploring multinomial fits.
+
+* How does multinomial fit for a range of trait sizes?
+* For a range of interaction intensities
+* For a each species.
+
+```{r}
+names(mats)<-1:length(mats)
+#iteration count
+for(x in 1:length(mats)){
+  mats[[x]]$Iteration<-names(mats)[[x]]
+}
+
+ml<-rbind_all(mats)
+
+#Discrepancy by traitmatch
+tchisq<-ml %>% group_by(Traitmatch) %>% summarize(mean=mean(Chisq),Low=quantile(Chisq,0.05),High=quantile(Chisq,0.95))
+ggplot(tchisq,aes(x=Traitmatch,y=mean)) + geom_ribbon(aes(ymin=Low,ymax=High),fill='red',alpha=.4) + geom_point() + geom_smooth() + labs(y="Mean Discrepancy")
+```
+
+```{r}
+ychisq<-ml %>% group_by(Yobs) %>% summarize(mean=mean(Chisq),Low=quantile(Chisq,0.05),High=quantile(Chisq,0.95))
+
+ggplot(ychisq,aes(x=Yobs,y=mean)) + geom_ribbon(aes(ymin=Low,ymax=High),fill='red',alpha=.6) + geom_point(size=3) + geom_smooth() + labs(y="Mean Discrepancy",x="Observed Intensity")
+```
+
+```{r}
+ggplot(ml,aes(x=Hummingbird,y=Chisq)) + geom_boxplot(aes(group=Hummingbird)) + labs(y="Discrepancy",x="Species")
 ```
 
 ```{r}
