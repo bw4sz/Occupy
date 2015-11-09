@@ -529,17 +529,15 @@ hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Hummin
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
-#Correct known taxonomic errors
+#Correct known taxonomic disagreements, atleast compared to traits
 int[int$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
 int[int$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
 int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
-
-#crowned woodnymph is a species name change.
-int[int$Hummingbird %in% "Green-crowned Woodnymph","Hummingbird"]<-"Crowned Woodnymph"
+int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
 #Some reasonable level of presences, 20 points
-keep<-names(which(table(int$Hummingbird) > 10))
+keep<-names(which(table(int$Hummingbird) > 20))
 int<-int[int$Hummingbird %in% keep, ]
 dim(int)
 m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
@@ -552,10 +550,6 @@ m.dat$Type<-(is.na(m.dat$TransectID))*1
 m.dat$Year<-years(as.Date(m.dat$DateP))
 #one missing date
 m.dat$Year[m.dat$Year %in% 2012]<-2013
-
-#Fix spacing to match clades
-#Which are matching
-levels(m.dat$Hummingbird)[!levels(m.dat$Hummingbird) %in% hum.morph$English]
 
 #Number of bird species
 h_species<-nlevels(m.dat$Hummingbird)
@@ -595,9 +589,7 @@ colnames(traitmatchF)<-fl.morph$Group.1
 ```
 
 ```{r}
-#match names
-#Round to 2 decimals
-#Convert to cm for winbugs, avoids numerical underflow
+#match names #Round to 2 decimals #Convert to cm for winbugs, avoids numerical underflow
 traitmatchT<-round(traitmatchF[rownames(traitmatchF) %in% dath$Hummingbird,colnames(traitmatchF) %in% dath$Iplant_Double],2)/10
 
 traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))]
@@ -683,22 +675,6 @@ colnames(traitmelt)<-c("Hummingbird","Iplant_Double","Traitmatch")
 obs<-merge(indatraw,traitmelt,by=c("Hummingbird","Iplant_Double"))
 ```
 
-##Elevation ranges
-How much do the bird and plant elevation range match? Using the transect data we will take the absolute value of the difference in mean elevation for each species pair.
-
-```{r}
-obs$ElevD<-NA
-
-#Difference in mean elevations
-
-for (x in 1:nrow(obs)){
-  b<-obs[x,"Bird"]
-  p<-obs[x,"Plant"]
-  d<-abs(elevP[elevP$Plant %in% p,"m"] - elevH[elevH$Bird %in% b,"m"])
-  obs[x,"ElevD"]<-d
-}
-```
-
 #Absences - accounting for non-detection
 
 We have more information than just the presences, given species elevation ranges, we have absences as well. Absences are birds that occur at the elevation of the plant sample, but were not recorded feeding on the flower.
@@ -731,9 +707,10 @@ for(x in 1:dim(indatlong)[3]){
       if(is.na(pr)|!pr==3){
         helim<-elevH[!elevH$Elevation %in% c(pr,3),"Bird"]
         #sanity check, make sure rows don't have values
-        sums<-indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x]
+        sums<-indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x]==0
+        helim<-helim[sums]
         #set to NA if they are outside of elevation and are blank
-        indatlong[rownames(a) %in% helim & sums==0 ,colnames(a) %in% pres[y],x]<-NA
+        indatlong[rownames(a) %in% helim ,colnames(a) %in% pres[y],x]<-NA
         }
       }  
     }
@@ -762,24 +739,12 @@ for (x in 1:nrow(indat)){
 #Get trait information
 #match the traits
 indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
-
-indat$ElevD<-NA
-
-#Difference in mean elevations
-
-for (x in 1:nrow(indat)){
-  b<-indat[x,"Bird"]
-  p<-indat[x,"Plant"]
-  d<-abs(elevP[elevP$Plant %in% p,"m"] - elevH[elevH$Bird %in% b,"m"])
-  indat[x,"ElevD"]<-d
-}
 ```
 
 Reformat index for jags.
 Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
-
 indat$Hummingbird<-as.factor(indat$Hummingbird)
 indat$Iplant_Double<-as.factor(indat$Iplant_Double)
 indat$jBird<-as.numeric(indat$Hummingbird)
@@ -789,6 +754,8 @@ jagsIndexBird<-data.frame(Hummingbird=levels(indat$Hummingbird),jBird=1:length(l
  
 jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:length(levels(indat$Iplant_Double)))
 ```
+
+Similiarly, the trait matrix needs to reflect this indexing.
 
 ###Without detection
 
@@ -872,9 +839,7 @@ source("Bayesian/NMixtureRagged.R")
 #print model
 print.noquote(readLines("Bayesian/NMixtureRagged.R"))
 
-
 #ragged index data
-
 #Input Data
 Dat <- list(
   Y=indat$Yobs,
@@ -936,7 +901,6 @@ Hierarcichal Posteriors
 ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
-
 ```
 
 ```{r}
@@ -949,7 +913,6 @@ parsObs<-rbind(pars,pars_niave)
 ```{r,cache=FALSE,fig.width=11,fig.height=12}
 ###Posterior Distributions
 ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
-
 ```
 
 ```{r,cache=FALSE,fig.width=10,fig.height=5}
@@ -972,7 +935,7 @@ ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope")
 
 castdf<-dcast(parsObs[parsObs$par %in% c("beta","alpha","polybeta"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
-#Turn to 
+#Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
 
 species.split<-split(castdf,list(castdf$species,castdf$Model))
@@ -981,9 +944,12 @@ species.traj<-list()
 
 for(d in 1:length(species.split)){
   x<-species.split[[d]]
+  #species name
   index<-jagsIndexBird[unique(x$species),"Hummingbird"]
   
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,x=as.numeric(traitmatchT[rownames(traitmatchT) %in% index,]))
+  #range of trait distances
+  tsp<-indat %>% filter(Hummingbird==index) %>% distinct(Traitmatch) %>% .$Traitmatch
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,x=tsp)
   }
 
 names(species.traj)<-names(species.split)
@@ -1015,7 +981,7 @@ castdf<-split(castdf,castdf$Model)
 #calculated predicted y
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta=i$gamma,x=round(as.numeric(traitmatchT),2))  
+  pr<-trajF(alpha=i$intercept,beta=i$gamma,x=indat$Traitmatch)  
   pr$Model<-unique(i$Model)
   return(pr)
   }))
@@ -1090,7 +1056,7 @@ write.csv(h,"Figures/DICtable.csv")
 
 #Compared to a multinomial fit
 
-Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. For the observed matrix, i took the mean interaction intensity for each bird plant combination.
+Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. For the observed matrix, I took the mean interaction intensity for each bird plant combination.
 
 ```{r}
 m<-traitmatchT/sum(traitmatchT)
@@ -1100,7 +1066,6 @@ mat<-acast(mat,Hummingbird~Iplant_Double,fill=0)
 #trait liklihood
 dmultinom(mat,prob=m,log=T)
 paste("Correlation coefficient is:", round(cor(c(mat),c(m),method="spearman"),2))
-
 ```
 
 What is the discrepancy of a multinomial approach?
@@ -1113,14 +1078,18 @@ chisq<-function(o,e){(o-e)^2/(e+0.5)}
 
 nullm<-function(){
 r<-mgen(m,sum(indat$Yobs),keep.species = F)
-r<-melt(r)
-colnames(r)<-c("Bird","Plant","Pred")
+rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
 
-rmerge<-merge(r,indat,by=c("Bird","Plant"))
-rmerge$Chisq<-chisq(o=rmerge$Yobs,e=rmerge$Pred)
+#for each position what is the chisq
+for (x in 1:nrow(r)){
+  for (y in 1:ncol(r)){
+   rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+  }
+}
 
 #sum of chisq driscrepancy
-return(rmerge)}
+return(mean(rmerge))
+}
 
 #same number of draws as bayesian
 cl<-makeCluster(12,"SOCK")
@@ -1160,24 +1129,10 @@ ggplot(ychisq,aes(x=Yobs,y=mean)) + geom_ribbon(aes(ymin=Low,ymax=High),fill='re
 ```
 
 ```{r}
-ggplot(ml,aes(x=Hummingbird,y=Chisq)) + geom_boxplot(aes(group=Hummingbird)) + labs(y="Discrepancy",x="Species")
-```
+#By Species
+ggplot(ml,aes(x=Hummingbird,y=Chisq)) + geom_boxplot(aes(group=Hummingbird)) + labs(y="Discrepancy",x="Species") + coord_flip() 
 
-```{r}
-#visualize multinomial prediction
-mats<-list()
-for (x in 1:length(fitstat[fitstat$Model %in% "Detection","fit"])){
-  mats[[x]]<-mgen(m,sum(indat$Yobs))
-}
-mats<-melt(mats)
-colnames(mats)<-c("Bird","Plant","Pred","Iteration")
-
-multp<-merge(mats,indat,by=c("Bird","Plant"))
-
-pmats<-mats %>% group_by(Bird,Plant) %>% summarize(mean=mean(Pred),High=quantile(probs=0.95,Pred),Low=quantile(probs=0.05,Pred)) 
-
-p<-merge(pmats,indat,by=c("Bird","Plant"))
-ggplot(p,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Low,ymax=High),alpha=.5) + geom_line(aes(y=mean),linetype="dashed")+ geom_point(aes(y=Yobs),col="red") + theme_bw() + ggtitle("Multinomial Best Fit")
+ml %>% group_by(Hummingbird) %>% summarize(median=median(Chisq)) %>% arrange(median)
 ```
 
 ##Compare Bayesian Occupancy and multinomial
@@ -1187,7 +1142,6 @@ ggplot(p,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Low,ymax=High),alpha=.5) + ge
 ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=fitstat[fitstat$Model %in% "Detection",],aes(x=fit),fill="red",alpha=.4) + theme_bw() + geom_vline(xintercept=mean(fitstat[fitstat$Model %in% "Detection","fit"]),linetype="dashed",col="black")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
 
 ggsave("Figures/MultinomialDiscrep.svg",height=5,width=5)
-
 ggsave("Figures/MultinomialDiscrep.jpeg",height=5,width=5)
 ```
 
