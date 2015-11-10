@@ -28,7 +28,7 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation   
@@ -187,7 +187,7 @@ Detect parameters is 'fixed' by placing it centered on 1 with extremely low vari
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-30000
+runs<-25000
 
 #Source model
 source("Bayesian/NoDetect.R")
@@ -214,7 +214,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N"
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- runs*.001   #thinning rate
+nt <- runs*.0001   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -299,7 +299,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-30000
+runs<-25000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -326,7 +326,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N"
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- runs*.001   #thinning rate
+nt <- runs*.0001   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -760,8 +760,7 @@ Similiarly, the trait matrix needs to reflect this indexing.
 ###Without detection
 
 ```{r,eval=T}
-
-runs<-30000
+runs<-25000
 
 #Source model
 source("Bayesian/NoDetectRagged.R")
@@ -793,7 +792,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- runs*.001   #thinning rate
+nt <- runs*.0001   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -831,7 +830,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T}
 
-runs<-40000
+runs<-50000
 
 #Source model
 source("Bayesian/NMixtureRagged.R")
@@ -858,11 +857,11 @@ initY<-matrix(nrow=Dat$Birds,ncol=Dat$Plants,data=max(Dat$Y,na.rm=T))
 InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","N","fit","fitnew",'mfit')
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- runs*.001   #thinning rate
+nt <- runs*.0001   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -881,6 +880,7 @@ m2 = jags(inits=InitStage,
 ```
 
 ```{r}
+#extract par to data.frame
 pars<-extract_par(m2)
 
 #name
@@ -897,6 +897,7 @@ ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col
 ```
 
 Hierarcichal Posteriors
+
 ```{r,fig.height=5,fig.width=11,eval=T}
 ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ggsave("Figures/BothObs.svg",height=5,width=7)
@@ -1056,7 +1057,7 @@ write.csv(h,"Figures/DICtable.csv")
 
 #Compared to a multinomial fit
 
-Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. For the observed matrix, I took the mean interaction intensity for each bird plant combination.
+Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. 
 
 ```{r}
 m<-traitmatchT/sum(traitmatchT)
@@ -1088,7 +1089,7 @@ for (x in 1:nrow(r)){
 }
 
 #sum of chisq driscrepancy
-return(mean(rmerge))
+return(rmerge)
 }
 
 #same number of draws as bayesian
@@ -1097,7 +1098,7 @@ registerDoSNOW(cl)
 mats<-foreach(x=1:length(fitstat[fitstat$Model %in% "Detection","fit"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
 stopCluster(cl)
 
-multi_disc<-sapply(mats,function(x) sum(x$Chisq))
+multi_disc<-sapply(mats,function(x) mean(x))
 
 qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
 ```
@@ -1110,16 +1111,24 @@ Exploring multinomial fits.
 
 ```{r}
 names(mats)<-1:length(mats)
-#iteration count
-for(x in 1:length(mats)){
-  mats[[x]]$Iteration<-names(mats)[[x]]
-}
 
-ml<-rbind_all(mats)
+ml<-melt(mats)
+colnames(ml)<-c("jBird","jPlant","Chisq","Iteration")
+
+#merge with input data.
+org<-melt(mat)
+colnames(org)<-c("Hummingbird","Iplant_Double","Yobs")
+org$jBird<-as.numeric(org$Hummingbird)
+org$jPlant<-as.numeric(org$Iplant_Double)
+
+ml<-merge(ml,org,by=c("jBird","jPlant"))
+
+#merge with trait data
+ml<-merge(ml,traitmelt,by=c("Hummingbird","Iplant_Double"))
 
 #Discrepancy by traitmatch
-tchisq<-ml %>% group_by(Traitmatch) %>% summarize(mean=mean(Chisq),Low=quantile(Chisq,0.05),High=quantile(Chisq,0.95))
-ggplot(tchisq,aes(x=Traitmatch,y=mean)) + geom_ribbon(aes(ymin=Low,ymax=High),fill='red',alpha=.4) + geom_point() + geom_smooth() + labs(y="Mean Discrepancy")
+tchisq<-ml %>% group_by(Traitmatch) %>% summarize(mean=mean(Chisq),Low=quantile(Chisq,0.025),High=quantile(Chisq,0.975)) %>% arrange(desc(mean))
+ggplot(tchisq,aes(x=Traitmatch,y=mean)) + geom_line() +  geom_ribbon(aes(ymin=Low,ymax=High),fill='red',alpha=.4) + labs(y="Mean Discrepancy")
 ```
 
 ```{r}
@@ -1138,13 +1147,58 @@ ml %>% group_by(Hummingbird) %>% summarize(median=median(Chisq)) %>% arrange(med
 ##Compare Bayesian Occupancy and multinomial
 
 ```{r}
-#compared to bayesian
-ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=fitstat[fitstat$Model %in% "Detection",],aes(x=fit),fill="red",alpha=.4) + theme_bw() + geom_vline(xintercept=mean(fitstat[fitstat$Model %in% "Detection","fit"]),linetype="dashed",col="black")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+#mean bayesian discrepancy
+mstat<-parsObs[parsObs$par %in% c("mfit"),]
 
-ggsave("Figures/MultinomialDiscrep.svg",height=5,width=5)
-ggsave("Figures/MultinomialDiscrep.jpeg",height=5,width=5)
+#compared to bayesian
+ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=mstat,aes(x=estimate),fill="red",alpha=.4) + theme_bw() + geom_vline(data=mstat,aes(xintercept=mean(estimate)),linetype="dashed",col="red")+geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+
+ggsave("Figures/MultinomialDiscrep.svg",height=5,width=5) 
+ggsave("Figures/MultinomialDiscrep.jpeg",height=5,width=5) 
+```
+
+##Compare aggregated matrix
+
+For each of the posterior draws, what is the sum interactions
+```{r}
+head(pars)
+N<-pars[pars$Model %in% "Detection" & pars$par %in% "N",]
+bydraw<-split(N,list(N$Chain,N$Draw))
+occ<-lapply(bydraw,function(x){
+  r<-acast(x,species ~ plant,value.var = "estimate")
+    #for each position what is the chisq
+  rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+  for (x in 1:nrow(r)){
+    for (y in 1:ncol(r)){
+     rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+      }
+    }
+  return(rmerge)
+})
+
+names(occ)<-1:length(occ)
+```
+
+```{r}
+#Multinomial
+multi_disc<-sapply(mats,function(x) sum(x))
+
+#Occupancy
+occ_disc<-sapply(occ,function(x) sum(x))
+
+#compared to bayesian
+ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() + geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+```
+
+Comparison table
+
+```{r}
+d<-list(Occupancy=occ,Multinomial=mats)
+d<-melt(d)
+d %>% group_by(L1,Var1) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(L1) %>% summarize(mean_mean=mean(mean),mean_sd=mean(sd),mean_sum=mean(sum))
 ```
 
 ```{r}
 save.image("Abundance.Rdata")
 ```
+

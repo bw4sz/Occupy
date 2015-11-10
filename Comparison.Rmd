@@ -1,0 +1,166 @@
+---
+title: "On Comparing Multinomial and Occupancy Approaches"
+author: "Ben Weinstein"
+date: "November 9, 2015"
+output: 
+  html_document:
+    toc=True
+---
+
+```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
+#Load in packages and data, see Abundance.Rmd
+
+library(reshape2)
+library(foreach)
+library(doSNOW)
+library(chron)
+library(ggplot2)
+library(knitr)
+library(R2jags)
+library(dplyr)
+library(stringr)
+library(gridExtra)
+library(boot)
+library(picante)
+library(bipartite)
+
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
+
+setwd("C:/Users/Ben/Documents/Occupy/")
+
+set.seed(3)
+#source functions
+
+source("Functions.R")
+load("Abundance.RData")
+```
+
+#Overview
+
+The challenge in comparing the multinomial approach and the occupancy model is that the methods are designed to evaluate different forms of the dataset. For the multinomial approach, the data is aggregated over time to create a full matrix of birds by plants. The multinomial approach assumes that each set of interactions are equally likely to be detected, such that draws are independent. In contrast, the occupancy model approach models interactions as the joint outcome of and observation and a process model, and therefore predicts interaction on a per sample basis. Therefore for the multinomial approach there are (14*45) = 675 discrepancy values.  For our empirical data, there is one predicted value for each species for each day of camera footage, leading to ~15,000 discrepancy values. Given this difference, there could be a number of different ways to compare models, each with its own strength and weaknesses.
+
+## Option 1: Compare the sum discrepancy of each model on each of the dataset.
+
+* Strengths - Mantains the data in its intended format.
+* Weakness - Data is off different lengths and format. Biased toward the smaller dataset (multinomial).
+
+## Compare the mean discrepancy of each model
+* Strength - Can compare across modeling types, very simple.
+* Weakness - Likely very sensitive to extremely large outliers
+
+Furthermore, the mutlinomial model solely includes information on observed interactions, and makes no use of absence data. Since the multiomial uses the sum number of interactions as its input data, adding more absences (0's), makes no difference in estimating the predicted intensity. Therefore, should the multinomial be compared to the dataset including absences? I believe that these zeros represent real data with value information about resource selection. Furthermore, we want make the comparison as reasonable as possible, and therefore should try to compare the two models on identical datasets.
+
+#Multinomial
+
+```{r}
+mat<-indat %>% group_by(Hummingbird,Iplant_Double) %>% summarize(n=sum(Yobs))
+mat<-acast(mat,Hummingbird~Iplant_Double,fill=0)
+dim(m)
+```
+
+To predict the sum total of bird plant interactions, we use the trait-matching matrix of bill - corolla length as input probabilities.
+
+```{r}
+m<-traitmatchT/sum(traitmatchT)
+```
+
+We can then generate a predicted matrix by drawing from a multinomial distribution, following the mgen function in package bipartite.
+
+```{r}
+r<-mgen(m,sum(indat$Yobs),keep.species = F)
+dim(r)
+```
+
+At each position in the predicted (r) and observed (mat) matrixes, we can calculate the chi-squared discrepancy. We can create a function that wraps the last two steps into a function.
+
+```{r}
+#define discrep function
+chisq<-function(o,e){(o-e)^2/(e+0.5)}
+
+nullm<-function(){
+r<-mgen(m,sum(indat$Yobs),keep.species = F)
+rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+
+#for each position what is the chisq
+for (x in 1:nrow(r)){
+  for (y in 1:ncol(r)){
+   rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+  }
+}
+
+#sum of chisq driscrepancy
+return(rmerge)
+}
+```
+
+So every call of the function returns a matrix of discrepancy using the multinomial approach.
+
+If we repeat this function thousand of times, we can create a distribution of sum discrepancy based as a summary statistic.
+
+```{r}
+#same number of draws as bayesian
+cl<-makeCluster(12,"SOCK")
+registerDoSNOW(cl)
+mats<-foreach(x=1:length(fitstat[fitstat$Model %in% "Detection","fit"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
+stopCluster(cl)
+
+multi_disc<-sapply(mats,function(x) sum(x))
+
+qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed') + ggtitle("Sum Summary Statistic")
+```
+
+Alternatively, we can look at the average discrepancy in the same way.
+
+```{r}
+multi_disc<-sapply(mats,function(x) mean(x))
+
+qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed') + ggtitle("Mean Summary Statistic")
+```
+
+#Occupancy model
+
+The occupancy model estimates discrepancy by multiplying the latent interaction intensity (N[i,j]) by the detection probability for each species detect[Bird[i]]. Jags makes this easy. In the jags code (NMixtureRagged.R) we see:
+
+```{r,eval=F}
+eval[i]<-detect[Bird[i]]*N[Bird[i],Plant[i]]
+E[i]<-pow((Y[i]-eval[i]),2)/(eval[i]+0.5)
+
+#and outside the loops we calcuate the summary stats
+fit<-sum(E[]) #Discrepancy for the observed data
+mfit<-mean(E[])
+```
+
+Then, we can moniter the parameters 'fit' and 'mfit'  for each of the monte carlo draws, just like any other parameter.
+
+```{r}
+#mean bayesian discrepancy
+mstat<-parsObs[parsObs$par %in% c("mfit"),]
+
+#compared to bayesian
+ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=mstat,aes(x=estimate),fill="red",alpha=.4) + theme_bw() 
++ geom_vline(data=mstat,aes(xintercept=mean(estimate)),linetype="dashed",col="black")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+```
+
+# Comparisons
+
+As noted above, it would be tempting to compare the sum discrepancy for both models, but given that multinomial has 14 hummingbird species * 45 plant species = 630 data points, and the occupancy model has 15396 data points, its not really a fair comparison, since the summary statistic greatly favors the multinomial approach. Yet when we look at the data, we can see the even given this biased statistic, the occupancy model still performs better.
+
+```{r}
+#multinomial
+multi_disc<-sapply(mats,function(x) sum(x))
+# Occupancy
+mstat<-parsObs[parsObs$par %in% c("fit") & parsObs$Model %in% "Detection",]
+
+ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=mstat,aes(x=estimate),fill="red",alpha=.4) + theme_bw() + geom_vline(data=mstat,aes(xintercept=mean(estimate)),linetype="dashed",col="black")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+```
+
+A more fair summary statistic would be the mean discrepancy.
+
+```{r}
+#multinomial
+multi_disc<-sapply(mats,function(x) mean(x))
+#Bayesian
+mstat<-parsObs[parsObs$par %in% c("mfit"),]
+
+ggplot(data.frame(multi_disc)) + geom_density(aes(x=multi_disc),fill="blue",alpha=.4)+ xlab("Chisquared Discrepancy") + geom_density(data=mstat,aes(x=estimate),fill="red",alpha=.4) + theme_bw() + geom_vline(data=mstat,aes(xintercept=mean(estimate)),linetype="dashed",col="black")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+```

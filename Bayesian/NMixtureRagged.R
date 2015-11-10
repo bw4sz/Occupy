@@ -42,9 +42,10 @@ cat("
     sigma_slope<-pow(1/tau_beta,0.5)
 
     #derived posterior check
-    fit<-sum(E[]) #Discrepancy for the observed data
-    fitnew<-sum(E.new[])
-    
+    fit<-sum(E[]) # sum Discrepancy for the observed data
+    mfit<-mean(E[]) # mean Discrepancy for the observed data
+    fitnew<-sum(E.new[]) # sum Discrepancy for a new draw from posterior
+  
     }
     ",fill=TRUE)
 
