@@ -299,7 +299,7 @@ pars_niave<-pars
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-25000
+runs<-20000
 
 #Source model
 source("Bayesian/NMixture.R")
@@ -326,13 +326,13 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","N"
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- runs*.0001   #thinning rate
+nt <- max(1,runs*.0001)   #thinning rate
 nb <- runs*.2 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
 
-m = jags(inits=InitStage,
+sim_detect = jags(inits=InitStage,
          n.chains=nc,
          model.file="Bayesian/NMixture.jags",
          working.directory=getwd(),
@@ -345,7 +345,7 @@ m = jags(inits=InitStage,
 ```
 
 ```{r}
-pars<-extract_par(m)
+pars<-extract_par(sim_detect)
 ```
 
 ###Assess Convergence
@@ -512,6 +512,93 @@ jpeg("Figures/SimPredictBoth.jpg",height=6,width=7,units="in",res=300)
 grid.arrange(psim3)
 dev.off()
 ```
+
+#Compared to a multinomial fit
+
+Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. 
+
+```{r}
+m<-traitmatch/sum(traitmatch)
+
+#True latent interactions, since the simulated data is known.
+mat<-true_interactions
+print(paste("Correlation coefficient is:", round(cor(c(mat),c(m),method="spearman"),2)))
+```
+
+What is the discrepancy of a multinomial approach?
+
+Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus mean observed.
+
+```{r}
+#define discrep function
+chisq<-function(o,e){(o-e)^2/(e+0.5)}
+
+nullm<-function(){
+r<-mgen(m,sum(obs),keep.species = F)
+rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+
+#for each position what is the chisq
+for (x in 1:nrow(r)){
+  for (y in 1:ncol(r)){
+   rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+  }
+}
+
+#sum of chisq driscrepancy
+return(rmerge)
+}
+
+#same number of draws as bayesian
+cl<-makeCluster(12,"SOCK")
+registerDoSNOW(cl)
+mats<-foreach(x=1:length(pars[pars$par %in% "fit","estimate"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
+stopCluster(cl)
+
+multi_disc<-sapply(mats,function(x) sum(x))
+
+qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
+```
+
+##Compare Bayesian Occupancy and multinomial using true known interactions 
+
+```{r}
+head(pars)
+N<-pars[pars$par %in% "N",]
+bydraw<-split(N,list(N$Chain,N$Draw))
+occ<-lapply(bydraw,function(x){
+  r<-acast(x,species ~ plant,value.var = "estimate")
+    #for each position what is the chisq
+  rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+  for (x in 1:nrow(r)){
+    for (y in 1:ncol(r)){
+     rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+      }
+    }
+  return(rmerge)
+})
+
+names(occ)<-1:length(occ)
+```
+
+```{r}
+#Multinomial
+multi_disc<-sapply(mats,function(x) sum(x))
+
+#Occupancy
+occ_disc<-sapply(occ,function(x) sum(x))
+
+#compared to bayesian
+ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() + geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+```
+
+Comparison table
+
+```{r}
+d<-list(Occupancy=occ,Multinomial=mats)
+d<-melt(d)
+d %>% group_by(L1,Var1) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(L1) %>% summarize(mean_mean=mean(mean),mean_sd=mean(sd),mean_sum=mean(sum))
+```
+
 
 #Observed dataset
 #Read in Data
@@ -1027,7 +1114,7 @@ fitstat<-dcast(fitstat,Model+Draw+Chain~par,value.var="estimate")
 ymin<-round(min(fitstat$fit))
 ymax<-round(max(fitstat$fit))
 ab<-data.frame(x=0:ymax,y=0:ymax)
-disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Field Observations") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
+disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
 disc_obs
 jpeg("Figures/ObsDiscrepancy.jpeg",res=300,height=7,width=6,units="in")
 grid.arrange(psim4,disc_obs,nrow=2)
@@ -1049,7 +1136,7 @@ Number of samples per species
 ##DIC Table
 
 ```{r}
-DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,m$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
+DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,sim_detect$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
 h<-dcast(DICtable,Data~Model)
 print(h)
 write.csv(h,"Figures/DICtable.csv")
