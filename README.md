@@ -1,13 +1,21 @@
 # Occupy
 
 Manuscript prepared for “Standard Article” section of Methods in Ecology and Evolution. 
+
 Title: Bringing hierarchical occupancy models to predicting species interaction networks
+
 Running title: Detection in networks
+
 Word Count: 5700
+
 Authors:
+
 Ben G. Weinstein, corresponding author, email: benjamin.weinstein@stonybrook.edu
+
 Department of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA
+
 Catherine H. Graham, email: Catherine.Graham@stonybrook.edu
+
 Department of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA 
 
 #File Structure
