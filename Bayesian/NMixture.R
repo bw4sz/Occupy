@@ -32,8 +32,8 @@ cat("
     }
     
     #Hyperpriors
-    gamma~dnorm(0.001,0.001)
-    intercept~dnorm(0.001,0.001)
+    gamma~dnorm(0,0.0001)
+    intercept~dnorm(0,0.0001)
     
     tau_alpha ~ dgamma(0.0001,0.0001)
     sigma_int<-pow(1/tau_alpha,0.5) #Derived Quantity

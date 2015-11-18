@@ -1,7 +1,7 @@
 ---
 title: Accounting for detection bias increases trait-matching in a tropical plant-hummingbird network
 author: "Ben Weinstein - Stony Brook University"
-date: "Monday, March 16, 2015"
+date: Sys.time()
 output: html_document
 ---
 
