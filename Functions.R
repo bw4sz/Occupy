@@ -50,7 +50,28 @@ trajF<-function(alpha,beta,x){
   return(predy)
 }
 
-#fits a chisquared residual for a given poisson function
+trajHDI<-function(alpha,beta,x){
+  fdat<-data.frame(alpha=alpha,beta=beta)
+  
+  #fit regression for each input estimate
+  sampletraj<-list()
+  for (s in 1:nrow(fdat)){
+    a<-fdat$alpha[s]
+    b<-fdat$beta[s]
+    b2<-fdat$beta2[s]
+    yp=exp(a + (b*x))
+    
+    #compute pred value
+    sampletraj[[s]]<-data.frame(x=x,y=yp)
+  }
+  
+  sample_all<-rbind_all(sampletraj)
+  
+  #Compute CI intervals
+  predy<-group_by(sample_all,x) %>% summarise(lower=hdi(y)[[1]],upper=hdi(y)[[2]],mean=mean(y,na.rm=T))
+  return(predy)
+}
+
 
 trajState<-function(alpha,beta,x,observed){
   
