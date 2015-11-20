@@ -144,9 +144,7 @@ ob1<-ggplot(obs.state[obs.state$Month==12,],aes(x=Hummingbird,y=Plant,fill=Detec
 
 ob2<-ggplot(obs.state[obs.state$Month==18,],aes(x=Hummingbird,y=Plant,fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red",limits=c(0,max(mdat$True_State))) + ylab("Plant") + ggtitle("Example 2") + xlab("Hummingbird")
 
-ob1
-ob2
-trueplot
+grid.arrange(ob1,ob2,trueplot,nrow=1)
 ```
 
 The left hand panel is the true state for each hummingbird plant combination. The middle and right hand panel are two realizations that might result from a month of sampling given incomplete detection and phenology.
@@ -170,16 +168,16 @@ $$\alpha_i \sim N(intercept,\tau_{\alpha})$$
 $$\beta_i \sim N(\gamma,\tau_{\beta})$$
 
 **Hyperpriors**
-$$gamma \sim N(0.001,0.001)$$
-$$intercept \sim N(0.001,0.001)$$
+$$gamma \sim N(0,0.0001)$$
+$$intercept \sim N(0,0.0001)$$
 
-$$\tau_{\alpha} \sim Gamma(0.001,0.001)$$
-$$\tau_\beta \sim Gamma(0.001,0.001)$$
+$$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
+$$\tau_\beta \sim Gamma(0.0001,0.0001)$$
 
 **Derived quantities**
 
-$$\sigma_{int} = \frac{1}{\tau_{\alpha}}^2$$
-$$\sigma_{slope} = \frac{1}{\tau_{\beta}}^2$$
+$$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
+$$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 
 ##Hierarcichal Bayesian Model without detection
 
