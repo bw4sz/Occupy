@@ -1,31 +1,41 @@
 #extract and create a dataframe of posteriors
 
-extract_par<-function(x){
-#extract desired info from the models
-parsO<-melt(x$BUGSoutput$sims.array)
-colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-(4000/x$BUGSoutput$n.chains)),]
-
-#label species and plants
-l<-levels(parsO$parameter)
-
-#parameters to save
-totrack<-x$parameters.to.save
-
-sp_pl<-data.frame(parameter=l,str_match(l,pattern="(\\d+),(\\d+)")[,-1],par=str_extract(l,"\\w+"))
-
-colnames(sp_pl)<-c("parameter","species","plant","par")
-
-sp_pl[is.na(sp_pl$species),c("species")]<-str_extract(sp_pl[is.na(sp_pl$species),"parameter"],"\\d+")
-
-#merge levels
-pars<-merge(parsO,sp_pl)
-
-#take out deviance
-pars<-pars[!pars$par %in% "deviance",]
-return(pars)
+extract_par<-function(x,data=obs){
+  #extract desired info from the models
+  parsO<-melt(x$BUGSoutput$sims.array)
+  colnames(parsO)<-c("Draw","Chain","parameter","estimate")
+  
+  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-(2000/x$BUGSoutput$n.chains)),]
+  
+  #label species and plants
+  l<-levels(parsO$parameter)
+  
+  #parameters to save
+  totrack<-x$parameters.to.save
+  
+  #assign species index to ragged frame.
+  sp_pl<-data.frame(parameter=l,species=as.numeric(str_match(l,pattern="\\[(\\d+)]")[,2]),par=str_extract(l,"\\w+"))
+  
+  #correct N samples
+  i<-sp_pl$par %in% "Yobs"
+  
+  #Species
+  sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),"Bird"]
+  
+  
+  #Plant
+  #add a NA plant columns
+  sp_pl$plant<-NA
+  sp_pl[i,][,"plant"]<-
+    data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),"Plant"]
+  
+  #merge levels
+  pars<-merge(parsO,sp_pl)
+  
+  #take out deviance
+  pars<-pars[!pars$par %in% "deviance",]
+  return(pars)
 }
-
 #fits a curve for given poisson function
 
 trajF<-function(alpha,beta,x){
