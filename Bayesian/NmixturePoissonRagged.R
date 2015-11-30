@@ -26,7 +26,7 @@ cat("
     }
     
     for (i in 1:Birds){
-    detect[i] ~ dunif(0,.5)
+    detect[i] ~ dnorm(dprior,tau_detect)
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta[i] ~ dnorm(gamma,tau_beta)    
     }
@@ -37,7 +37,8 @@ cat("
     
     #Intercept grouping
     intercept~dnorm(0,0.0001)
-    
+    dprior~dbeta(1,5)
+
     # Group intercept variance
     tau_alpha ~ dgamma(0.0001,0.0001)
     sigma_int<-pow(1/tau_alpha,0.5) #Derived Quantity
@@ -45,6 +46,10 @@ cat("
     #Slope variance, turning precision to sd
     tau_beta ~ dgamma(0.0001,0.0001)
     sigma_slope<-pow(1/tau_beta,0.5)
+
+    #detect variance, turning precision to sd
+    tau_detect ~ dgamma(0.0001,0.0001)
+    sigma_detect<-pow(1/tau_detect,0.5)
 
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data

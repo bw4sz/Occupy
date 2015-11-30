@@ -1,7 +1,6 @@
 ---
 title: Accounting for detection bias increases trait-matching in a tropical plant-hummingbird network
 author: "Ben Weinstein - Stony Brook University"
-date: Sys.time()
 output:
   html_document:
     toc: true
@@ -35,6 +34,10 @@ set.seed(3)
 
 source("Functions.R")
 #load("Abundance.RData")
+```
+
+```{r,echo=F}
+paste("Run Completed at",Sys.time())
 ```
 
 #Simulation   
@@ -226,13 +229,13 @@ Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","Yobs","gamma","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","Yobs","gamma","fit","fitnew","dprior","sigma_detect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- max(runs*.0001,1)   #thinning rate
 nb <- runs*.95 # number to discard for burn-in
-nc <- 2  # number of chains
+nc <- 1  # number of chains
 
 #Jags
 
@@ -340,13 +343,13 @@ Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.25,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","Yobs","gamma","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","Yobs","gamma","fit","fitnew","dprior","sigma_detect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- max(runs*.0001,1)   #thinning rate
 nb <- runs*.95 # number to discard for burn-in
-nc <- 2  # number of chains
+nc <- 1  # number of chains
 
 #Jags
 
@@ -428,7 +431,7 @@ psim
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
 
-p<-ggplot(parsall[parsall$par %in% c("gamma","polygamma","intercept","sigma_int","sigma_slope","sigma_polyslope"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
+p<-ggplot(parsall[parsall$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
 tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
@@ -644,7 +647,10 @@ int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teusc
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
 #Some reasonable level of presences, 20 points
-keep<-names(which(table(int$Hummingbird) > 20))
+keep<-names(which(table(int$Hummingbird) > 25))
+
+#sparkling violetear changes through time, seems to violate closed system assumption
+keep<-keep[!keep %in% "Sparkling Violetear"]
 int<-int[int$Hummingbird %in% keep, ]
 dim(int)
 m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
@@ -893,13 +899,13 @@ initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9995,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","Yobs","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","Yobs","fit","fitnew","dprior","sigma_detect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- max(runs*0.0001,1)   #thinning rate
 nb <- runs*0.95 # number to discard for burn-in
-nc <- 2  # number of chains
+nc <- 1  # number of chains
 
 #Jags
 
@@ -935,7 +941,7 @@ ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=es
 
 ```{r,eval=T}
 
-runs<-200000
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -962,13 +968,13 @@ initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.25,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","Yobs","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","Yobs","fit","fitnew","dprior","sigma_detect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- max(runs*0.0001,1)   #thinning rate
 nb <- runs*0.95 # number to discard for burn-in
-nc <- 2  # number of chains
+nc <- 1  # number of chains
 
 #Jags
 
@@ -1004,7 +1010,7 @@ ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11,eval=T}
-ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope","dprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
 ```
@@ -1032,7 +1038,7 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=5,fig.width=13}
 
-ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
 ##Species Predictions
@@ -1198,7 +1204,7 @@ return(rmerge)
 }
 
 #same number of draws as bayesian
-cl<-makeCluster(12,"SOCK")
+cl<-makeCluster(15,"SOCK")
 registerDoSNOW(cl)
 mats<-foreach(x=1:length(fitstat[fitstat$Model %in% "Detection","fit"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
 stopCluster(cl)
@@ -1279,10 +1285,10 @@ names(occ)<-1:length(occ)
 
 ```{r}
 #Multinomial
-multi_disc<-sapply(mats,function(x) sum(x))
+multi_disc<-sapply(mats,function(x) mean(x))
 
 #Occupancy
-occ_disc<-sapply(occ,function(x) sum(x))
+occ_disc<-sapply(occ,function(x) mean(x))
 
 #compared to bayesian
 ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() + geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
@@ -1293,7 +1299,9 @@ Comparison table
 ```{r}
 d<-list(Occupancy=occ,Multinomial=mats)
 d<-melt(d)
-d %>% group_by(L1,Var1) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(L1) %>% summarize(mean_mean=mean(mean),mean_sd=mean(sd),mean_sum=mean(sum))
+colnames(d)<-c("Bird","Plant","value","Iteration","Model")
+
+d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=mean(mean),mean_sd=mean(sd),mean_sum=mean(sum))
 ```
 
 ```{r}
