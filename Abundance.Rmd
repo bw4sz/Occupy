@@ -235,7 +235,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","Yo
 ni <- runs  # number of draws from the posterior
 nt <- max(runs*.0001,1)   #thinning rate
 nb <- runs*.95 # number to discard for burn-in
-nc <- 1  # number of chains
+nc <- 2  # number of chains
 
 #Jags
 
@@ -349,7 +349,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","Yo
 ni <- runs  # number of draws from the posterior
 nt <- max(runs*.0001,1)   #thinning rate
 nb <- runs*.95 # number to discard for burn-in
-nc <- 1  # number of chains
+nc <- 2  # number of chains
 
 #Jags
 
@@ -905,7 +905,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 ni <- runs  # number of draws from the posterior
 nt <- max(runs*0.0001,1)   #thinning rate
 nb <- runs*0.95 # number to discard for burn-in
-nc <- 1  # number of chains
+nc <- 2  # number of chains
 
 #Jags
 
@@ -974,7 +974,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 ni <- runs  # number of draws from the posterior
 nt <- max(runs*0.0001,1)   #thinning rate
 nb <- runs*0.95 # number to discard for burn-in
-nc <- 1  # number of chains
+nc <- 2  # number of chains
 
 #Jags
 
