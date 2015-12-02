@@ -5,7 +5,7 @@ extract_par<-function(x,data=obs){
   parsO<-melt(x$BUGSoutput$sims.array)
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
   
-  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-(2000/x$BUGSoutput$n.chains)),]
+  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-(3000/x$BUGSoutput$n.chains)),]
   
   #label species and plants
   l<-levels(parsO$parameter)
@@ -17,7 +17,7 @@ extract_par<-function(x,data=obs){
   sp_pl<-data.frame(parameter=l,species=as.numeric(str_match(l,pattern="\\[(\\d+)]")[,2]),par=str_extract(l,"\\w+"))
   
   #correct N samples
-  i<-sp_pl$par %in% "Yobs"
+  i<-sp_pl$par %in% "y.new"
   
   #Species
   sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),"Bird"]

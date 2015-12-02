@@ -37,7 +37,7 @@ cat("
     
     #Intercept grouping
     intercept~dnorm(0,0.0001)
-    dprior~dbeta(1,3)
+    dprior~dunif(0,0.5)
 
     # Group intercept variance
     tau_alpha ~ dgamma(0.0001,0.0001)

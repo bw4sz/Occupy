@@ -25,7 +25,7 @@ library(boot)
 library(picante)
 library(bipartite)
 
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,cache.path = 'jp_cache/',fig.align='center',fig.path="figure/")
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figure/")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
@@ -69,7 +69,7 @@ $$\beta = N(-0.01,0.001)$$
 h_species=10
 plant_species=20
 months=24
-detection=runif(h_species,0,0.5)
+detection= runif(h_species,0,0.5)
 phenology=1
 
 #Bill sizes
@@ -168,7 +168,7 @@ ggplot(d,aes(x=True_State,y=Detections,col=Month)) + geom_point() + theme_bw() +
 $$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
 $$N_{i,j} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
-$$detect_i \sim U(0,1)$$     
+$$detect_i \sim N(dprior,\tau_detect)$$     
 
 **Priors**
 
@@ -176,19 +176,21 @@ $$\alpha_i \sim N(intercept,\tau_{\alpha})$$
 $$\beta_i \sim N(\gamma,\tau_{\beta})$$
 
 **Hyperpriors**
+$$dprior \sim Beta(1,3)$$
 $$gamma \sim N(0,0.0001)$$
 $$intercept \sim N(0,0.0001)$$
 
 $$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
 $$\tau_\beta \sim Gamma(0.0001,0.0001)$$
+$$\tau_detect \sim Gamma(0.0001,0.0001)$$
 
 **Derived quantities**
 
 $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
+$$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 #Simulated Data without detection
-
 
 ```{r}
 #melt into input shape
@@ -203,7 +205,7 @@ obs<-merge(obs,traitY)
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-100000
+runs<-1000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -229,11 +231,11 @@ Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","Yobs","gamma","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","y.new","gamma","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- max(runs*.0001,1)   #thinning rate
+nt <- 5   #thinning rate
 nb <- runs*.95 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -316,7 +318,7 @@ pars_niave$Model<-"Without Detection"
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-100000
+runs<-1000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -342,11 +344,11 @@ Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.25,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","Yobs","gamma","fit","fitnew","dprior","sigma_detect")
+ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","y.new","gamma","fit","fitnew","dprior","sigma_detect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- max(runs*.0001,1)   #thinning rate
+nt <- 5   #thinning rate
 nb <- runs*.95 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -378,7 +380,7 @@ ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col
 ```
 
 ```{r,fig.height=5,fig.width=11,eval=T}
-ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ##Posteriors
@@ -395,7 +397,7 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 ```
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
-p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
+p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
 tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
@@ -410,7 +412,7 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 
 ##Compare simulation posteriors with and without detection
 
-```{r,cache=FALSE,fig.width=7,fig.height=5}
+```{r,cache=FALSE,fig.width=8,fig.height=9}
 pars$Model<-"Detection"
 
 #Bind to other dataset
@@ -869,7 +871,7 @@ Similiarly, the trait matrix needs to reflect this indexing.
 # Observed Data Without detection
 
 ```{r,eval=T}
-runs<-50000
+runs<-1000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -897,11 +899,11 @@ initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9995,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","Yobs","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","y.new","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- max(runs*0.0001,1)   #thinning rate
+nt <- 5   #thinning rate
 nb <- runs*0.95 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -939,7 +941,7 @@ ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes
 
 ```{r,eval=T}
 
-runs<-50000
+runs<-1000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -966,11 +968,11 @@ initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.25,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","Yobs","fit","fitnew","dprior","sigma_detect")
+ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","y.new","fit","fitnew","dprior","sigma_detect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- max(runs*0.0001,1)   #thinning rate
+nt <- 5   #thinning rate
 nb <- runs*0.95 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -1008,7 +1010,7 @@ ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11,eval=T}
-ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope","dprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
 ```
@@ -1020,7 +1022,7 @@ parsObs<-rbind(pars,pars_niave)
 
 ##Posteriors
 
-```{r,cache=FALSE,fig.width=11,fig.height=12}
+```{r,cache=FALSE,fig.width=11,fig.height=14}
 ###Posterior Distributions
 ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
 ```
@@ -1043,7 +1045,7 @@ ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope",
 
 ```{r,fig.height=10,fig.width=11,eval=T}
 
-castdf<-dcast(parsObs[parsObs$par %in% c("beta","alpha","polybeta"),], species +Chain +Model+ Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -1201,8 +1203,8 @@ for (x in 1:nrow(r)){
 return(rmerge)
 }
 
-#same number of draws as bayesian
-cl<-makeCluster(15,"SOCK")
+#same number of draws as bayesian posteriors
+cl<-makeCluster(20,"SOCK")
 registerDoSNOW(cl)
 mats<-foreach(x=1:length(fitstat[fitstat$Model %in% "Detection","fit"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
 stopCluster(cl)
@@ -1261,7 +1263,7 @@ For each of the posterior draws, what is the sum interactions?
 
 ```{r}
 head(pars)
-N<-pars[pars$Model %in% "Detection" & pars$par %in% "Yobs",]
+N<-pars[pars$Model %in% "Detection" & pars$par %in% "y.new",]
 ```
 
 ```{r}
@@ -1303,6 +1305,6 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ```
 
 ```{r}
-save.image("Abundance.Rdata")
+#save.image("Abundance.Rdata")
 ```
 
