@@ -58,7 +58,7 @@ $$\alpha=N(3,0.01)$$
 $$\beta = N(-0.01,0.001)$$
 
 * Imperfect detection 
-* $p_i = U(0,1)$ 
+* $p_i = U(0,.5)$ 
 * 24 month replicates
 * Phenology = 0.5 (plants are in flower/present .5 of surveys)
 
@@ -205,7 +205,7 @@ obs<-merge(obs,traitY)
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -231,12 +231,12 @@ Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","dprior","sigma_detect")
+ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- 5   #thinning rate
-nb <- runs*.95 # number to discard for burn-in
+nb <- runs*.97 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -266,7 +266,7 @@ ggplot(pars_niave[pars_niave$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=
 ```
 
 ```{r,fig.height=5,fig.width=11,eval=T}
-ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ##Posteriors
@@ -284,7 +284,7 @@ ggsave("Figures/SimulationPosteriorsNoDetect.jpg",dpi=300,height=8,width=8)
 ```
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
-p<-ggplot(pars_niave[pars_niave$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
+p<-ggplot(pars_niave[pars_niave$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
 tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
@@ -318,7 +318,7 @@ pars_niave$Model<-"Without Detection"
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -904,7 +904,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- 5   #thinning rate
-nb <- runs*0.95 # number to discard for burn-in
+nb <- runs*.97 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -941,7 +941,7 @@ ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes
 
 ```{r,eval=T}
 
-runs<-100000
+runs<-300000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -972,8 +972,8 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- 5   #thinning rate
-nb <- runs*0.95 # number to discard for burn-in
+nt <- 10   #thinning rate
+nb <- runs*0.97 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
