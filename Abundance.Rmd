@@ -33,7 +33,6 @@ set.seed(3)
 #source functions
 
 source("Functions.R")
-#load("Abundance.RData")
 ```
 
 ```{r,echo=F}
@@ -51,7 +50,6 @@ I first create data with constant detection for each hummingbird speices, and th
 * Twenty plants
 * Range of corolla sizes (mm) ~ Pois(2)
 * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
-* For each plant the occupancy is N($\lambda$,0.2) (truncated 0-1) 
 * Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
 $$log(\lambda)<-\alpha_i + \beta_i *traitmatch$$
 $$\alpha=N(3,0.01)$$
@@ -59,17 +57,20 @@ $$\beta = N(-0.01,0.001)$$
 
 * Imperfect detection 
 * $p_i = U(0,.5)$ 
-* 24 month replicates
+* 36 month replicates
 * Phenology = 0.5 (plants are in flower/present .5 of surveys)
 
 **View simulated strength and form of trait matching **
+
+```{r}
+#load("Abundance.RData")
+```
 
 ```{r,fig.height=5,fig.width=8}
 #Number of hummingbird species
 h_species=10
 plant_species=20
-months=24
-detection= runif(h_species,0,0.5)
+months=36
 phenology=1
 
 #Bill sizes
@@ -80,13 +81,17 @@ Corolla<-rpois(plant_species,15)
 
 #Subtract both and take absolute value
 traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
-
+  
+#detection priors
+dpr<-.25
+sigma_det<-0.1
 #regression slope
 gamma=-0.5
 intercept<-3
 sigma_slope<- 0.15
 sigma_intercept<- 0.15
 
+detection= rnorm(h_species,dpr,sigma_det)
 beta<-rnorm(h_species,gamma,sigma_slope)
 alpha<-rnorm(h_species,intercept,sigma_intercept)
 
@@ -205,7 +210,7 @@ obs<-merge(obs,traitY)
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-200000
+runs<-45000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -228,7 +233,7 @@ Dat <- list(
 Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 
 #Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dprior=rep(0.9999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -236,7 +241,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","yn
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- 5   #thinning rate
-nb <- runs*.97 # number to discard for burn-in
+nb <- runs*.96 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -262,7 +267,6 @@ pars_niave<-extract_par(sim_niave,data=obs)
 ```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
 ###Chains
 ggplot(pars_niave[pars_niave$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-
 ```
 
 ```{r,fig.height=5,fig.width=11,eval=T}
@@ -301,7 +305,7 @@ ggsave("Figures/SimulationHNoDetect.jpg",dpi=300,height=4,width=10)
 
 ```{r,fig.height=4,fig.width=4}
 
-castdf<-group_by(pars_niave,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
+castdf<-group_by(pars_niave,Chain) %>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
 
 castdf<-dcast(pars_niave[pars_niave$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
 
@@ -318,7 +322,7 @@ pars_niave$Model<-"Without Detection"
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-200000
+runs<-80000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -400,7 +404,7 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
+tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope,dprior=dpr,sigma_detect=sigma_det))
 
 colnames(tr)<-c("value","par")
 
@@ -450,7 +454,7 @@ Does accounting for non-independence and detection change our estimate of trait 
 
 ```{r,fig.height=4,fig.width=4}
 
-castdf<-group_by(pars,Chain) %>% sample_n(2000)%>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
+castdf<-group_by(pars,Chain) %>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
 
 castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
 
@@ -585,9 +589,31 @@ qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + ge
 
 #Compare Bayesian Occupancy and Multinomial using true known interactions
 
+## No Detection Occupancy Model
+
 ```{r}
-head(pars)
-N<-pars[pars$par %in% "ynew",]
+N<-parsall[parsall$Model %in% "Without Detection" & parsall$par %in% "ynew",]
+
+bydraw<-split(N,list(N$Chain,N$Draw))
+occ_nodetect<-lapply(bydraw,function(x){
+  r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
+    #for each position what is the chisq
+  rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+  for (x in 1:nrow(r)){
+    for (y in 1:ncol(r)){
+     rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+      }
+    }
+  return(rmerge)
+})
+
+names(occ_nodetect)<-1:length(occ_nodetect)
+```
+
+##With Detection
+
+```{r}
+N<-parsall[parsall$Model %in% "Detection" & parsall$par %in% "ynew",]
 bydraw<-split(N,list(N$Chain,N$Draw))
 occ<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
@@ -604,27 +630,34 @@ occ<-lapply(bydraw,function(x){
 names(occ)<-1:length(occ)
 ```
 
+Compare predicted matrices
+
 ```{r}
 #Multinomial
-multi_disc<-sapply(mats,function(x) sum(x))
+multi_disc<-sapply(mats,function(x) mean(x))
 
-#Occupancy
-occ_disc<-sapply(occ,function(x) sum(x))
+#occupancy without detection
+occno_disc<-sapply(occ_nodetect,function(x) mean(x))
+
+#Occupancy with detection
+occ_disc<-sapply(occ,function(x) mean(x))
 
 #compared to bayesian
-ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() + geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-##Comparison table
+##Comparison table among all three approaches
 
 ```{r}
-d<-list(Occupancy=occ,Multinomial=mats)
+d<-list(Occupancy=occ,Multinomial=mats,NoDetection=occ_nodetect)
 d<-melt(d)
-d %>% group_by(L1,Var1) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(L1) %>% summarize(mean_mean=mean(mean),mean_sd=mean(sd),mean_sum=mean(sum))
+colnames(d)<-c("Bird","Plant","value","Iteration","Model")
+
+d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=mean(mean),mean_sd=sd(mean),mean_sum=mean(sum))
 ```
 
 #Observed dataset
-Read in Data
+
 ```{r}
 #read in flower morphology data, comes from Nectar.R
 droppath<-"C:/Users/Ben/Dropbox/"
@@ -871,7 +904,7 @@ Similiarly, the trait matrix needs to reflect this indexing.
 # Observed Data Without detection
 
 ```{r,eval=T}
-runs<-100000
+runs<-70000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -903,7 +936,7 @@ ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_sl
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- 5   #thinning rate
+nt <- 7   #thinning rate
 nb <- runs*.97 # number to discard for burn-in
 nc <- 2  # number of chains
 
@@ -941,7 +974,7 @@ ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes
 
 ```{r,eval=T}
 
-runs<-300000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -1129,16 +1162,16 @@ finaldat<-merge(predState,orig,by.x=c("species","plant"),by.y=c("Bird","Plant"))
 ##Discrepancy 
 
 The goodness if of fit is a measured as chi-squared. The expected value for each day is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
-Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. 
+Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. In addition, a model with 0 discrepancy would likely be seriously overfit and have little to no predictive power.
 
-```{r,fig.height=4,fig.width=8}
+```{r,fig.height=4,fig.width=8,message=F,warning=F}
 fitstat<-parsObs[parsObs$par %in% c("fit","fitnew"),]
 fitstat<-dcast(fitstat,Model+Draw+Chain~par,value.var="estimate")
 
 ymin<-round(min(fitstat$fit))
 ymax<-round(max(fitstat$fit))
 ab<-data.frame(x=0:ymax,y=0:ymax)
-disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
+disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew)))) + facet_wrap(~Model,scales = "free")
 disc_obs
 jpeg("Figures/ObsDiscrepancy.jpeg",res=300,height=7,width=6,units="in")
 grid.arrange(psim4,disc_obs,nrow=2)
@@ -1214,55 +1247,35 @@ multi_disc<-sapply(mats,function(x) mean(x))
 qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
 ```
 
-Exploring multinomial fits.
 
-* How does multinomial fit for a range of trait sizes?
-* For a range of interaction intensities
-* For a each species.
+#Compare Bayesian Occupancy and multinomial
+
+## No Detection Occupancy Model
 
 ```{r}
-names(mats)<-1:length(mats)
-
-ml<-melt(mats)
-colnames(ml)<-c("jBird","jPlant","Chisq","Iteration")
-
-#merge with input data.
-org<-melt(mat)
-colnames(org)<-c("Hummingbird","Iplant_Double","Yobs")
-org$jBird<-as.numeric(org$Hummingbird)
-org$jPlant<-as.numeric(org$Iplant_Double)
-
-ml<-merge(ml,org,by=c("jBird","jPlant"))
-
-#merge with trait data
-ml<-merge(ml,traitmelt,by=c("Hummingbird","Iplant_Double"))
-
-#Discrepancy by traitmatch
-tchisq<-ml %>% group_by(Traitmatch) %>% summarize(mean=mean(Chisq),Low=quantile(Chisq,0.025),High=quantile(Chisq,0.975)) %>% arrange(desc(mean))
-ggplot(tchisq,aes(x=Traitmatch,y=mean)) + geom_line() +  geom_ribbon(aes(ymin=Low,ymax=High),fill='red',alpha=.4) + labs(y="Mean Discrepancy")
+N<-parsObs[parsObs$Model %in% "Without Detection" & parsObs$par %in% "ynew",]
 ```
 
 ```{r}
-ychisq<-ml %>% group_by(Yobs) %>% summarize(mean=mean(Chisq),Low=quantile(Chisq,0.05),High=quantile(Chisq,0.95))
+bydraw<-split(N,list(N$Chain,N$Draw))
+occ_nodetect<-lapply(bydraw,function(x){
+  r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
+    #for each position what is the chisq
+  rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+  for (x in 1:nrow(r)){
+    for (y in 1:ncol(r)){
+     rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+      }
+    }
+  return(rmerge)
+})
 
-ggplot(ychisq,aes(x=Yobs,y=mean)) + geom_ribbon(aes(ymin=Low,ymax=High),fill='red',alpha=.6) + geom_point(size=3) + geom_smooth() + labs(y="Mean Discrepancy",x="Observed Intensity")
+names(occ_nodetect)<-1:length(occ_nodetect)
 ```
 
-```{r}
-#By Species
-ggplot(ml,aes(x=Hummingbird,y=Chisq)) + geom_boxplot(aes(group=Hummingbird)) + labs(y="Discrepancy",x="Species") + coord_flip() 
-
-ml %>% group_by(Hummingbird) %>% summarize(median=median(Chisq)) %>% arrange(median)
-```
-
-##Compare Bayesian Occupancy and multinomial
-
-Compare aggregated matrix
-
-For each of the posterior draws, what is the sum interactions?
+##With Detection
 
 ```{r}
-head(pars)
 N<-pars[pars$Model %in% "Detection" & pars$par %in% "ynew",]
 ```
 
@@ -1283,25 +1296,30 @@ occ<-lapply(bydraw,function(x){
 names(occ)<-1:length(occ)
 ```
 
+Compared to multinomial
+
 ```{r}
 #Multinomial
 multi_disc<-sapply(mats,function(x) mean(x))
 
-#Occupancy
+#occupancy without detection
+occno_disc<-sapply(occ_nodetect,function(x) mean(x))
+
+#Occupancy with detection
 occ_disc<-sapply(occ,function(x) mean(x))
 
 #compared to bayesian
-ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() + geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue")
+ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() + geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-Comparison table
+Comparison table among all three approaches
 
 ```{r}
-d<-list(Occupancy=occ,Multinomial=mats)
+d<-list(Occupancy=occ,Multinomial=mats,NoDetection=occ_nodetect)
 d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 
-d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=mean(mean),mean_sd=mean(sd),mean_sum=mean(sum))
+d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=mean(mean),mean_sd=sd(mean),mean_sum=mean(sum))
 ```
 
 ```{r}
