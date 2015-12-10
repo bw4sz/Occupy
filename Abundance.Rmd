@@ -1,5 +1,5 @@
 ---
-title: Hierarchical occupancy models for species interactions: Simulations
+title: Hierarchical occupancy models for species interactions - Simulations
 author: "Ben Weinstein - Stony Brook University"
 output:
   html_document:
@@ -56,12 +56,11 @@ $$\beta = N(-0.01,0.001)$$
 * Imperfect detection 
 * $p_i = U(0,.5)$ 
 * 36 month replicates
-* Phenology = 0.5 (plants are in flower/present .5 of surveys)
 
 **View simulated strength and form of trait matching **
 
 ```{r}
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation Parameters
@@ -138,9 +137,9 @@ ggplot(mdat,aes(x=Traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point()
 
 ```{r}
 obs.state<-melt(obs)
-colnames(obs.state)<-c("Bird","Plant","Month","Detections")
-d<-merge(mdat,obs.state,by=c("Bird","Plant","Month"))
-ggplot(d,aes(x=Interactions,y=Detections,col=Month)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
+colnames(obs.state)<-c("Bird","Plant","Time","Yobs")
+d<-merge(mdat,obs.state,by=c("Bird","Plant","Time"))
+ggplot(d,aes(x=Interactions,y=Yobs,col=Time)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
 ```
 
 # Hierarcichal Occupancy Model
@@ -170,18 +169,7 @@ $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
-#Simulated Data without detection
-
-```{r}
-#melt into input shape
-obs<-melt(obs)
-colnames(obs)<-c("Bird","Plant","Time","Yobs")
-
-#merge with trait data
-traitY<-melt(traitmatch)
-colnames(traitY)<-c("Bird","Plant","traitmatch")
-obs<-merge(obs,traitY)
-```
+#Simulated data without detection
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
@@ -195,14 +183,14 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 #Input Data
 Dat <- list(
-  Yobs=obs$Yobs,
-  Bird=obs$Bird,
-  Plant=obs$Plant,
-  Time=obs$Time,
-  traitmatch=obs$traitmatch,
+  Yobs=obs.state$,
+  Bird=obs.state$Bird,
+  Plant=obs.state$Plant,
+  Time=obs.state$Time,
+  traitmatch=obs.state$traitmatch,
   #number of birds to iterate
-  Birds=max(obs$Bird),
-  Nobs=length(obs$Yobs))
+  Birds=max(obs.state$Bird),
+  Nobs=length(obs.state$Yobs))
 
 #A blank Y matrix - all present
 Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
@@ -233,7 +221,7 @@ sim_niave = jags(inits=InitStage,
                  DIC=T)
 ```
 
-```{r,eval=F}
+```{r,eval=TALSE}
 #recompile if needed
 runs<-5000
 recompile(sim_niave)
@@ -242,12 +230,12 @@ sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.75)
 
 ```{r}
 pars_niave<-extract_par(sim_niave,data=obs)
+pars_niave$Model<-c("Without Detection")
 ```
 
 ##Assess Convergence
 
-```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
-###Chains
+```{r,cache=FALSE,fig.width=11,fig.height=5}
 ggplot(pars_niave[pars_niave$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
@@ -269,8 +257,8 @@ psim
 ggsave("Figures/SimulationPosteriorsNoDetect.jpg",dpi=300,height=8,width=8)
 ```
 
-```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
-p<-ggplot(pars_niave[pars_niave$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
+```{r,cache=FALSE,fig.height=3,fig.width=10}
+p<-ggplot(pars_niave[pars_niave$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw()
 
 #Add true values
 tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
@@ -286,7 +274,6 @@ ggsave("Figures/SimulationHNoDetect.jpg",dpi=300,height=4,width=10)
 ##Predicted Relationship 
 
 ```{r,fig.height=4,fig.width=4}
-
 castdf<-group_by(pars_niave,Chain) %>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
 
 castdf<-dcast(pars_niave[pars_niave$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
@@ -302,9 +289,9 @@ pars_niave$Model<-"Without Detection"
 
 # Simulated data with detection
 
-```{r,eval=F}
+```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-20000
+runs<-30000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -341,8 +328,7 @@ nc <- 2  # number of chains
 #Jags
 
 sim_detect = jags(inits=InitStage,
-                 n.chains=nc,
-                 model.file="Bayesian/NmixturePoissonRagged.jags",
+                 n.chains=nc, model.file="Bayesian/NmixturePoissonRagged.jags",
                  working.directory=getwd(),
                  data=Dat,
                  parameters.to.save=ParsStage,
@@ -352,7 +338,7 @@ sim_detect = jags(inits=InitStage,
                  DIC=T)
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 runs<-5000
 recompile(sim_detect)
@@ -361,16 +347,16 @@ sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.75)
 
 ```{r}
 pars<-extract_par(sim_detect,data=obs)
+pars$Model<-"Detection"
 ```
 
 ##Assess Convergence
 
-```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
-###Chains
+```{r,cache=FALSE,fig.width=11,fig.height=5}
 ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-```{r,fig.height=5,fig.width=11,eval=T}
+```{r,fig.height=5,fig.width=11}
 ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
@@ -387,7 +373,7 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 #ggsave("Figures/SimulationPosteriors.jpg",dpi=300,height=8,width=8)
 ```
 
-```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
+```{r,cache=FALSE,fig.height=3,fig.width=10}
 p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
@@ -404,8 +390,6 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 ##Compare simulation posteriors with and without detection
 
 ```{r,cache=FALSE,fig.width=8,fig.height=9}
-pars$Model<-"Detection"
-
 #Bind to other dataset
 parsall<-rbind.data.frame(pars,pars_niave)
 parsall$Model<-as.factor(parsall$Model)
@@ -421,7 +405,7 @@ psim
 #ggsave("Figures/SimulationPosteriorsBoth.jpg",dpi=300,height=8,width=8)
 ```
 
-```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
+```{r,cache=FALSE,fig.height=3,fig.width=10}
 p<-ggplot(parsall[parsall$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
@@ -439,7 +423,6 @@ psim2
 Does accounting for non-independence and detection change our estimate of trait matching?
 
 ```{r,fig.height=4,fig.width=4}
-
 castdf<-group_by(pars,Chain) %>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
 
 castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
@@ -478,7 +461,6 @@ Black line is the true relationship. The red line is the posterior mean with con
 Since I have simualted the data, it should fit as well as any random dataset drawn from the estimated parameters. An ideal fit would be posterior values sitting along the 1:1 line.
 
 ```{r,fig.height=4,fig.width=8}
-
 fitstat<-droplevels(parsall[parsall$par %in% c("fit","fitnew"),])
 fitstat<-dcast(fitstat,Draw+Chain+Model~par,value.var="estimate")
 
@@ -523,7 +505,6 @@ What is the discrepancy of a multinomial approach?
 Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus mean observed.
 
 ```{r}
-
 #define discrep function
 chisq<-function(o,e){(o-e)^2/(e+0.5)}
 
@@ -543,7 +524,7 @@ rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
 #for each position what is the chisq
 for (x in 1:nrow(r)){
   for (y in 1:ncol(r)){
-   rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
+   rmerge[x,y]<-chisq(e=r[x,y],o=true_state[x,y])
   }
 }
 
@@ -553,7 +534,7 @@ return(rmerge)
 
 multi_disc<-sapply(mats,function(x) sum(x))
 
-qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
+qplot(multi_disc)+ xlab("Chi-squared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
 ```
 
 #Compare Bayesian Occupancy and Multinomial using true known interactions
@@ -575,7 +556,7 @@ occ_nodetect<-lapply(occ_nodetect_matrix,function(r){
   rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
   for (x in 1:nrow(r)){
     for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
+     rmerge[x,y]<-chisq(e=r[x,y],o=true_state[x,y])
       }
     }
   return(rmerge)
@@ -600,7 +581,7 @@ occ<-lapply(occ_matrix,function(r){
   rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
   for (x in 1:nrow(r)){
     for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
+     rmerge[x,y]<-chisq(e=r[x,y],o=true_state[x,y])
       }
     }
   return(rmerge)
@@ -647,7 +628,6 @@ h<-simdat[which.max(simdat$True_State),c("Bird","Plant")]
 d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("High Visitation Example")
-
 
 h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
 d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
