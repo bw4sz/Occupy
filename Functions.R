@@ -1,11 +1,11 @@
 #extract and create a dataframe of posteriors
 
-extract_par<-function(x,data=obs){
+extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   #extract desired info from the models
   parsO<-melt(x$BUGSoutput$sims.array)
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
   
-  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-(3000/x$BUGSoutput$n.chains)),]
+  parsO<-parsO[!parsO$Draw %in% 1:(max(parsO$Draw)-(2000/x$BUGSoutput$n.chains)),]
   
   #label species and plants
   l<-levels(parsO$parameter)
@@ -20,14 +20,14 @@ extract_par<-function(x,data=obs){
   i<-sp_pl$par %in% "ynew"
   
   #Species
-  sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),"Bird"]
+  sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Bird]
   
   
   #Plant
   #add a NA plant columns
   sp_pl$plant<-NA
   sp_pl[i,][,"plant"]<-
-    data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),"Plant"]
+    data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Plant]
   
   #merge levels
   pars<-merge(parsO,sp_pl)

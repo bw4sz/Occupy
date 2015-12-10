@@ -1,5 +1,5 @@
 ---
-title: Accounting for detection bias increases trait-matching in a tropical plant-hummingbird network
+title: Hierarchical occupancy models for species interactions: Simulations
 author: "Ben Weinstein - Stony Brook University"
 output:
   html_document:
@@ -35,13 +35,11 @@ set.seed(3)
 source("Functions.R")
 ```
 
-```{r,echo=F}
+```{r,echo=F,cache=FALSE}
 paste("Run Completed at",Sys.time())
 ```
 
 #Simulation   
-
-I first create data with constant detection for each hummingbird speices, and the interaction frequency is a function of a species hierarcichal model and corolla similarity. There is uneven sampling among species.
 
 ### Parameters
 
@@ -66,12 +64,13 @@ $$\beta = N(-0.01,0.001)$$
 #load("Abundance.RData")
 ```
 
+#Simulation Parameters
+
 ```{r,fig.height=5,fig.width=8}
 #Number of hummingbird species
 h_species=10
 plant_species=20
 months=36
-phenology=1
 
 #Bill sizes
 Bill<-rpois(h_species,10)
@@ -79,93 +78,69 @@ Bill<-rpois(h_species,10)
 #Corolla sizes
 Corolla<-rpois(plant_species,15)
 
-#Subtract both and take absolute value
+#Subtract both and take absolute value, convert cm
 traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
   
 #detection priors
 dpr<-.25
 sigma_det<-0.1
+
 #regression slope
-gamma=-0.5
-intercept<-3
-sigma_slope<- 0.15
-sigma_intercept<- 0.15
+gamma<- -0.5
+intercept<- 3
+sigma_slope<- 0.2
+sigma_intercept<- 0.4
 
 detection= rnorm(h_species,dpr,sigma_det)
 beta<-rnorm(h_species,gamma,sigma_slope)
 alpha<-rnorm(h_species,intercept,sigma_intercept)
-
-#fit regression
-lambda<-exp(alpha + beta * traitmatch)
-
-true_interactions<-sapply(lambda,function(x){rpois(1,x)})
-
-#convert to matrix
-true_interactions<-matrix(nrow=h_species,ncol=plant_species,data=true_interactions)
-
-#combine and melt into a single datafFrame
-mdat<-dcast(melt(list(y=true_interactions,x=traitmatch)),Var1+Var2~L1)
-
-ggplot(mdat,aes(x=x,y=y,col=as.factor(Var1))) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson",formula=y~x) + theme_bw() + labs(x="Bill-Corolla Difference",y="Occurrences","Hummingbird") + ggtitle("Correlation in Simulated Data") + labs(col="Species")
-
 ```
 
-### True Interaction Matrix
+#Compute true interaction matrices
 
-```{r,fig.width=12}
-#Reshape into a nicer format
-colnames(mdat)<-c("Hummingbird","Plant","Bill_Diff","True_State")
-
-trueplot<-ggplot(mdat,aes(y=as.factor(Plant),x=as.factor(Hummingbird),fill=True_State)) + geom_tile() + labs(x="Hummingbird",y="Plant",fill="Presence") + ggtitle("True State ") + scale_fill_continuous(low="white",high="red","Occurrences")
-```
-
-```{r,fig.width=11,fig.height=4}
-##Simulate detection 
-
+```{r,eval=T}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,months))
-
-#Which months are plants in bloom?
-#This is the phenology matrix
-sampled<-replicate(plant_species,rbinom(months,1,phenology))
-sampled[sampled==0]<-NA
+lambda<-array(dim=c(h_species,plant_species,months))
+N<-array(dim=c(h_species,plant_species,months))
 
 for(x in 1:h_species){
   for (y in 1:plant_species){
+    for (z in 1:months){
+      
+      #true lambda - interaction intensity
+      lambda[x,y,z]<-exp(alpha[x] + beta[x] * traitmatch[x,y])
     
-    #True State
-    ts<-true_interactions[x,y]
-    
-    #detections are function of phenology detection probability and occupancy
-    det<-rbinom(months,ts,detection[x])
-    
-    #detections and phenology
-    obs[x,y,]<-det *sampled[,y]
+      # true observed count
+      N[x,y,z]<-rpois(1,lambda[x,y,z])
+      
+      #true detection rate of that observed count
+      obs[x,y,z]<-rbinom(1,N[x,y,z],p=detection[x])
     }
   }
-
-#plot observed state
-obs.state<-melt(obs)
-colnames(obs.state)<-c("Hummingbird","Plant","Month","Detections")
-
-#turn NA's to 0
-obs.state$Detections[is.na(obs.state$Detections)]<-0
-
-obs.state$Hummingbird<-as.factor(obs.state$Hummingbird)
-obs.state$Plant<-factor(obs.state$Plant,levels=1:plant_species)
-
-ob1<-ggplot(obs.state[obs.state$Month==12,],aes(x=Hummingbird,y=Plant,fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red",limits=c(0,max(mdat$True_State))) + ylab("Plant") + ggtitle("Example 1") + xlab("Hummingbird")
-
-ob2<-ggplot(obs.state[obs.state$Month==18,],aes(x=Hummingbird,y=Plant,fill=Detections)) + geom_tile() + scale_fill_continuous(low="white",high="Red",limits=c(0,max(mdat$True_State))) + ylab("Plant") + ggtitle("Example 2") + xlab("Hummingbird")
-
-grid.arrange(ob1,ob2,trueplot,nrow=1)
+}
 ```
 
-The left hand panel is the true state for each hummingbird plant combination. The middle and right hand panel are two realizations that might result from a month of sampling given incomplete detection and phenology.
+##View correlation in simulated latent state
 
 ```{r}
-d<-merge(mdat,obs.state)
-ggplot(d,aes(x=True_State,y=Detections,col=Month)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
+mdat<-melt(N)
+colnames(mdat)<-c("Bird","Plant","Month","Interactions")
+
+traitmelt<-melt(traitmatch)
+colnames(traitmelt)<-c("Bird","Plant","Traitmatch")
+
+mdat<-merge(mdat,traitmelt,c("Bird","Plant"))
+ggplot(mdat,aes(x=Traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson") + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
+```
+
+##View Detection Rates
+
+```{r}
+obs.state<-melt(obs)
+colnames(obs.state)<-c("Bird","Plant","Month","Detections")
+d<-merge(mdat,obs.state,by=c("Bird","Plant","Month"))
+ggplot(d,aes(x=Interactions,y=Detections,col=Month)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
 ```
 
 # Hierarcichal Occupancy Model
@@ -210,7 +185,7 @@ obs<-merge(obs,traitY)
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-45000
+runs<-20000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -233,7 +208,7 @@ Dat <- list(
 Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 
 #Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dprior=rep(0.9999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -241,7 +216,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","yn
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- 5   #thinning rate
-nb <- runs*.96 # number to discard for burn-in
+nb <- runs*.75 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -258,6 +233,13 @@ sim_niave = jags(inits=InitStage,
                  DIC=T)
 ```
 
+```{r,eval=F}
+#recompile if needed
+runs<-5000
+recompile(sim_niave)
+sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.75)
+```
+
 ```{r}
 pars_niave<-extract_par(sim_niave,data=obs)
 ```
@@ -269,7 +251,7 @@ pars_niave<-extract_par(sim_niave,data=obs)
 ggplot(pars_niave[pars_niave$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-```{r,fig.height=5,fig.width=11,eval=T}
+```{r,fig.height=5,fig.width=11}
 ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
@@ -320,9 +302,9 @@ pars_niave$Model<-"Without Detection"
 
 # Simulated data with detection
 
-```{r,eval=T}
+```{r,eval=F}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-80000
+runs<-20000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -353,7 +335,7 @@ ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","yn
 #MCMC options
 ni <- runs  # number of draws from the posterior
 nt <- 5   #thinning rate
-nb <- runs*.95 # number to discard for burn-in
+nb <- runs*.75 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -370,6 +352,13 @@ sim_detect = jags(inits=InitStage,
                  DIC=T)
 ```
 
+```{r,eval=F}
+#recompile if needed
+runs<-5000
+recompile(sim_detect)
+sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.75)
+```
+
 ```{r}
 pars<-extract_par(sim_detect,data=obs)
 ```
@@ -377,10 +366,8 @@ pars<-extract_par(sim_detect,data=obs)
 ##Assess Convergence
 
 ```{r,cache=FALSE,eval=TRUE,fig.width=11,fig.height=5}
-
 ###Chains
 ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-
 ```
 
 ```{r,fig.height=5,fig.width=11,eval=T}
@@ -401,7 +388,7 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 ```
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
-p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
+p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
 tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope,dprior=dpr,sigma_detect=sigma_det))
@@ -435,11 +422,10 @@ psim
 ```
 
 ```{r,cache=FALSE,eval=TRUE,fig.height=3,fig.width=10}
-
-p<-ggplot(parsall[parsall$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw() 
+p<-ggplot(parsall[parsall$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
+tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope,dprior=dpr,sigma_detect=sigma_det))
 
 colnames(tr)<-c("value","par")
 
@@ -487,29 +473,6 @@ Black line is the true relationship. The red line is the posterior mean with con
 
 **Conclusion:** Accounting for detection and non-independence greatly increases the accuracy of the predicted state. The perfect detection model underestimates the strength of trait matching among hummingbirds and their foodplants.
 
-##Predicted Frequency
-
-Validating the model
-
-```{r,eval=T}
-
-#any given state
-predState<-group_by(parsall,par,Model) %>% filter(par=="ynew") %>% group_by(par,species,plant,Model) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
-
-predState$species<-as.factor(predState$species)
-predState$plant<-factor(predState$plant,levels=1:plant_species)
-
-predplot<-ggplot(predState,aes(x=species,y=plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model)
-
-#compare true and pred states
-tr<-melt(true_interactions)
-colnames(tr)<-c("Hummingbird","Plant","True_State")
-
-mdat<-merge(predState,tr,by.x=c("species","plant"),by.y=c("Hummingbird","Plant"))
-
-ggplot(mdat,aes(y=State,x=True_State,col=Model)) + geom_point(size=3) + geom_abline(linetype="dashed") + theme_bw() + xlab("True State") + ylab("Predicted State") + coord_equal()
-```
-
 ##Posterior Predictive Check
 
 Since I have simualted the data, it should fit as well as any random dataset drawn from the estimated parameters. An ideal fit would be posterior values sitting along the 1:1 line.
@@ -525,8 +488,7 @@ ymin<-round(min(c(fitstat$fit,fitstat$fitnew)))
 ymax<-round(max(c(fitstat$fit,fitstat$fitnew)))
 ab<-data.frame(x=ymin:ymax,y=ymin:ymax)
 p<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + coord_equal()
-psim4<-p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model") + geom_line(data=ab,aes(x=x,y=y)) + ggtitle("Simulated Data")
-
+psim4<-p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model") + geom_line(data=ab,aes(x=x,y=y)) + ggtitle("Simulated Data") + facet_wrap(~Model,scales="free")
 psim4
 ```
 
@@ -541,16 +503,19 @@ grid.arrange(psim3)
 dev.off()
 ```
 
-#Compare Occupancy to a Multinomial fit
+#Compare Occupancy Models to a Multinomial fit
 
-Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. 
+Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. Since traitmatching is a distance, take 1-probabilities to correct weight the multinomial
 
 ```{r}
-m<-traitmatch/sum(traitmatch)
+#true number of observed interactions
+true_state<-obs %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
+
+m<-max(traitmatch)-traitmatch
+m<-m/sum(m)
 
 #True latent interactions, since the simulated data is known.
-mat<-true_interactions
-print(paste("Correlation coefficient is:", round(cor(c(mat),c(m),method="spearman"),2)))
+print(paste("Correlation coefficient is:", round(cor(c(true_state),c(m),method="spearman"),2)))
 ```
 
 What is the discrepancy of a multinomial approach?
@@ -558,29 +523,33 @@ What is the discrepancy of a multinomial approach?
 Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus mean observed.
 
 ```{r}
+
 #define discrep function
 chisq<-function(o,e){(o-e)^2/(e+0.5)}
 
 nullm<-function(){
-r<-mgen(m,sum(obs),keep.species = F)
-rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+r<-mgen(m,sum(true_state),keep.species = F)
+}
+
+#same number of draws as bayesian
+cl<-makeCluster(20,"SOCK")
+registerDoSNOW(cl)
+mult_matrix<-foreach(x=1:length(pars[pars$par %in% "fit","estimate"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
+stopCluster(cl)
+
+mats<-lapply(mult_matrix,function(r){
+rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
 
 #for each position what is the chisq
 for (x in 1:nrow(r)){
   for (y in 1:ncol(r)){
-   rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+   rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
   }
 }
 
 #sum of chisq driscrepancy
 return(rmerge)
-}
-
-#same number of draws as bayesian
-cl<-makeCluster(12,"SOCK")
-registerDoSNOW(cl)
-mats<-foreach(x=1:length(pars[pars$par %in% "fit","estimate"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
-stopCluster(cl)
+})
 
 multi_disc<-sapply(mats,function(x) sum(x))
 
@@ -592,45 +561,109 @@ qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + ge
 ## No Detection Occupancy Model
 
 ```{r}
-N<-parsall[parsall$Model %in% "Without Detection" & parsall$par %in% "ynew",]
+N_niave<-pars_niave[ pars_niave$par %in% "ynew",]
 
-bydraw<-split(N,list(N$Chain,N$Draw))
-occ_nodetect<-lapply(bydraw,function(x){
+bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
+
+occ_nodetect_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
+})
+
+#calculate discrep on those deviates
+occ_nodetect<-lapply(occ_nodetect_matrix,function(r){
     #for each position what is the chisq
-  rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+  rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
   for (x in 1:nrow(r)){
     for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+     rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
       }
     }
   return(rmerge)
 })
 
 names(occ_nodetect)<-1:length(occ_nodetect)
+names(occ_nodetect_matrix)<-1:length(occ_nodetect_matrix)
 ```
 
 ##With Detection
 
 ```{r}
-N<-parsall[parsall$Model %in% "Detection" & parsall$par %in% "ynew",]
-bydraw<-split(N,list(N$Chain,N$Draw))
-occ<-lapply(bydraw,function(x){
+Ndetect<-pars[pars$par %in% "ynew",]
+bydraw<-split(Ndetect,list(Ndetect$Chain,Ndetect$Draw))
+occ_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
+  })
+
+#calculate discrep for those aggregated matrices
+occ<-lapply(occ_matrix,function(r){
     #for each position what is the chisq
-  rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
+  rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
   for (x in 1:nrow(r)){
     for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
+     rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
       }
     }
   return(rmerge)
 })
 
 names(occ)<-1:length(occ)
+names(occ_matrix)<-1:length(occ_matrix)
 ```
 
-Compare predicted matrices
+##Compare to observed data
+
+```{r}
+mmat<-melt(true_state)
+colnames(mmat)<-c("Bird","Plant","True_State")
+
+#append to predicted matrices
+
+#occupancy with detection
+mocc<-melt(occ_matrix)
+colnames(mocc)<-c("Bird","Plant","Detect","Iteration")
+simdat<-merge(mocc,mmat,by=c("Bird","Plant"),all.x=T)
+
+#occupancy with nodetection
+moccd<-melt(occ_nodetect_matrix)
+colnames(moccd)<-c("Bird","Plant","NoDetect","Iteration")
+
+simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
+
+#multinomial
+multmats<-melt(mult_matrix)
+colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
+simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
+
+
+simdat<-melt(simdat,measure.vars = c("Detect","NoDetect","Multinomial"))
+
+ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
+```
+
+View a couple example data points from across the type of interactions.
+
+```{r}
+h<-simdat[which.max(simdat$True_State),c("Bird","Plant")]
+d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
+
+ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("High Visitation Example")
+
+
+h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
+d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
+
+ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
+
+h<-simdat[simdat$True_State == quantile(simdat$True_State,0.5),c("Bird","Plant")][1,]
+d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
+
+ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Median Visitation Example")
+
+h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
+d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
+```
+
+##Summary of discrepancy of predicted matrices
 
 ```{r}
 #Multinomial
@@ -646,680 +679,14 @@ occ_disc<-sapply(occ,function(x) mean(x))
 ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-##Comparison table among all three approaches
+##Comparison of summary statistics for all three approaches
 
 ```{r}
 d<-list(Occupancy=occ,Multinomial=mats,NoDetection=occ_nodetect)
 d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 
-d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=mean(mean),mean_sd=sd(mean),mean_sum=mean(sum))
-```
-
-#Observed dataset
-
-```{r}
-#read in flower morphology data, comes from Nectar.R
-droppath<-"C:/Users/Ben/Dropbox/"
-fl.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerMorphology.csv",sep=""))
-
-#First row is empty
-fl.morph<-fl.morph[-1,]
-
-#Bring in Hummingbird Morphology Dataset, comes from
-hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",sep=""))
-
-#Bring in Interaction Matrix
-int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
-
-#Correct known taxonomic disagreements, atleast compared to traits
-int[int$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
-int[int$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
-int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
-int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
-int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
-
-#Some reasonable level of presences, 20 points
-keep<-names(which(table(int$Hummingbird) > 25))
-
-#sparkling violetear changes through time, seems to violate closed system assumption
-keep<-keep[!keep %in% "Sparkling Violetear"]
-int<-int[int$Hummingbird %in% keep, ]
-dim(int)
-m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
-
-#Does the data come from camera or transect?
-m.dat$Type<-(is.na(m.dat$TransectID))*1
-
-m.dat$Year<-years(as.Date(m.dat$DateP))
-#one missing date
-m.dat$Year[m.dat$Year %in% 2012]<-2013
-
-#Number of bird species
-h_species<-nlevels(m.dat$Hummingbird)
-
-#Number of plant species
-plant_species<-nlevels(m.dat$Iplant_Double)
-
-#Get english name
-dath<-merge(m.dat,hum.morph, by.x="Hummingbird",by.y="English",keep=all)
-
-#Merge to flowers
-int.FLlevels<-levels(factor(dath$Iplant_Double))
-
-#Which flowers are we missing info for?
-missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
-
-#print(paste("Missing Trait Information:",missingTraits))
-dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
-
-#Drop piercing events, since they don't represent correlation
-dath<-dath[!dath$Pierce %in% c("y","Y"),]
-```
-
-##Match Species to Morphology
-
-```{r}
-#remove species with less than  10 observations
-keep<-names(which(table(dath$Hummingbird) > 10))
-
-dath<-droplevels(dath[dath$Hummingbird %in% keep,])
-
-#observed traitmatching
-traitmatchF<-abs(t(sapply(hum.morph$Bill,function(x){x-fl.morph$TotalCorolla})))
-
-rownames(traitmatchF)<-hum.morph$English
-colnames(traitmatchF)<-fl.morph$Group.1
-```
-
-```{r}
-#match names #Round to 2 decimals #Convert to cm for winbugs, avoids numerical underflow
-traitmatchT<-round(traitmatchF[rownames(traitmatchF) %in% dath$Hummingbird,colnames(traitmatchF) %in% dath$Iplant_Double],2)/10
-
-traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))]
-```
-
-##Elevation ranges
-
-Create a binary variable whether each observation was in a low elevation or high elevation transect. We have some species that just occur at the top of the gradient, and are not present in the sampling window of flowers at the low elevation.
-
-Accounting for non-availability.
-We have to figure out which plants were sampled in which periods, and if it was sampled, the non-detection are 0 if it wasn't the non-detection are NA. then remove all the Na's.
-
-```{r}
-elevH<-read.csv("InputData/HummingbirdElevation.csv",row.names=1)
-head(elevH)
-colnames(elevH)[5]<-"Elevation"
-elevH$Bird<-1:nrow(elevH)
-
-#high elevation or low elevation
-elevP<-read.csv("InputData/PlantElevation.csv",row.names=1)
-colnames(elevP)[5]<-"Elevation"
-elevP$Plant<-1:nrow(elevP)
-elevP$Iplant_Double<-as.character(elevP$Iplant_Double)
-
-#Correct known taxonomic errors
-elevP[elevP$Iplant_Double %in% "Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
-elevP[elevP$Iplant_Double %in% "Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
-elevP[elevP$Iplant_Double %in% "Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
-elevP[elevP$Iplant_Double %in% "Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
-elevP[elevP$Iplant_Double %in% "Alloplectus tenuis","Iplant_Double"]<-"Drymonia tenuis"
-
-#Merge to observed Data
-#plants
-dathp<-merge(dath,elevP,by="Iplant_Double")
-
-#birds
-datph<-merge(dathp,elevH,by="Hummingbird")
-
-```
-
-### Summarize Observations
-
-```{r}
-#ID for NA is holger transects, make the id's 1:n for each day of transect at each elevation, assuming no elevation was split across days.
-datph$ID<-as.character(datph$ID)
-
-noid<-datph[is.na(datph$ID),]
-
-id_topaste<-paste(noid$Transect_R,noid$DateP,"Transect",sep="_")
-datph[which(is.na(datph$ID)),"ID"]<-id_topaste
-  
-indatraw<- datph %>% group_by(Bird,Plant,ID,DateP) %>% summarize(Yobs=n(),Elev=mean(ele,na.rm=T),Transect_R=unique(Transect_R)) 
-
-indatraw[order(indatraw$Yobs,decreasing=T),]
-#add unique ID
-indatraw$Time<-1:nrow(indatraw)
-
-#add months and years
-indatraw$Month<-as.numeric(factor(months(strptime(indatraw$DateP,format="%Y-%m-%d")),levels=month.name))
-indatraw$Year<-years(indatraw$DateP)
-
-#Species names
-for (x in 1:nrow(indatraw)){
-  indatraw$Hummingbird[x]<-as.character(elevH[elevH$Bird %in% indatraw$Bird[x],"Hummingbird"])
-  indatraw$Iplant_Double[x]<-as.character(elevP[elevP$Plant %in% indatraw$Plant[x],"Iplant_Double"])
-}
-```
-
-What elevation transect is each observation in?
-The camera data need to be inferred from the GPS point.
-
-```{r}
-#which elevation bin is each observation within
-labs<-paste(seq(1300,2500,200),seq(1500,2700,200),sep="_")
-indatraw[is.na(indatraw$Transect_R),"Transect_R"]<-cut(indatraw[is.na(indatraw$Transect_R),]$Elev,seq(1300,2700,200),labels=labs)
-```
-
-```{r}
-#match the traits
-traitmelt<-melt(traitmatchT)
-colnames(traitmelt)<-c("Hummingbird","Iplant_Double","Traitmatch")
-
-obs<-merge(indatraw,traitmelt,by=c("Hummingbird","Iplant_Double"))
-```
-
-##Absences - accounting for non-detection
-
-We have more information than just the presences, given species elevation ranges, we have absences as well. Absences are birds that occur at the elevation of the plant sample, but were not recorded feeding on the flower.
-
-```{r}
-indatlong<-acast(indatraw,Bird~Plant~Time,value.var="Yobs")
-indatlong[is.na(indatlong)]<-0
-```
-
-```{r}
-#Only non-detections are real 0's, the rest are NA's and are removed.
-#Plants not surveyed in that time period
-#Hummingbirds not present at that site
-
-for(x in 1:dim(indatlong)[3]){
-  #Remove non sampled plants 
-  a<-indatlong[,,x]
-  
-  #No observations at that plant
-  toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
-  pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
-  indatlong[,colnames(a) %in% toNA,x]<-NA
-  
-  #match elevation if there were presences, slightly terse code.
-  if(length(pres)>0){
-    for (y in 1:length(pres)){
-      #Plant range
-      pr<-elevP[elevP$Plant %in% pres[y],"Elevation"]
-      #if there is not enough elevation area, make NA
-      if(is.na(pr)|!pr==3){
-        helim<-elevH[!elevH$Elevation %in% c(pr,3),"Bird"]
-        #sanity check, make sure rows don't have values
-        sums<-indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x]==0
-        helim<-helim[sums]
-        #set to NA if they are outside of elevation and are blank
-        indatlong[rownames(a) %in% helim ,colnames(a) %in% pres[y],x]<-NA
-        }
-      }  
-    }
-  }
-
-#melt and remove Na's
-indat<-melt(indatlong)
-indat<-indat[!is.na(indat$value),]
-
-colnames(indat)<-c("Bird","Plant","Time","Yobs")
-```
-
-```{r}
-#remerge the time period data
-Timelookup<-indatraw %>% dplyr::select(Time,DateP,Transect_R,Month,Year)%>% group_by(Time,DateP,Transect_R,Month,Year) %>% distinct() %>% arrange(Time)
-
-#Get time information
-indat<-merge(indat,Timelookup[,!colnames(Timelookup) %in% c("Bird","Plant")],by=c("Time"),all.x=T)
-
-#Species names
-for (x in 1:nrow(indat)){
-  indat$Hummingbird[x]<-as.character(elevH[elevH$Bird %in% indat$Bird[x],"Hummingbird"])
-  indat$Iplant_Double[x]<-as.character(elevP[elevP$Plant %in% indat$Plant[x],"Iplant_Double"])
-}
-
-#Get trait information
-#match the traits
-indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
-```
-
-Reformat index for jags.
-Jags needs a vector of input species 1:n with no breaks.
-
-```{r}
-indat$Hummingbird<-as.factor(indat$Hummingbird)
-indat$Iplant_Double<-as.factor(indat$Iplant_Double)
-indat$jBird<-as.numeric(indat$Hummingbird)
-indat$jPlant<-as.numeric(indat$Iplant_Double)
-
-jagsIndexBird<-data.frame(Hummingbird=levels(indat$Hummingbird),jBird=1:length(levels(indat$Hummingbird)))
- 
-jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:length(levels(indat$Iplant_Double)))
-```
-
-Similiarly, the trait matrix needs to reflect this indexing.
-
-# Observed Data Without detection
-
-```{r,eval=T}
-runs<-70000
-
-#Source model
-source("Bayesian/NoDetectNmixturePoissonRagged.R")
-
-#print model
-print.noquote(readLines("Bayesian/NoDetectNmixturePoissonRagged.R"))
-
-#ragged index data
-
-#Input Data
-Dat <- list(
-  Yobs=indat$Yobs,
-  Bird=indat$jBird,
-  Plant=indat$jPlant,
-  Birds=max(indat$jBird),
-  Nobs=length(indat$Yobs),
-  Time=indat$Time,
-  traitmatch=indat$Traitmatch
-  )
-
-#A blank Y matrix - all present
-initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
-
-#Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9995,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
-
-#Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","ynew","fit","fitnew")
-
-#MCMC options
-ni <- runs  # number of draws from the posterior
-nt <- 7   #thinning rate
-nb <- runs*.97 # number to discard for burn-in
-nc <- 2  # number of chains
-
-#Jags
-
-m2_niave = jags(inits=InitStage,
-                n.chains=nc,
-                model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",
-                working.directory=getwd(),
-                data=Dat,
-                parameters.to.save=ParsStage,
-                n.thin=nt,
-                n.iter=ni,
-                n.burnin=nb,
-                DIC=T)
-```
-
-```{r}
-pars_niave<-extract_par(m2_niave,data=indat)
-pars_niave$Model<-"Without Detection"
-```
-
-##Assess Convergence
-
-```{r,cache=FALSE,eval=TRUE,fig.width=13,fig.height=5}
-###Chains
-ggplot(pars_niave[pars_niave$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-```
-
-```{r,fig.height=5,fig.width=11,eval=T}
-ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
-```
-
-# Observed Data With Detection
-
-```{r,eval=T}
-
-runs<-100000
-
-#Source model
-source("Bayesian/NmixturePoissonRagged.R")
-
-#print model
-print.noquote(readLines("Bayesian/NmixturePoissonRagged.R"))
-
-#ragged index data
-#Input Data
-Dat <- list(
-  Yobs=indat$Yobs,
-  Bird=indat$jBird,
-  Plant=indat$jPlant,
-  Birds=max(indat$jBird),
-  Nobs=length(indat$Yobs),
-  Time=indat$Time,
-  traitmatch=indat$Traitmatch
-  )
-
-#A blank Y matrix - all present
-initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
-
-#Inits
-InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.25,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
-
-#Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","ynew","fit","fitnew","dprior","sigma_detect")
-
-#MCMC options
-ni <- runs  # number of draws from the posterior
-nt <- 10   #thinning rate
-nb <- runs*0.97 # number to discard for burn-in
-nc <- 2  # number of chains
-
-#Jags
-
-m2 = jags(inits=InitStage,
-          n.chains=nc,
-          model.file="Bayesian/NmixturePoissonRagged.jags",
-          working.directory=getwd(),
-          data=Dat,
-          parameters.to.save=ParsStage,
-          n.thin=nt,
-          n.iter=ni,
-          n.burnin=nb,
-          DIC=T)
-```
-
-```{r}
-#extract par to data.frame
-pars<-extract_par(m2,data=indat)
-
-#name
-pars$Model<-"Detection"
-```
-
-##Assess Convergence
-
-```{r,cache=FALSE,eval=TRUE,fig.width=13,fig.height=5}
-
-###Chains
-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-
-```
-
-###Hierarcichal Posteriors
-
-```{r,fig.height=5,fig.width=11,eval=T}
-ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
-ggsave("Figures/BothObs.svg",height=5,width=7)
-ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
-```
-
-```{r}
-#Bind together the two models
-parsObs<-rbind(pars,pars_niave)
-```
-
-##Posteriors
-
-```{r,cache=FALSE,fig.width=11,fig.height=14}
-###Posterior Distributions
-ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
-```
-
-```{r,cache=FALSE,fig.width=10,fig.height=5}
-#Detection figure
-ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
-
-parsp<-merge(pars,jagsIndexBird,by.x="species",by.y="jBird")
-ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
-ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
-```
-
-```{r,cache=FALSE,eval=TRUE,fig.height=5,fig.width=13}
-
-ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
-```
-
-##Species Predictions
-
-```{r,fig.height=10,fig.width=11,eval=T}
-
-castdf<-dcast(parsObs[parsObs$par %in% c("beta","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
-
-#Turn to species level
-castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
-
-species.split<-split(castdf,list(castdf$species,castdf$Model))
-
-species.traj<-list()
-
-for(d in 1:length(species.split)){
-  x<-species.split[[d]]
-  #species name
-  index<-jagsIndexBird[unique(x$species),"Hummingbird"]
-  
-  #range of trait distances
-  tsp<-indat %>% filter(Hummingbird==index) %>% distinct(Traitmatch) %>% .$Traitmatch
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,x=tsp)
-  }
-
-names(species.traj)<-names(species.split)
-
-species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
-
-#split out names and model
-species.traj[,c("Index","Model")]<-colsplit(species.traj$L1,"\\.",c("Index","Model"))
-
-spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
-
-#match colnames
-
-#plot and compare to original data
-ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model") 
-
-ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
-```
-
-###Overall predicted relationship 
-
-Does accounting for non-independence and detection change our estimate of trait matching?
-
-```{r,fig.height=6,fig.width=10}
-
-castdf<-dcast(parsObs[parsObs$par %in% c("gamma","intercept"),], Model+Chain + Draw~par,value.var="estimate")
-
-castdf<-split(castdf,castdf$Model)
-#calculated predicted y
-predy<-rbind_all(lapply(castdf,function(i){
-  #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta=i$gamma,x=indat$Traitmatch)  
-  pr$Model<-unique(i$Model)
-  return(pr)
-  }))
-
-#plot and compare to original data
-ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),col="black",fill="black",size=2) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.6)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
-ggsave("Figures/ObsResults.jpg",dpi=300,height=5,width=7)
-
-```
-
-##Predicted Frequency
-
-```{r,eval=T,fig.height=7,fig.width=12,eval=T}
-
-#any given state
-predState<-group_by(parsObs,par,Model) %>% filter(par=="ynew") %>% group_by(par,species,plant,Model) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
-
-#order it to show nestedness.
-b_ord<-group_by(predState,species) %>% summarize(I=sum(State)) %>% arrange(desc(I)) %>% select(species)
-
-p_ord<-group_by(predState,plant) %>% summarize(I=sum(State)) %>% arrange(I) %>% select(plant)
-
-predState$Bird<-factor(predState$species,levels=b_ord$species)
-predState$Plant<-factor(predState$plant,levels=p_ord$plant)
-
-predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model) + theme(axis.text.x = element_text(angle = 90))
-predplot
-orig<-group_by(indat,Bird,Plant) %>% summarize(Y=sum(Yobs))
-
-finaldat<-merge(predState,orig,by.x=c("species","plant"),by.y=c("Bird","Plant"))
-```
-
-##Discrepancy 
-
-The goodness if of fit is a measured as chi-squared. The expected value for each day is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
-Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. In addition, a model with 0 discrepancy would likely be seriously overfit and have little to no predictive power.
-
-```{r,fig.height=4,fig.width=8,message=F,warning=F}
-fitstat<-parsObs[parsObs$par %in% c("fit","fitnew"),]
-fitstat<-dcast(fitstat,Model+Draw+Chain~par,value.var="estimate")
-
-ymin<-round(min(fitstat$fit))
-ymax<-round(max(fitstat$fit))
-ab<-data.frame(x=0:ymax,y=0:ymax)
-disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew)))) + facet_wrap(~Model,scales = "free")
-disc_obs
-jpeg("Figures/ObsDiscrepancy.jpeg",res=300,height=7,width=6,units="in")
-grid.arrange(psim4,disc_obs,nrow=2)
-dev.off()
-```
-
-##Detection table
-
-```{r}
-dp<-group_by(pars[pars$par %in% c("detect"),],species) %>% summarise(mean=round(mean(estimate,na.rm=T),3)*100,lower=round(quantile(estimate,0.025,na.rm=T),3)*100,upper=round(quantile(estimate,0.975,na.rm=T),3)*100)
-
-tab<-merge(dp,jagsIndexBird,by.x="species",by.y="jBird")[,-1]
-tab[,c(4,1,2,3)]
-write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
-```
-
-Number of samples per species
-
-##DIC Table
-
-```{r}
-DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,sim_detect$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
-h<-dcast(DICtable,Data~Model)
-print(h)
-write.csv(h,"Figures/DICtable.csv")
-```
-
-#Compared to a multinomial fit
-
-Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. 
-
-```{r}
-m<-traitmatchT/sum(traitmatchT)
-mat<-indat %>% group_by(Hummingbird,Iplant_Double) %>% summarize(n=sum(Yobs))
-mat<-acast(mat,Hummingbird~Iplant_Double,fill=0)
-
-#trait liklihood
-dmultinom(mat,prob=m,log=T)
-paste("Correlation coefficient is:", round(cor(c(mat),c(m),method="spearman"),2))
-```
-
-What is the discrepancy of a multinomial approach?
-
-Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus mean observed.
-
-```{r}
-#define discrep function
-chisq<-function(o,e){(o-e)^2/(e+0.5)}
-
-nullm<-function(){
-r<-mgen(m,sum(indat$Yobs),keep.species = F)
-rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
-
-#for each position what is the chisq
-for (x in 1:nrow(r)){
-  for (y in 1:ncol(r)){
-   rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
-  }
-}
-
-#sum of chisq driscrepancy
-return(rmerge)
-}
-
-#same number of draws as bayesian posteriors
-cl<-makeCluster(20,"SOCK")
-registerDoSNOW(cl)
-mats<-foreach(x=1:length(fitstat[fitstat$Model %in% "Detection","fit"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
-stopCluster(cl)
-
-multi_disc<-sapply(mats,function(x) mean(x))
-
-qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
-```
-
-
-#Compare Bayesian Occupancy and multinomial
-
-## No Detection Occupancy Model
-
-```{r}
-N<-parsObs[parsObs$Model %in% "Without Detection" & parsObs$par %in% "ynew",]
-```
-
-```{r}
-bydraw<-split(N,list(N$Chain,N$Draw))
-occ_nodetect<-lapply(bydraw,function(x){
-  r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
-    #for each position what is the chisq
-  rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
-  for (x in 1:nrow(r)){
-    for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
-      }
-    }
-  return(rmerge)
-})
-
-names(occ_nodetect)<-1:length(occ_nodetect)
-```
-
-##With Detection
-
-```{r}
-N<-pars[pars$Model %in% "Detection" & pars$par %in% "ynew",]
-```
-
-```{r}
-bydraw<-split(N,list(N$Chain,N$Draw))
-occ<-lapply(bydraw,function(x){
-  r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
-    #for each position what is the chisq
-  rmerge<-matrix(nrow = nrow(mat),ncol=ncol(mat))
-  for (x in 1:nrow(r)){
-    for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=mat[x,y],e=r[x,y])
-      }
-    }
-  return(rmerge)
-})
-
-names(occ)<-1:length(occ)
-```
-
-Compared to multinomial
-
-```{r}
-#Multinomial
-multi_disc<-sapply(mats,function(x) mean(x))
-
-#occupancy without detection
-occno_disc<-sapply(occ_nodetect,function(x) mean(x))
-
-#Occupancy with detection
-occ_disc<-sapply(occ,function(x) mean(x))
-
-#compared to bayesian
-ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() + geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
-```
-
-Comparison table among all three approaches
-
-```{r}
-d<-list(Occupancy=occ,Multinomial=mats,NoDetection=occ_nodetect)
-d<-melt(d)
-colnames(d)<-c("Bird","Plant","value","Iteration","Model")
-
-d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=mean(mean),mean_sd=sd(mean),mean_sum=mean(sum))
+d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=round(mean(mean),2),mean_sd=round(sd(mean),2),mean_sum=round(mean(sum),2))
 ```
 
 ```{r}
