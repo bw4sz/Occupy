@@ -60,7 +60,7 @@ $$\beta = N(-0.01,0.001)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation Parameters
@@ -124,13 +124,13 @@ for(x in 1:h_species){
 
 ```{r}
 mdat<-melt(N)
-colnames(mdat)<-c("Bird","Plant","Month","Interactions")
+colnames(mdat)<-c("Bird","Plant","Time","Interactions")
 
 traitmelt<-melt(traitmatch)
-colnames(traitmelt)<-c("Bird","Plant","Traitmatch")
+colnames(traitmelt)<-c("Bird","Plant","traitmatch")
 
 mdat<-merge(mdat,traitmelt,c("Bird","Plant"))
-ggplot(mdat,aes(x=Traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson") + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
+ggplot(mdat,aes(x=traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson") + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
 ```
 
 ##View Detection Rates
@@ -138,8 +138,8 @@ ggplot(mdat,aes(x=Traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point()
 ```{r}
 obs.state<-melt(obs)
 colnames(obs.state)<-c("Bird","Plant","Time","Yobs")
-d<-merge(mdat,obs.state,by=c("Bird","Plant","Time"))
-ggplot(d,aes(x=Interactions,y=Yobs,col=Time)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
+obs.state<-merge(mdat,obs.state,by=c("Bird","Plant","Time"))
+ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Time)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
 ```
 
 # Hierarcichal Occupancy Model
@@ -172,6 +172,8 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 #Simulated data without detection
 
 ```{r,eval=T}
+load.module("glm")
+
 setwd("C:/Users/Ben/Documents/Occupy/")
 runs<-20000
 
@@ -183,7 +185,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 #Input Data
 Dat <- list(
-  Yobs=obs.state$,
+  Yobs=obs.state$Yobs,
   Bird=obs.state$Bird,
   Plant=obs.state$Plant,
   Time=obs.state$Time,
@@ -199,7 +201,7 @@ Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9999,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","lambda","N")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -221,7 +223,7 @@ sim_niave = jags(inits=InitStage,
                  DIC=T)
 ```
 
-```{r,eval=TALSE}
+```{r,eval=FALSE}
 #recompile if needed
 runs<-5000
 recompile(sim_niave)
@@ -229,7 +231,7 @@ sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.75)
 ```
 
 ```{r}
-pars_niave<-extract_par(sim_niave,data=obs)
+pars_niave<-extract_par(sim_niave,data=obs.state)
 pars_niave$Model<-c("Without Detection")
 ```
 
@@ -291,7 +293,7 @@ pars_niave$Model<-"Without Detection"
 
 ```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-30000
+runs<-20000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -301,14 +303,14 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 #Input Data
 Dat <- list(
-  Yobs=obs$Yobs,
-  Bird=obs$Bird,
-  Plant=obs$Plant,
-  Time=obs$Time,
-  traitmatch=obs$traitmatch,
+  Yobs=obs.state$Yobs,
+  Bird=obs.state$Bird,
+  Plant=obs.state$Plant,
+  Time=obs.state$Time,
+  traitmatch=obs.state$traitmatch,
   #number of birds to iterate
-  Birds=max(obs$Bird),
-  Nobs=length(obs$Yobs))
+  Birds=max(obs.state$Bird),
+  Nobs=length(obs.state$Yobs))
 
 #A blank Y matrix - all present
 Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
@@ -338,7 +340,7 @@ sim_detect = jags(inits=InitStage,
                  DIC=T)
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 runs<-5000
 recompile(sim_detect)
@@ -346,7 +348,7 @@ sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.75)
 ```
 
 ```{r}
-pars<-extract_par(sim_detect,data=obs)
+pars<-extract_par(sim_detect,data=obs.state)
 pars$Model<-"Detection"
 ```
 
@@ -491,7 +493,7 @@ Several studies follow Vasquez 2009 in fitting a multinomial relationship to fre
 
 ```{r}
 #true number of observed interactions
-true_state<-obs %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
+true_state<-obs.state %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
 
 m<-max(traitmatch)-traitmatch
 m<-m/sum(m)
