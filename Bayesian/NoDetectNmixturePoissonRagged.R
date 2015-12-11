@@ -8,25 +8,21 @@ cat("
     # Covariates for true state   
     log(lambda[Bird[x],Plant[x],Time[x]]) <- alpha[Bird[x]] + beta[Bird[x]] * traitmatch[x] 
     
-    #True State
-    N[x] ~ dpois(lambda[Bird[x],Plant[x],Time[x]] )    
-    
-    #Observation Process
-    Yobs[x] ~ dbin(detect[Bird[x]],N[x])    
+    #Observed State
+    Yobs[x] ~ dpois(lambda[Bird[x],Plant[x],Time[x]] )    
     
     #Assess Model Fit
     
     #Fit discrepancy statistics
-    eval[x]<-detect[Bird[x]]*N[x]
+    eval[x]<-lambda[Bird[x],Plant[x],Time[x]]
     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
     
-    ynew[x]~dbin(detect[Bird[x]],N[x])
+    ynew[x]~dpois(lambda[Bird[x],Plant[x],Time[x]] )    
     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)
     
     }
     
     for (i in 1:Birds){
-    detect[i] ~ dunif(.999,1) 
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta[i] ~ dnorm(gamma,tau_beta)    
     }

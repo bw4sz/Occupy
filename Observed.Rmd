@@ -314,7 +314,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 ```{r,eval=T}
 #runs<-70000
-runs<-80000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -339,15 +339,15 @@ Dat <- list(
 initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 
 #Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),detect=rep(0.9995,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(9,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","ynew","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- 7   #thinning rate
-nb <- runs*.97 # number to discard for burn-in
+nt <- 5   #thinning rate
+nb <- runs*.9 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
@@ -409,15 +409,15 @@ Dat <- list(
 initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 
 #Inits
-InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),detect=rep(.25,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(.5,Dat$Birds),alpha=rep(.5,Dat$Birds),dtrans=rep(0,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","ynew","fit","fitnew","dprior","sigma_detect")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
-nt <- 10   #thinning rate
-nb <- runs*0.97 # number to discard for burn-in
+nt <- 5   #thinning rate
+nb <- runs*0.9 # number to discard for burn-in
 nc <- 2  # number of chains
 
 #Jags
