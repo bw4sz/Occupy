@@ -61,6 +61,7 @@ $$\beta = N(-0.01,0.001)$$
 
 ```{r}
 load("Abundance.RData")
+rm(pars)
 ```
 
 #Simulation Parameters

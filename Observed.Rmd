@@ -39,6 +39,11 @@ source("Functions.R")
 paste("Run Completed at",Sys.time())
 ```
 
+```{r}
+#reload if needed
+load("Observed.Rdata")
+```
+
 #Observed dataset
 
 ```{r}
@@ -310,9 +315,9 @@ $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
-# Observed Data Without detection
+# Poisson GLM
 
-```{r,eval=T}
+```{r,eval=F}
 #runs<-70000
 runs<-50000
 
@@ -339,10 +344,10 @@ Dat <- list(
 initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 
 #Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","ynew","fit","fitnew")
+ParsStage <- c("alpha","beta","intercept","gamma","sigma_int","sigma_slope","ynew","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -364,9 +369,18 @@ m2_niave = jags(inits=InitStage,
                 DIC=T)
 ```
 
+
+```{r,eval=T}
+#recompile if needed
+load.module("dic")
+runs<-50000
+recompile(m2_niave)
+sim_detect<-update(m2_niave,n.iter=runs,n.burnin=runs*.75)
+```
+
 ```{r}
 pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant")
-pars_dniave$Model<-"Without Detection"
+pars_dniave$Model<-"Poisson GLM"
 ```
 
 ##Assess Convergence
@@ -382,10 +396,10 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],a
 
 # Observed Data With Detection
 
-```{r,eval=T}
+```{r,eval=F}
 
-#runs<-500000
-runs<-100000
+runs<-500000
+#runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -434,9 +448,18 @@ m2 = jags(inits=InitStage,
           DIC=T)
 ```
 
+
+```{r,eval=T}
+#recompile if needed
+load.module("dic")
+runs<-100000
+recompile(m2)
+sim_detect<-update(m2,n.iter=runs,n.burnin=runs*.75)
+```
+
 ```{r}
 #extract par to data.frame
-pars_detect<-extract_par(m2,data=indat,Bird="Bird",Plant="jPlant")
+pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
 
 #name
 pars_detect$Model<-"Detection"
@@ -447,7 +470,7 @@ pars_detect$Model<-"Detection"
 ```{r,cache=FALSE,eval=TRUE,fig.width=13,fig.height=5}
 
 ###Chains
-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 
 ```
 
@@ -668,7 +691,7 @@ qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + ge
 
 #Compare Bayesian Occupancy and Multinomial using true known interactions
 
-## No Detection Occupancy Model
+## Poisson GLM
 
 ```{r}
 N_niave<-pars_dniave[ pars_dniave$par %in% "ynew",]
@@ -735,12 +758,12 @@ colnames(mmat)<-c("Bird","Plant","True_State")
 
 #occupancy with detection
 mocc<-melt(occ_matrix)
-colnames(mocc)<-c("Bird","Plant","Detect","Iteration")
-simdat<-merge(mocc,mmat,by=c("Bird","Plant"),all.x=T)
+colnames(mocc)<-c("Bird","Plant","Occupancy","Iteration")
+simdat<-merge(mocc,mmat,by=c("Bird","Plant"))
 
 #occupancy with nodetection
 moccd<-melt(occ_nodetect_matrix)
-colnames(moccd)<-c("Bird","Plant","NoDetect","Iteration")
+colnames(moccd)<-c("Bird","Plant","Poisson GLM","Iteration")
 
 simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
 
@@ -750,9 +773,12 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Detect","NoDetect","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("Detect","Poisson GLM","Multinomial"))
 
-ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
+ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
+
+
+ggplot(data=simdat[simdat$Bird %in% 13 & simdat$Plant %in% 40,],aes(x)) + geom_histogram(aes(x=value,fill=variable)) + geom_vline(aes(xintercept=unique(True_State))) + facet_wrap(~Plant,scales='free')
 ```
 
 ##Summary of discrepancy of predicted matrices
@@ -774,7 +800,7 @@ ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",al
 ##Comparison of summary statistics for all three approaches
 
 ```{r}
-d<-list(Occupancy=occ,Multinomial=mats,NoDetection=occ_nodetect)
+d<-list(Occupancy=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
 d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 
