@@ -292,10 +292,11 @@ $$detect_i \sim N(dprior,\tau_detect)$$
 **Priors**
 
 $$\alpha_i \sim N(intercept,\tau_{\alpha})$$
-$$\beta_i \sim N(\gamma,\tau_{\beta})$$
+$$\beta_i \sim N(\gamma,\tau_{detect})$$
+$$ logit(detect_i) \sim N(dprior,tau_detect)$$
 
 **Hyperpriors**
-$$dprior \sim U(0,0.5)$$
+$$dprior \sim N(0,0.1)$$
 $$gamma \sim N(0,0.0001)$$
 $$intercept \sim N(0,0.0001)$$
 
@@ -308,7 +309,6 @@ $$\tau_detect \sim Gamma(0.0001,0.0001)$$
 $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
-
 
 # Observed Data Without detection
 
@@ -339,7 +339,7 @@ Dat <- list(
 initY<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 
 #Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(9,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
+InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),gamma=0,intercept=0,tau_alpha=0.1,tau_beta=0.1,N=initY)}
 
 #Parameters to track
 ParsStage <- c("detect","alpha","beta","intercept","gamma","sigma_int","sigma_slope","ynew","fit","fitnew")

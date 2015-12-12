@@ -60,12 +60,12 @@ $$\beta = N(-0.01,0.001)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=T}
+```{r,fig.height=5,fig.width=8,eval=F}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -97,7 +97,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=T}
+```{r,eval=F}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,months))
 lambda<-array(dim=c(h_species,plant_species,months))
@@ -171,11 +171,11 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 #Simulated data without detection
 
-```{r,eval=T}
+```{r,eval=F}
 load.module("glm")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1000
+runs<-20000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -198,10 +198,10 @@ Dat <- list(
 Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
 
 #Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,gamma=0)}
 
 #Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
 
 #MCMC options
 ni <- runs  # number of draws from the posterior
@@ -223,8 +223,9 @@ sim_niave = jags(inits=InitStage,
                  DIC=T)
 ```
 
-```{r,eval=FALSE}
+```{r,eval=F}
 #recompile if needed
+load.module("dic")
 runs<-5000
 recompile(sim_niave)
 sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.75)
@@ -232,7 +233,7 @@ sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.75)
 
 ```{r}
 pars_niave<-extract_par(sim_niave,data=obs.state)
-pars_niave$Model<-c("Without Detection")
+pars_niave$Model<-c("Poisson GLM")
 ```
 
 ##Assess Convergence
@@ -249,10 +250,10 @@ ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes
 
 ```{r,cache=FALSE,fig.width=7,fig.height=5}
 ###Posterior Distributions
-p<-ggplot(pars_niave[pars_niave$par %in% c("detect","alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),alpha=alpha,beta=beta),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 psim
@@ -283,16 +284,13 @@ castdf<-dcast(pars_niave[pars_niave$par %in% c("gamma","intercept"),], Chain + D
 predyniave<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=as.numeric(traitmatch))
 
 orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,sigma_slope),x=as.numeric(traitmatch))
-
-#save the pars to merge with other model
-pars_niave$Model<-"Without Detection"
 ```
 
 # Simulated data with detection
 
-```{r,eval=T}
+```{r,eval=F}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-1000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -339,10 +337,10 @@ sim_detect = jags(inits=InitStage,
                  DIC=T)
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-100000
 recompile(sim_detect)
 sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.75)
 ```
@@ -379,7 +377,7 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope,dprior=dprior,sigma_detect=sigma_det))
+tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope,dprior=dprior,sigma_detect=sigma_detect))
 
 colnames(tr)<-c("value","par")
 
