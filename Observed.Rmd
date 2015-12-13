@@ -397,7 +397,6 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],a
 # Observed Data With Detection
 
 ```{r,eval=F}
-
 runs<-500000
 #runs<-100000
 
@@ -607,9 +606,6 @@ ymax<-round(max(fitstat$fit))
 ab<-data.frame(x=0:ymax,y=0:ymax)
 disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew)))) + facet_wrap(~Model,scales = "free")
 disc_obs
-jpeg("Figures/ObsDiscrepancy.jpeg",res=300,height=7,width=6,units="in")
-grid.arrange(psim4,disc_obs,nrow=2)
-dev.off()
 ```
 
 ##Detection table

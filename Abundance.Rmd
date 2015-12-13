@@ -61,12 +61,11 @@ $$\beta = N(-0.01,0.001)$$
 
 ```{r}
 load("Abundance.RData")
-rm(pars)
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=F}
+```{r,fig.height=5,fig.width=8,eval=T}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -98,7 +97,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=F}
+```{r,eval=T}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,months))
 lambda<-array(dim=c(h_species,plant_species,months))
@@ -172,7 +171,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 #Simulated data without detection
 
-```{r,eval=F}
+```{r,eval=T}
 load.module("glm")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
@@ -289,9 +288,9 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 # Simulated data with detection
 
-```{r,eval=F}
+```{r,eval=T}
 setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-100000
+runs<-350000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -338,10 +337,10 @@ sim_detect = jags(inits=InitStage,
                  DIC=T)
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-200000
 recompile(sim_detect)
 sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.75)
 ```
@@ -594,7 +593,7 @@ names(occ_matrix)<-1:length(occ_matrix)
 
 ##Compare to observed data
 
-```{r}
+```{r,fig.width=11}
 mmat<-melt(true_state)
 colnames(mmat)<-c("Bird","Plant","True_State")
 
@@ -607,7 +606,7 @@ simdat<-merge(mocc,mmat,by=c("Bird","Plant"),all.x=T)
 
 #occupancy with nodetection
 moccd<-melt(occ_nodetect_matrix)
-colnames(moccd)<-c("Bird","Plant","NoDetect","Iteration")
+colnames(moccd)<-c("Bird","Plant","Poisson GLM","Iteration")
 
 simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
 
@@ -663,7 +662,7 @@ ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",al
 ##Comparison of summary statistics for all three approaches
 
 ```{r}
-d<-list(Occupancy=occ,Multinomial=mats,NoDetection=occ_nodetect)
+d<-list(Occupancy=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
 d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 
