@@ -60,7 +60,7 @@ $$\beta = N(-0.01,0.001)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation Parameters
@@ -172,10 +172,10 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 #Simulated data without detection
 
 ```{r,eval=T}
-load.module("glm")
-
-setwd("C:/Users/Ben/Documents/Occupy/")
 runs<-20000
+
+#trigger parallel
+paralleljags<-T
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -183,44 +183,76 @@ source("Bayesian/NoDetectNmixturePoissonRagged.R")
 #print model
 print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
-#Input Data
-Dat <- list(
-  Yobs=obs.state$Yobs,
-  Bird=obs.state$Bird,
-  Plant=obs.state$Plant,
-  Time=obs.state$Time,
-  traitmatch=obs.state$traitmatch,
+if(paralleljags){
+
+  #for parallel run
+  Yobs=obs.state$Yobs
+  Bird=obs.state$Bird
+  Plant=obs.state$Plant
+  Time=obs.state$Time
+  traitmatch=obs.state$traitmatch
   #number of birds to iterate
-  Birds=max(obs.state$Bird),
-  Nobs=length(obs.state$Yobs))
+  Birds=max(obs.state$Bird)
+  Nobs=length(obs.state$Yobs)
 
-#A blank Y matrix - all present
-Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
+  #A blank Y matrix - all present
+  Ninit<-rep(max(obs.state$Yobs)+1,Nobs)
+  
+  #Inits
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  
+  #Parameters to track
+  ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  
+  #MCMC options
+  ni <- runs  # number of draws from the posterior
+  nt <- 1   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
+  nc <- 2  # number of chains
 
-#Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,gamma=0)}
+  Dat<-list("Yobs","Bird","Plant","Time","traitmatch","Birds","Nobs","Ninit")
 
-#Parameters to track
-ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
-
-#MCMC options
-ni <- runs  # number of draws from the posterior
-nt <- 1   #thinning rate
-nb <- runs*.75 # number to discard for burn-in
-nc <- 2  # number of chains
-
-#Jags
-
-sim_niave = jags(inits=InitStage,
-                 n.chains=nc,
-                 model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",
-                 working.directory=getwd(),
-                 data=Dat,
-                 parameters.to.save=ParsStage,
-                 n.thin=nt,
-                 n.iter=ni,
-                 n.burnin=nb,
-                 DIC=T)
+    sim_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+    
+  } else {
+ #Input Data
+  Dat <- list(
+    Yobs=obs.state$Yobs,
+    Bird=obs.state$Bird,
+    Plant=obs.state$Plant,
+    Time=obs.state$Time,
+    traitmatch=obs.state$traitmatch,
+    #number of birds to iterate
+    Birds=max(obs.state$Bird),
+    Nobs=length(obs.state$Yobs))
+  
+    #A blank Y matrix - all present
+    Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
+  
+    #Inits
+  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  
+  #Parameters to track
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","dprior","sigma_detect")
+  
+  #MCMC options
+  ni <- runs  # number of draws from the posterior
+  nt <- 1   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
+  nc <- 2  # number of chains
+  
+  #Jags
+  
+  sim_niave <- jags(inits=InitStage,
+                   n.chains=nc, model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",
+                   working.directory=getwd(),
+                   data=Dat,
+                   parameters.to.save=ParsStage,
+                   n.thin=nt,
+                   n.iter=ni,
+                   n.burnin=nb,
+                   DIC=T)
+}
 ```
 
 ```{r,eval=F}
@@ -289,8 +321,10 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 # Simulated data with detection
 
 ```{r,eval=T}
-setwd("C:/Users/Ben/Documents/Occupy/")
-runs<-350000
+runs<-300000
+
+#trigger parallel
+paralleljags<-T
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -298,49 +332,81 @@ source("Bayesian/NmixturePoissonRagged.R")
 #print model
 print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
-#Input Data
-Dat <- list(
-  Yobs=obs.state$Yobs,
-  Bird=obs.state$Bird,
-  Plant=obs.state$Plant,
-  Time=obs.state$Time,
-  traitmatch=obs.state$traitmatch,
+if(paralleljags){
+
+  #for parallel run
+  Yobs=obs.state$Yobs
+  Bird=obs.state$Bird
+  Plant=obs.state$Plant
+  Time=obs.state$Time
+  traitmatch=obs.state$traitmatch
   #number of birds to iterate
-  Birds=max(obs.state$Bird),
-  Nobs=length(obs.state$Yobs))
+  Birds=max(obs.state$Bird)
+  Nobs=length(obs.state$Yobs)
 
-#A blank Y matrix - all present
-Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
+  #A blank Y matrix - all present
+  Ninit<-rep(max(obs.state$Yobs)+1,Nobs)
+  
+  #Inits
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  
+  #Parameters to track
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","dprior","sigma_detect")
+  
+  #MCMC options
+  ni <- runs  # number of draws from the posterior
+  nt <- 5   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
+  nc <- 2  # number of chains
 
-#Inits
-InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  Dat<-list("Yobs","Bird","Plant","Time","traitmatch","Birds","Nobs","Ninit")
 
-#Parameters to track
-ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","dprior","sigma_detect")
-
-#MCMC options
-ni <- runs  # number of draws from the posterior
-nt <- 5   #thinning rate
-nb <- runs*.75 # number to discard for burn-in
-nc <- 2  # number of chains
-
-#Jags
-
-sim_detect = jags(inits=InitStage,
-                 n.chains=nc, model.file="Bayesian/NmixturePoissonRagged.jags",
-                 working.directory=getwd(),
-                 data=Dat,
-                 parameters.to.save=ParsStage,
-                 n.thin=nt,
-                 n.iter=ni,
-                 n.burnin=nb,
-                 DIC=T)
+    system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+  } else {
+  #Input Data
+  Dat <- list(
+    Yobs=obs.state$Yobs,
+    Bird=obs.state$Bird,
+    Plant=obs.state$Plant,
+    Time=obs.state$Time,
+    traitmatch=obs.state$traitmatch,
+    #number of birds to iterate
+    Birds=max(obs.state$Bird),
+    Nobs=length(obs.state$Yobs))
+  
+    #A blank Y matrix - all present
+    Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
+  
+    #Inits
+  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  
+  #Parameters to track
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","dprior","sigma_detect")
+  
+  #MCMC options
+  ni <- runs  # number of draws from the posterior
+  nt <- 5   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
+  nc <- 2  # number of chains
+  
+  #Jags
+  
+  system.time(sim_detect <- jags(inits=InitStage,
+                   n.chains=nc, model.file="Bayesian/NmixturePoissonRagged.jags",
+                   working.directory=getwd(),
+                   data=Dat,
+                   parameters.to.save=ParsStage,
+                   n.thin=nt,
+                   n.iter=ni,
+                   n.burnin=nb,
+                   DIC=T))
+}
 ```
 
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-200000
+runs<-2000
 recompile(sim_detect)
 sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.75)
 ```
@@ -616,7 +682,7 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Detect","NoDetect","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("Detect","PoissonGLM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 ```
