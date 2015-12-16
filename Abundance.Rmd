@@ -406,9 +406,9 @@ if(paralleljags){
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-2000
+runs<-1000000
 recompile(sim_detect)
-sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.75)
+sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```
 
 ```{r}
@@ -667,7 +667,7 @@ colnames(mmat)<-c("Bird","Plant","True_State")
 
 #occupancy with detection
 mocc<-melt(occ_matrix)
-colnames(mocc)<-c("Bird","Plant","Detect","Iteration")
+colnames(mocc)<-c("Bird","Plant","Occupancy","Iteration")
 simdat<-merge(mocc,mmat,by=c("Bird","Plant"),all.x=T)
 
 #occupancy with nodetection
@@ -682,7 +682,7 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Detect","PoissonGLM","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 ```
