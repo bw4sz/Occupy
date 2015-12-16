@@ -38,7 +38,7 @@ cat("
     
     #Intercept grouping
     intercept~dnorm(0,0.0001)
-    dprior~dnorm(0,0001)
+    dprior~dnorm(0,0.0001)
 
     # Group detection variance
     tau_detect ~ dgamma(0.0001,0.0001)

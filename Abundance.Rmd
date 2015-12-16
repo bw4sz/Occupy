@@ -172,7 +172,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-20000
+runs<-30000
 
 #trigger parallel
 paralleljags<-T
@@ -321,7 +321,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-300000
+runs<-100000
 
 #trigger parallel
 paralleljags<-T
@@ -457,7 +457,7 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 
 ```{r,cache=FALSE,fig.width=8,fig.height=9}
 #Bind to other dataset
-parsall<-rbind.data.frame(pars,pars_niave)
+parsall<-rbind.data.frame(pars[!pars$par %in% "ynew",],pars_niave[!pars_niave$par %in% "ynew",])
 parsall$Model<-as.factor(parsall$Model)
 
 ###Posterior Distributions

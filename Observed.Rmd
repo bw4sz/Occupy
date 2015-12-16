@@ -318,7 +318,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 # Poisson GLM
 
 ```{r,eval=T}
-runs<-50000
+runs<-60000
 
 #trigger parallel
 paralleljags<-T
@@ -336,7 +336,7 @@ if(paralleljags){
   Bird=indat$jBird
   Plant=indat$jPlant
   Time=indat$Time
-  traitmatch=indat$traitmatch
+  traitmatch=indat$Traitmatch
   #number of birds to iterate
   Birds=max(indat$jBird)
   Nobs=length(indat$Yobs)
@@ -367,7 +367,7 @@ if(paralleljags){
     Bird=indat$jBird,
     Plant=indat$jPlant,
     Time=indat$Time,
-    traitmatch=indat$traitmatch,
+    traitmatch=indat$Traitmatch,
     #number of birds to iterate
     Birds=max(indat$jBird),
     Nobs=length(indat$Yobs))
@@ -407,7 +407,7 @@ if(paralleljags){
 load.module("dic")
 runs<-50000
 recompile(m2_niave)
-sim_detect<-update(m2_niave,n.iter=runs,n.burnin=runs*.75)
+m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.75)
 ```
 
 ```{r}
@@ -429,7 +429,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],a
 # Observed Data With Detection
 
 ```{r,eval=T}
-runs<-300000
+runs<-200000
 
 #trigger parallel
 paralleljags<-T
@@ -515,9 +515,9 @@ if(paralleljags){
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-1000000
 recompile(m2)
-sim_detect<-update(m2,n.iter=runs,n.burnin=runs*.75)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```
 
 ```{r}
@@ -531,16 +531,14 @@ pars_detect$Model<-"Detection"
 ##Assess Convergence
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
-
 ###Chains
 ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-
 ```
 
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("gamma","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect[pars_detect$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
 ```
@@ -561,8 +559,8 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill
 #Detection figure
 ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
 
-parsp<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird")
-ggplot(parsp[parsp$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
+pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird")
+ggplot(pars_detect[pars_detect$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
