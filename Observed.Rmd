@@ -627,7 +627,6 @@ predy<-rbind_all(lapply(castdf,function(i){
 #plot and compare to original data
 ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),col="black",fill="black",size=2) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.6)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
 ggsave("Figures/ObsResults.jpg",dpi=300,height=5,width=7)
-
 ```
 
 ##Predicted Frequency
@@ -644,7 +643,7 @@ p_ord<-group_by(predState,plant) %>% summarize(I=sum(State)) %>% arrange(I) %>% 
 predState$Bird<-factor(predState$species,levels=b_ord$species)
 predState$Plant<-factor(predState$plant,levels=p_ord$plant)
 
-predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(obs.state$Detection))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model) + theme(axis.text.x = element_text(angle = 90))
+predplot<-ggplot(predState,aes(x=Bird,y=Plant,fill=State)) + geom_tile() + scale_fill_continuous(na.value="white",low="white",high="red",limits=c(0,max(indat$Yobs))) + labs(x="Hummingbird",y="Plant",fill="Predicted State") + ggtitle("Predicted") + facet_wrap(~Model) + theme(axis.text.x = element_text(angle = 90))
 predplot
 orig<-group_by(indat,Bird,Plant) %>% summarize(Y=sum(Yobs))
 

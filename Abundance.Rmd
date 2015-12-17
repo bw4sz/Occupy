@@ -745,6 +745,6 @@ sim_detect$BUGSoutput$DIC
 ```
 
 ```{r}
-#save.image("Abundance.Rdata")
+save.image("Abundance.Rdata")
 ```
 
