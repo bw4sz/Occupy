@@ -55,7 +55,7 @@ $$\beta = N(-0.01,0.001)$$
 
 * Imperfect detection 
 * $$ p_i = N(dprior,\sigma_detect) $$ 
-* 36 month replicates
+* 36 camera replicates
 
 **View simulated strength and form of trait matching **
 
@@ -69,7 +69,8 @@ $$\beta = N(-0.01,0.001)$$
 #Number of hummingbird species
 h_species=10
 plant_species=20
-months=36
+cameras<-36
+days<-3
 
 #Bill sizes
 Bill<-rpois(h_species,10)
@@ -99,22 +100,36 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 ```{r,eval=T}
 #for each species loop through and create a replicate dataframe
-obs<-array(dim=c(h_species,plant_species,months))
-lambda<-array(dim=c(h_species,plant_species,months))
-N<-array(dim=c(h_species,plant_species,months))
+obs<-array(dim=c(h_species,plant_species,cameras,days))
+lambda<-array(dim=c(h_species,plant_species))
+N<-array(dim=c(h_species,plant_species,cameras))
 
+#draw intensities
 for(x in 1:h_species){
   for (y in 1:plant_species){
-    for (z in 1:months){
-      
-      #true lambda - interaction intensity
-      lambda[x,y,z]<-exp(alpha[x] + beta[x] * traitmatch[x,y])
-    
-      # true observed count
-      N[x,y,z]<-rpois(1,lambda[x,y,z])
-      
+          #true lambda - interaction intensity
+      lambda[x,y]<-exp(alpha[x] + beta[x] * traitmatch[x,y])
+  }
+}
+
+#draw latent states
+for(x in 1:h_species){
+  for (y in 1:plant_species){
+    for (z in 1:cameras){
+      # true latent count
+      N[x,y,z]<-rpois(1,lambda[x,y])
+    }
+  }
+}
+
+#Observed counts in each day
+for(x in 1:h_species){
+  for (y in 1:plant_species){
+    for (z in 1:cameras){
+        for (d in 1:days){
       #true detection rate of that observed count
-      obs[x,y,z]<-rbinom(1,N[x,y,z],p=detection[x])
+      obs[x,y,z,d]<-rbinom(1,N[x,y,z],p=detection[x])
+      }
     }
   }
 }
@@ -124,7 +139,7 @@ for(x in 1:h_species){
 
 ```{r}
 mdat<-melt(N)
-colnames(mdat)<-c("Bird","Plant","Time","Interactions")
+colnames(mdat)<-c("Bird","Plant","Camera","Interactions")
 
 traitmelt<-melt(traitmatch)
 colnames(traitmelt)<-c("Bird","Plant","traitmatch")
@@ -137,14 +152,16 @@ ggplot(mdat,aes(x=traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point()
 
 ```{r}
 obs.state<-melt(obs)
-colnames(obs.state)<-c("Bird","Plant","Time","Yobs")
-obs.state<-merge(mdat,obs.state,by=c("Bird","Plant","Time"))
-ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Time)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
+colnames(obs.state)<-c("Bird","Plant","Camera","Day","Yobs")
+obs.state<-merge(mdat,obs.state,by=c("Bird","Plant","Camera"))
+ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Camera)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
 ```
 
 # Hierarcichal Occupancy Model
 
-$$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
+For hummingbird i visiting plant j recorded by camera k on day d:
+
+$$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},detect_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
 $$logit(detect_i) \sim N(dprior,\tau_{detect})$$     
@@ -172,7 +189,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-50000
+runs<-20000
 #runs<-1000
 
 #trigger parallel
@@ -191,7 +208,8 @@ if(paralleljags){
   Bird=obs.state$Bird
   Plant=obs.state$Plant
   Plants=max(obs.state$Plant)
-  Time=obs.state$Time
+  Camera=obs.state$Camera
+  Day=obs.state$Day
   Traitmatch<-traitmatch
   #number of birds to iterate
   Birds=max(obs.state$Bird)
@@ -204,7 +222,7 @@ if(paralleljags){
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
-  ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","Day")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -324,7 +342,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-100000
+runs<-30000
 
 #trigger parallel
 paralleljags<-T
@@ -341,7 +359,10 @@ if(paralleljags){
   Yobs=obs.state$Yobs
   Bird=obs.state$Bird
   Plant=obs.state$Plant
-  Time=obs.state$Time
+  Camera=obs.state$Camera
+  Cameras=max(obs.state$Camera)
+  Day<-obs.state$Day
+  Days<-max(obs.state$Day)
   Traitmatch=traitmatch
   #number of birds to iterate
   Birds=max(obs.state$Bird)
@@ -349,8 +370,8 @@ if(paralleljags){
   Nobs=length(obs.state$Yobs)
 
   #A blank Y matrix - all present
-  Ninit<-rep(max(obs.state$Yobs)+1,Nobs)
-  
+  Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(obs.state$Yobs)+1)
+
   #Inits
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
@@ -363,24 +384,27 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","Plants","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Time","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
 
     system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
   #Input Data
   Dat <- list(
-    Yobs=obs.state$Yobs,
+     Yobs=obs.state$Yobs,
     Bird=obs.state$Bird,
     Plant=obs.state$Plant,
-    Plants=max(obs.state$Plant),
-    Time=obs.state$Time,
+    Camera=obs.state$Camera,
+    Cameras=max(obs.state$Camera),
+    Day<-obs.state$Day,
+    Days<-max(obs.state$Day),
     Traitmatch=traitmatch,
     #number of birds to iterate
     Birds=max(obs.state$Bird),
-    Nobs=length(obs.state$Yobs))
-  
+    Plants=max(obs.state$Plant),
+    Nobs=length(obs.state$Yobs)
+  )
     #A blank Y matrix - all present
-    Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
+  Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(obs.state$Yobs)+1)
   
     #Inits
   InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}

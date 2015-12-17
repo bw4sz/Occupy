@@ -432,7 +432,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],a
 # Observed Data With Detection
 
 ```{r,eval=T}
-runs<-100000
+runs<-30000
 
 #trigger parallel
 paralleljags<-T
@@ -449,16 +449,19 @@ if(paralleljags){
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
-  Plants=max(indat$jPlant)
-  Time=indat$Time
-  Traitmatch=jTraitmatch
+  Camera=indat$Camera
+  Cameras=max(indat$Camera)
+  Day<-indat$Day
+  Days<-max(indat$Day)
+  Traitmatch=traitmatch
   #number of birds to iterate
   Birds=max(indat$jBird)
+  Plants=max(indat$jPlant)
   Nobs=length(indat$Yobs)
 
   #A blank Y matrix - all present
-  Ninit<-rep(max(indat$Yobs)+1,Nobs)
-  
+  Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(indat$Yobs)+1)
+
   #Inits
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
@@ -471,24 +474,27 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Time","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Time","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
 
-    system.time(m2<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+    system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
   #Input Data
   Dat <- list(
-    Yobs=indat$Yobs,
+     Yobs=indat$Yobs,
     Bird=indat$jBird,
     Plant=indat$jPlant,
-    Plants=max(indat$jPlant),
-    Time=indat$Time,
-    Traitmatch=jTraitmatch,
+    Camera=indat$Camera,
+    Cameras=max(indat$Camera),
+    Day<-indat$Day,
+    Days<-max(indat$Day),
+    Traitmatch=traitmatch,
     #number of birds to iterate
     Birds=max(indat$jBird),
-    Nobs=length(indat$Yobs))
-  
+    Plants=max(indat$jPlant),
+    Nobs=length(indat$Yobs)
+  )
     #A blank Y matrix - all present
-    Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
+  Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(indat$Yobs)+1)
   
     #Inits
   InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
@@ -498,13 +504,13 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 10   #thinning rate
+  nt <- 5   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
   
   #Jags
   
-  system.time(m2 <- jags(inits=InitStage,
+  system.time(sim_detect <- jags(inits=InitStage,
                    n.chains=nc, model.file="Bayesian/NmixturePoissonRagged.jags",
                    working.directory=getwd(),
                    data=Dat,
@@ -636,7 +642,7 @@ ggsave("Figures/ObsResults.jpg",dpi=300,height=5,width=7)
 
 ##Predicted Frequency
 
-```{r,fig.height=7,fig.width=12}
+```{r,fig.height=7,fig.width=12,eval=F}
 #any given state
 predState<-group_by(parsObs,par,Model) %>% filter(par=="ynew") %>% group_by(par,species,plant,Model) %>% summarize(State=as.numeric(names(which.max(table(estimate)))))
 
