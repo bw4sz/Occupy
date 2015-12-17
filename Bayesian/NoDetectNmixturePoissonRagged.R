@@ -6,7 +6,7 @@ cat("
     for (x in 1:Nobs){
     
     # Covariates for true state   
-    log(lambda[Bird[x],Plant[x],Time[x]]) <- alpha[Bird[x]] + beta[Bird[x]] * traitmatch[x] 
+    log(lambda[Bird[x],Plant[x],Time[x]]) <- alpha[Bird[x]] + beta[Bird[x]] * Traitmatch[x] 
     
     #Observed State
     Yobs[x] ~ dpois(lambda[Bird[x],Plant[x],Time[x]] )    

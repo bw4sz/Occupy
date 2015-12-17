@@ -6,7 +6,7 @@ cat("
     for (x in 1:Nobs){
     
     # Covariates for true state   
-    log(lambda[Bird[x],Plant[x],Time[x]]) <- alpha[Bird[x]] + beta[Bird[x]] * traitmatch[x] 
+    log(lambda[Bird[x],Plant[x],Time[x]]) <- alpha[Bird[x]] + beta[Bird[x]] * Traitmatch[x] 
     
     #True State
     N[x] ~ dpois(lambda[Bird[x],Plant[x],Time[x]] )    
@@ -41,7 +41,8 @@ cat("
     dprior~dnorm(0,0.5)
 
     # Group detection variance
-    tau_detect ~ dgamma(0.0001,0.0001)
+    #tau_detect ~ dgamma(0.0001,0.0001)
+    tau_detect ~ dunif(0,10)
     sigma_detect<-pow(1/tau_detect,0.5) 
 
     # Group intercept variance

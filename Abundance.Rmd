@@ -60,12 +60,12 @@ $$\beta = N(-0.01,0.001)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=F}
+```{r,fig.height=5,fig.width=8,eval=T}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -97,7 +97,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=F}
+```{r,eval=T}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,months))
 lambda<-array(dim=c(h_species,plant_species,months))
@@ -155,13 +155,13 @@ $$\alpha_i \sim N(intercept,\tau_{\alpha})$$
 $$\beta_i \sim N(\gamma,\tau_{\beta})$$
 
 **Hyperpriors**
-$$dprior \sim N(0,0.0001)$$
+$$dprior \sim N(0,0.5)$$
 $$gamma \sim N(0,0.0001)$$
 $$intercept \sim N(0,0.0001)$$
 
 $$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
 $$\tau_\beta \sim Gamma(0.0001,0.0001)$$
-$$\tau_{detect} \sim Gamma(0.0001,0.0001)$$
+$$\tau_{detect} \sim U(0,10)$$
 
 **Derived quantities**
 
@@ -171,8 +171,9 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 #Simulated data without detection
 
-```{r,eval=F}
-runs<-30000
+```{r,eval=T}
+runs<-60000
+#runs<-1000
 
 #trigger parallel
 paralleljags<-T
@@ -190,7 +191,7 @@ if(paralleljags){
   Bird=obs.state$Bird
   Plant=obs.state$Plant
   Time=obs.state$Time
-  traitmatch=obs.state$traitmatch
+  Traitmatch<-obs.state$traitmatch
   #number of birds to iterate
   Birds=max(obs.state$Bird)
   Nobs=length(obs.state$Yobs)
@@ -206,11 +207,11 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
+  nt <- 2   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Time","Traitmatch","Birds","Nobs","Ninit")
 
     sim_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
@@ -221,7 +222,7 @@ if(paralleljags){
     Bird=obs.state$Bird,
     Plant=obs.state$Plant,
     Time=obs.state$Time,
-    traitmatch=obs.state$traitmatch,
+    Traitmatch=obs.state$traitmatch,
     #number of birds to iterate
     Birds=max(obs.state$Bird),
     Nobs=length(obs.state$Yobs))
@@ -320,8 +321,9 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 # Simulated data with detection
 
-```{r,eval=F}
-runs<-100000
+```{r,eval=T}
+runs<-1000000
+#runs<-1000
 
 #trigger parallel
 paralleljags<-T
@@ -339,7 +341,7 @@ if(paralleljags){
   Bird=obs.state$Bird
   Plant=obs.state$Plant
   Time=obs.state$Time
-  traitmatch=obs.state$traitmatch
+  Traitmatch=obs.state$traitmatch
   #number of birds to iterate
   Birds=max(obs.state$Bird)
   Nobs=length(obs.state$Yobs)
@@ -359,7 +361,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Time","Traitmatch","Birds","Nobs","Ninit")
 
     system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
@@ -369,7 +371,7 @@ if(paralleljags){
     Bird=obs.state$Bird,
     Plant=obs.state$Plant,
     Time=obs.state$Time,
-    traitmatch=obs.state$traitmatch,
+    Traitmatch=obs.state$traitmatch,
     #number of birds to iterate
     Birds=max(obs.state$Bird),
     Nobs=length(obs.state$Yobs))
@@ -406,7 +408,7 @@ if(paralleljags){
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-1000000
+runs<-100000
 recompile(sim_detect)
 sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```

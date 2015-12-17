@@ -336,7 +336,7 @@ if(paralleljags){
   Bird=indat$jBird
   Plant=indat$jPlant
   Time=indat$Time
-  traitmatch=indat$Traitmatch
+  Traitmatch=indat$Traitmatch
   #number of birds to iterate
   Birds=max(indat$jBird)
   Nobs=length(indat$Yobs)
@@ -356,7 +356,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Time","Traitmatch","Birds","Nobs","Ninit")
 
     m2_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
@@ -367,7 +367,7 @@ if(paralleljags){
     Bird=indat$jBird,
     Plant=indat$jPlant,
     Time=indat$Time,
-    traitmatch=indat$Traitmatch,
+    Traitmatch=indat$Traitmatch,
     #number of birds to iterate
     Birds=max(indat$jBird),
     Nobs=length(indat$Yobs))
@@ -429,7 +429,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],a
 # Observed Data With Detection
 
 ```{r,eval=T}
-runs<-200000
+runs<-500000
 
 #trigger parallel
 paralleljags<-T
@@ -447,7 +447,7 @@ if(paralleljags){
   Bird=indat$jBird
   Plant=indat$jPlant
   Time=indat$Time
-  traitmatch=indat$Traitmatch
+  Traitmatch=indat$Traitmatch
   #number of birds to iterate
   Birds=max(indat$jBird)
   Nobs=length(indat$Yobs)
@@ -467,7 +467,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Time","Traitmatch","Birds","Nobs","Ninit")
 
     system.time(m2<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
@@ -477,7 +477,7 @@ if(paralleljags){
     Bird=indat$jBird,
     Plant=indat$jPlant,
     Time=indat$Time,
-    traitmatch=indat$Traitmatch,
+    Traitmatch=indat$Traitmatch,
     #number of birds to iterate
     Birds=max(indat$jBird),
     Nobs=length(indat$Yobs))
