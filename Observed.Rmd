@@ -283,14 +283,15 @@ indat$jPlant<-as.numeric(indat$Iplant_Double)
 jagsIndexBird<-data.frame(Hummingbird=levels(indat$Hummingbird),jBird=1:length(levels(indat$Hummingbird)))
  
 jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:length(levels(indat$Iplant_Double)))
-```
 
-Similiarly, the trait matrix needs to reflect this indexing.
+#Similiarly, the trait matrix needs to reflect this indexing.
+jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),colnames(traitmatchT) %in% unique(indat$Iplant_Double)]
+```
 
 # Hierarcichal Occupancy Model
 
-$$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
-$$N_{i,j} \sim Pois(\lambda_{i,j}) $$
+$$ Y_{i,j,k} \sim Binom(N_{i,j,k},detect_i)$$
+$$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
 $$detect_i \sim N(dprior,\tau_detect)$$     
 
@@ -318,7 +319,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 # Poisson GLM
 
 ```{r,eval=T}
-runs<-60000
+runs<-50000
 
 #trigger parallel
 paralleljags<-T
@@ -335,8 +336,9 @@ if(paralleljags){
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
+  Plants=max(indat$jPlant)
   Time=indat$Time
-  Traitmatch=indat$Traitmatch
+  Traitmatch=jTraitmatch
   #number of birds to iterate
   Birds=max(indat$jBird)
   Nobs=length(indat$Yobs)
@@ -356,7 +358,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Plants","Time","Traitmatch","Birds","Nobs","Ninit")
 
     m2_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
@@ -366,8 +368,9 @@ if(paralleljags){
     Yobs=indat$Yobs,
     Bird=indat$jBird,
     Plant=indat$jPlant,
+    Plants=max(indat$jPlant),
     Time=indat$Time,
-    Traitmatch=indat$Traitmatch,
+    Traitmatch=jTraitmatch,
     #number of birds to iterate
     Birds=max(indat$jBird),
     Nobs=length(indat$Yobs))
@@ -429,7 +432,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],a
 # Observed Data With Detection
 
 ```{r,eval=T}
-runs<-500000
+runs<-100000
 
 #trigger parallel
 paralleljags<-T
@@ -446,8 +449,9 @@ if(paralleljags){
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
+  Plants=max(indat$jPlant)
   Time=indat$Time
-  Traitmatch=indat$Traitmatch
+  Traitmatch=jTraitmatch
   #number of birds to iterate
   Birds=max(indat$jBird)
   Nobs=length(indat$Yobs)
@@ -467,7 +471,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Plants","Time","Traitmatch","Birds","Nobs","Ninit")
 
     system.time(m2<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
@@ -476,8 +480,9 @@ if(paralleljags){
     Yobs=indat$Yobs,
     Bird=indat$jBird,
     Plant=indat$jPlant,
+    Plants=max(indat$jPlant),
     Time=indat$Time,
-    Traitmatch=indat$Traitmatch,
+    Traitmatch=jTraitmatch,
     #number of birds to iterate
     Birds=max(indat$jBird),
     Nobs=length(indat$Yobs))
@@ -681,10 +686,8 @@ Number of samples per species
 ##DIC Table
 
 ```{r}
-DICtable<-data.frame(Data=c(rep("Simulated",2),rep("Observed",2)),Model=c(rep(c("No Detection Estimated","Detection Estimated"),2)),DIC=c(sim_niave$BUGSoutput$DIC,sim_detect$BUGSoutput$DIC,m2_niave$BUGSoutput$DIC,m2$BUGSoutput$DIC))
-h<-dcast(DICtable,Data~Model)
-print(h)
-write.csv(h,"Figures/DICtable.csv")
+m2_niave$BUGSoutput$DIC
+m2$BUGSoutput$DIC
 ```
 
 #Predicted versus Observed Data

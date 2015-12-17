@@ -145,7 +145,7 @@ ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Time)) + geom_point() + theme_bw(
 # Hierarcichal Occupancy Model
 
 $$ Y_{i,j,k} \sim Binom(N_{i,j},detect_i)$$
-$$N_{i,j} \sim Pois(\lambda_{i,j}) $$
+$$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
 $$logit(detect_i) \sim N(dprior,\tau_{detect})$$     
 
@@ -172,7 +172,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-60000
+runs<-50000
 #runs<-1000
 
 #trigger parallel
@@ -190,8 +190,9 @@ if(paralleljags){
   Yobs=obs.state$Yobs
   Bird=obs.state$Bird
   Plant=obs.state$Plant
+  Plants=max(obs.state$Plant)
   Time=obs.state$Time
-  Traitmatch<-obs.state$traitmatch
+  Traitmatch<-traitmatch
   #number of birds to iterate
   Birds=max(obs.state$Bird)
   Nobs=length(obs.state$Yobs)
@@ -211,7 +212,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Plants","Time","Traitmatch","Birds","Nobs","Ninit")
 
     sim_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
@@ -221,8 +222,9 @@ if(paralleljags){
     Yobs=obs.state$Yobs,
     Bird=obs.state$Bird,
     Plant=obs.state$Plant,
+    Plants=max(obs.state$Plant),
     Time=obs.state$Time,
-    Traitmatch=obs.state$traitmatch,
+    Traitmatch=traitmatch,
     #number of birds to iterate
     Birds=max(obs.state$Bird),
     Nobs=length(obs.state$Yobs))
@@ -322,8 +324,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-1000000
-#runs<-1000
+runs<-100000
 
 #trigger parallel
 paralleljags<-T
@@ -341,9 +342,10 @@ if(paralleljags){
   Bird=obs.state$Bird
   Plant=obs.state$Plant
   Time=obs.state$Time
-  Traitmatch=obs.state$traitmatch
+  Traitmatch=traitmatch
   #number of birds to iterate
   Birds=max(obs.state$Bird)
+  Plants=max(obs.state$Plant)
   Nobs=length(obs.state$Yobs)
 
   #A blank Y matrix - all present
@@ -361,7 +363,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Time","Plants","Traitmatch","Birds","Nobs","Ninit")
 
     system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
@@ -370,8 +372,9 @@ if(paralleljags){
     Yobs=obs.state$Yobs,
     Bird=obs.state$Bird,
     Plant=obs.state$Plant,
+    Plants=max(obs.state$Plant),
     Time=obs.state$Time,
-    Traitmatch=obs.state$traitmatch,
+    Traitmatch=traitmatch,
     #number of birds to iterate
     Birds=max(obs.state$Bird),
     Nobs=length(obs.state$Yobs))
