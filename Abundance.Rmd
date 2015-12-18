@@ -639,7 +639,7 @@ multmats<-merge(multmats,traitmelt)
 
 multline<-multmats %>% group_by(traitmatch) %>% summarize(y=mean(Multinomial),Upper=quantile(Multinomial,0.95),Lower=quantile(Multinomial,0.05)) 
 
-psim3 + geom_ribbon(data=multline,aes(x=traitmatch,ymin=Lower,ymax=Upper),alpha=0.5,fill='gray')
+psim3 + geom_ribbon(data=multline,aes(x=traitmatch,ymin=Lower,ymax=Upper),alpha=0.5,fill='gray') + geom_line(data=multline,aes(x=traitmatch,y=y),linetype='dashed')
 ```
 
 #Compare Bayesian Occupancy and Multinomial using true known interactions
