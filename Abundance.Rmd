@@ -69,7 +69,7 @@ $$\beta = N(-0.01,0.001)$$
 #Number of hummingbird species
 h_species=10
 plant_species=20
-cameras<-36
+cameras<-20
 days<-3
 
 #Bill sizes
@@ -189,7 +189,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-30000
+runs<-40000
 #runs<-1000
 
 #trigger parallel
@@ -222,7 +222,7 @@ if(paralleljags){
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
-  ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","Day")
+  ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -230,7 +230,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Time","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit")
 
     sim_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
@@ -342,7 +342,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-30000
+runs<-50000
 
 #trigger parallel
 paralleljags<-T
@@ -384,7 +384,7 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
 
     system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
@@ -729,7 +729,7 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
 
-h<-simdat[simdat$True_State == quantile(simdat$True_State,0.5),c("Bird","Plant")][1,]
+h<-simdat[simdat$True_State == quantile(simdat$True_State,0.55),c("Bird","Plant")][1,]
 d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Median Visitation Example")

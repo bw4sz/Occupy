@@ -448,7 +448,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],a
 # Observed Data With Detection
 
 ```{r,eval=T}
-runs<-30000
+runs<-80000
 
 #trigger parallel
 paralleljags<-T
@@ -586,7 +586,8 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill
 #Detection figure
 ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
 
-pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird")
+pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
+
 ggplot(pars_detect[pars_detect$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
@@ -852,12 +853,9 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Detect","Poisson GLM","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
-
-
-ggplot(data=simdat[simdat$Bird %in% 13 & simdat$Plant %in% 40,],aes(x)) + geom_histogram(aes(x=value,fill=variable)) + geom_vline(aes(xintercept=unique(True_State))) + facet_wrap(~Plant,scales='free')
 ```
 
 ##Summary of discrepancy of predicted matrices
