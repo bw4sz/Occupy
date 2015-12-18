@@ -60,6 +60,9 @@ hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Hummin
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
+#just use camera data
+int<-int[is.na(int$TransectID),]
+
 #Correct known taxonomic disagreements, atleast compared to traits
 int[int$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
 int[int$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
@@ -176,8 +179,21 @@ datph[which(is.na(datph$ID)),"ID"]<-id_topaste
 indatraw<- datph %>% group_by(Bird,Plant,ID,DateP) %>% summarize(Yobs=n(),Elev=mean(ele,na.rm=T),Transect_R=unique(Transect_R)) 
 
 indatraw[order(indatraw$Yobs,decreasing=T),]
-#add unique ID
-indatraw$Time<-1:nrow(indatraw)
+
+#add unique Camera ID
+indatraw$Camera<-1:nrow(indatraw)
+
+#add day ID
+
+sdat<-split(indatraw,list(indatraw$ID,indatraw$Plant),drop = T)
+
+sdat<-lapply(sdat,function(x){
+  x<-droplevels(x)
+  x$Day<-as.numeric(as.factor(x$DateP))
+  return(x)
+})
+
+indatraw<-rbind_all(sdat)
 
 #add months and years
 indatraw$Month<-as.numeric(factor(months(strptime(indatraw$DateP,format="%Y-%m-%d")),levels=month.name))
@@ -210,7 +226,7 @@ colnames(traitmelt)<-c("Hummingbird","Iplant_Double","Traitmatch")
 We have more information than just the presences, given species elevation ranges, we have absences as well. Absences are birds that occur at the elevation of the plant sample, but were not recorded feeding on the flower.
 
 ```{r}
-indatlong<-acast(indatraw,Bird~Plant~Time,value.var="Yobs")
+indatlong<-acast(indatraw,Bird~Plant~Camera~Day,value.var="Yobs")
 indatlong[is.na(indatlong)]<-0
 ```
 
@@ -221,12 +237,12 @@ indatlong[is.na(indatlong)]<-0
 
 for(x in 1:dim(indatlong)[3]){
   #Remove non sampled plants 
-  a<-indatlong[,,x]
+  a<-indatlong[,,x,]
   
   #No observations at that plant
   toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
   pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
-  indatlong[,colnames(a) %in% toNA,x]<-NA
+  indatlong[,colnames(a) %in% toNA,x,]<-NA
   
   #match elevation if there were presences, slightly terse code.
   if(length(pres)>0){
@@ -237,10 +253,10 @@ for(x in 1:dim(indatlong)[3]){
       if(is.na(pr)|!pr==3){
         helim<-elevH[!elevH$Elevation %in% c(pr,3),"Bird"]
         #sanity check, make sure rows don't have values
-        sums<-indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x]==0
+        sums<-indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x,]==0
         helim<-helim[sums]
         #set to NA if they are outside of elevation and are blank
-        indatlong[rownames(a) %in% helim ,colnames(a) %in% pres[y],x]<-NA
+        indatlong[rownames(a) %in% helim ,colnames(a) %in% pres[y],x,]<-NA
         }
       }  
     }
@@ -250,15 +266,15 @@ for(x in 1:dim(indatlong)[3]){
 indat<-melt(indatlong)
 indat<-indat[!is.na(indat$value),]
 
-colnames(indat)<-c("Bird","Plant","Time","Yobs")
+colnames(indat)<-c("Bird","Plant","Camera","Day","Yobs")
 ```
 
 ```{r}
 #remerge the time period data
-Timelookup<-indatraw %>% dplyr::select(Time,DateP,Transect_R,Month,Year)%>% group_by(Time,DateP,Transect_R,Month,Year) %>% distinct() %>% arrange(Time)
+Timelookup<-indatraw %>% dplyr::select(Camera,DateP,Transect_R,Month,Year) %>% group_by(Camera,DateP,Transect_R,Month,Year) %>% distinct() %>% arrange(Camera)
 
 #Get time information
-indat<-merge(indat,Timelookup[,!colnames(Timelookup) %in% c("Bird","Plant")],by=c("Time"),all.x=T)
+indat<-merge(indat,Timelookup[,!colnames(Timelookup) %in% c("Bird","Plant")],by=c("Camera"),all.x=T)
 
 #Species names
 for (x in 1:nrow(indat)){
@@ -337,7 +353,7 @@ if(paralleljags){
   Bird=indat$jBird
   Plant=indat$jPlant
   Plants=max(indat$jPlant)
-  Time=indat$Time
+  Time=indat$Camera
   Traitmatch=jTraitmatch
   #number of birds to iterate
   Birds=max(indat$jBird)
@@ -369,7 +385,7 @@ if(paralleljags){
     Bird=indat$jBird,
     Plant=indat$jPlant,
     Plants=max(indat$jPlant),
-    Time=indat$Time,
+    Time=indat$Camera,
     Traitmatch=jTraitmatch,
     #number of birds to iterate
     Birds=max(indat$jBird),
@@ -453,14 +469,14 @@ if(paralleljags){
   Cameras=max(indat$Camera)
   Day<-indat$Day
   Days<-max(indat$Day)
-  Traitmatch=traitmatch
+  Traitmatch=jTraitmatch
   #number of birds to iterate
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
   Nobs=length(indat$Yobs)
 
   #A blank Y matrix - all present
-  Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(indat$Yobs)+1)
+  Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
 
   #Inits
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
@@ -474,9 +490,9 @@ if(paralleljags){
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Time","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
 
-    system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+    system.time(m2<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
   #Input Data
   Dat <- list(
@@ -494,7 +510,7 @@ if(paralleljags){
     Nobs=length(indat$Yobs)
   )
     #A blank Y matrix - all present
-  Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(indat$Yobs)+1)
+  Ninit<-array(dim=c(Dat$Birds,Dat$Plants,Dat$Cameras),data=max(indat$Yobs)+1)
   
     #Inits
   InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
@@ -510,7 +526,7 @@ if(paralleljags){
   
   #Jags
   
-  system.time(sim_detect <- jags(inits=InitStage,
+  system.time(m2 <- jags(inits=InitStage,
                    n.chains=nc, model.file="Bayesian/NmixturePoissonRagged.jags",
                    working.directory=getwd(),
                    data=Dat,

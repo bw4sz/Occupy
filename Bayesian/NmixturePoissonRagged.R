@@ -33,7 +33,7 @@ cat("
     eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]
     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
     
-    ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])
+    ynew[x]~dbin(detect[Bird[x]],N[x])
     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)
     
     }

@@ -189,7 +189,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-20000
+runs<-30000
 #runs<-1000
 
 #trigger parallel
