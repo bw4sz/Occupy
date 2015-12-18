@@ -60,12 +60,12 @@ $$\beta = N(-0.01,0.001)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=T}
+```{r,fig.height=5,fig.width=8,eval=F}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -98,7 +98,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=T}
+```{r,eval=F}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,cameras,days))
 lambda<-array(dim=c(h_species,plant_species))
@@ -188,7 +188,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 #Simulated data without detection
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-40000
 #runs<-1000
 
@@ -341,7 +341,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 # Simulated data with detection
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-50000
 
 #trigger parallel
@@ -432,12 +432,12 @@ if(paralleljags){
 }
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-10000
 recompile(sim_detect)
-sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10)
+sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.9,n.thin=10)
 ```
 
 ```{r}
@@ -632,6 +632,16 @@ multi_disc<-sapply(mats,function(x) sum(x))
 qplot(multi_disc)+ xlab("Chi-squared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
 ```
 
+## View predicted trait-matching relationship with multinomial included.
+```{r}
+#merge multinomial with trait relationship
+multmats<-merge(multmats,traitmelt)
+
+multline<-multmats %>% group_by(traitmatch) %>% summarize(y=mean(Multinomial),Upper=quantile(Multinomial,0.95),Lower=quantile(Multinomial,0.05)) 
+
+psim3 + geom_ribbon(data=multline,aes(x=traitmatch,ymin=Lower,ymax=Upper),alpha=0.5,fill='gray')
+```
+
 #Compare Bayesian Occupancy and Multinomial using true known interactions
 
 ## No Detection Occupancy Model
@@ -722,17 +732,17 @@ View a couple example data points from across the type of interactions.
 h<-simdat[which.max(simdat$True_State),c("Bird","Plant")]
 d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 
-ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("High Visitation Example")
+ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(alpha=.95,binwidth=1) + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("High Visitation Example")
 
 h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
 d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 
-ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
+ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(binwidth=1) + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
 
 h<-simdat[simdat$True_State == quantile(simdat$True_State,0.55),c("Bird","Plant")][1,]
 d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 
-ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram() + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Median Visitation Example")
+ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(binwidth=1) + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Median Visitation Example")
 
 h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
 d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
@@ -770,6 +780,7 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 sim_niave$BUGSoutput$DIC
 sim_detect$BUGSoutput$DIC
 ```
+
 
 ```{r}
 save.image("Abundance.Rdata")

@@ -25,7 +25,7 @@ library(boot)
 library(picante)
 library(bipartite)
 
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figure/")
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
@@ -41,7 +41,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-#load("Observed.Rdata")
+load("Observed.Rdata")
 ```
 
 #Observed dataset
@@ -334,7 +334,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 # Poisson GLM
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-50000
 
 #trigger parallel
@@ -421,10 +421,10 @@ if(paralleljags){
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-50000
+runs<-20000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.75)
 ```
@@ -447,7 +447,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],a
 
 # Observed Data With Detection
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-80000
 
 #trigger parallel
@@ -830,7 +830,7 @@ names(occ_matrix)<-1:length(occ_matrix)
 
 ##Compare to observed data
 
-```{r}
+```{r,fig.width=12}
 mmat<-melt(true_state)
 colnames(mmat)<-c("Bird","Plant","True_State")
 
