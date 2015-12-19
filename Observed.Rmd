@@ -181,10 +181,9 @@ indatraw<- datph %>% group_by(Bird,Plant,ID,DateP) %>% summarize(Yobs=n(),Elev=m
 indatraw[order(indatraw$Yobs,decreasing=T),]
 
 #add unique Camera ID
-indatraw$Camera<-1:nrow(indatraw)
+indatraw$Camera<-as.numeric(factor(indatraw$ID))
 
 #add day ID
-
 sdat<-split(indatraw,list(indatraw$ID,indatraw$Plant),drop = T)
 
 sdat<-lapply(sdat,function(x){
@@ -445,13 +444,13 @@ ggplot(pars_dniave[pars_dniave$par %in% c("detect","alpha","beta"),],aes(x=Draw,
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","intercept"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 # Observed Data With Detection
 
-```{r,eval=T}
-runs<-80000
+```{r,eval=F}
+runs<-100000
 
 #trigger parallel
 paralleljags<-T
@@ -489,7 +488,7 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
+  nt <- 7   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 

@@ -60,12 +60,12 @@ $$\beta = N(-0.01,0.001)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-#load("Abundance.RData")
+load("Abundance.RData")
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=T}
+```{r,fig.height=5,fig.width=8,eval=F}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -94,7 +94,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=T}
+```{r,eval=F}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,cameras,days))
 lambda<-array(dim=c(h_species,plant_species))
@@ -182,7 +182,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 #Simulated data without detection
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-40000
 #runs<-1000
 
@@ -426,12 +426,12 @@ if(paralleljags){
 }
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-10000
+runs<-20000
 recompile(sim_detect)
-sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.9,n.thin=10)
+sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```
 
 ```{r}
@@ -625,16 +625,6 @@ multi_disc<-sapply(mats,function(x) sum(x))
 qplot(multi_disc)+ xlab("Chi-squared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
 ```
 
-## View predicted trait-matching relationship with multinomial included.
-```{r}
-#merge multinomial with trait relationship
-multmats<-merge(multmats,traitmelt)
-
-multline<-multmats %>% group_by(traitmatch) %>% summarize(y=mean(Multinomial),Upper=quantile(Multinomial,0.95),Lower=quantile(Multinomial,0.05)) 
-
-psim3 + geom_ribbon(data=multline,aes(x=traitmatch,ymin=Lower,ymax=Upper),alpha=0.5,fill='gray') + geom_line(data=multline,aes(x=traitmatch,y=y),linetype='dashed')
-```
-
 #Compare Bayesian Occupancy and Multinomial using true known interactions
 
 ## No Detection Occupancy Model
@@ -726,6 +716,16 @@ simd$Diff<-simd$Occupancy-simd$`Poisson GLM`
 ggplot(simd,aes(x=True_State,y=Diff)) + geom_point() + ylab("Difference in Occupancy and Poisson GLMM")
 ```
 
+## View predicted trait-matching relationship with multinomial included.
+```{r}
+#merge multinomial with trait relationship
+multmats<-merge(multmats,traitmelt)
+
+multline<-multmats %>% group_by(traitmatch) %>% summarize(y=mean(Multinomial),Upper=quantile(Multinomial,0.95),Lower=quantile(Multinomial,0.05)) 
+
+psim3 + geom_ribbon(data=multline,aes(x=traitmatch,ymin=Lower,ymax=Upper),alpha=0.5,fill='gray') + geom_line(data=multline,aes(x=traitmatch,y=y),linetype='dashed')
+```
+
 View a couple example data points from across the type of interactions.
 
 ```{r}
@@ -738,14 +738,6 @@ h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
 d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
-
-h<-simdat[simdat$True_State == quantile(simdat$True_State,0.55),c("Bird","Plant")][1,]
-d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
-
-ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Median Visitation Example")
-
-h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
-d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ```
 
 ##Summary of discrepancy of predicted matrices
