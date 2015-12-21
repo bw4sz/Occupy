@@ -184,7 +184,7 @@ indatraw[order(indatraw$Yobs,decreasing=T),]
 indatraw$Camera<-as.numeric(factor(indatraw$ID))
 
 #add day ID
-sdat<-split(indatraw,list(indatraw$ID,indatraw$Plant),drop = T)
+sdat<-split(indatraw,list(indatraw$Camera,indatraw$Plant),drop = T)
 
 sdat<-lapply(sdat,function(x){
   x<-droplevels(x)
@@ -260,9 +260,20 @@ for(x in 1:dim(indatlong)[3]){
         #set to NA if they are outside of elevation and are blank
         indatlong[rownames(a) %in% helim ,colnames(a) %in% pres[y],x,]<-NA
         }
-      }  
     }
   }
+}
+
+### There can't be absences in days that weren't sampled.
+for (x in 1:dim(indatlong)[3]){
+  cam<-indatlong[,,x,]
+  for (y in 1:dim(cam)[3]){
+    sc<-sum(cam[,,y],na.rm=T)
+    if (sc ==0){
+      cam[,,y]<-NA
+    }
+  }
+}
 
 #melt and remove Na's
 indat<-melt(indatlong)
@@ -337,7 +348,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 # Poisson GLM
 
 ```{r,eval=F}
-runs<-50000
+runs<-30000
 
 #trigger parallel
 paralleljags<-T
@@ -428,7 +439,7 @@ if(paralleljags){
 load.module("dic")
 runs<-20000
 recompile(m2_niave)
-m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.75)
+m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.95)
 ```
 
 ```{r}
@@ -450,7 +461,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-100000
+runs<-20000
 
 #trigger parallel
 paralleljags<-T
@@ -484,11 +495,11 @@ if(paralleljags){
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","lambda")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 7   #thinning rate
+  nt <- 8   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
@@ -518,7 +529,7 @@ if(paralleljags){
   InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","lambda")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -544,7 +555,7 @@ if(paralleljags){
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-50000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```
@@ -632,7 +643,7 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 #match colnames
 
 #plot and compare to original data
-ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model") 
+ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model")  + ylab("Interactions per day")
 
 ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
 ```
@@ -655,13 +666,13 @@ predy<-rbind_all(lapply(castdf,function(i){
   }))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),col="black",fill="black",size=2) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.6)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") 
+ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),col="black",fill="black",size=2) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.6)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + ylab("Interactions per day")
 ggsave("Figures/ObsResults.jpg",dpi=300,height=5,width=7)
 ```
 
 ##Discrepancy 
 
-The goodness if of fit is a measured as chi-squared. The expected value for each day is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
+The goodness of fit is a measured as chi-squared. The expected value for each day is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
 Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. In addition, a model with 0 discrepancy would likely be seriously overfit and have little to no predictive power.
 
 ```{r,fig.height=4,fig.width=8,message=F,warning=F}
@@ -707,6 +718,7 @@ true_state<-acast(mat,jBird~jPlant,fill=0)
 #trait liklihood
 dmultinom(true_state,prob=m,log=T)
 paste("Correlation coefficient is:", round(cor(c(true_state),c(m),method="spearman"),2))
+
 ```
 
 ###Test Statistic
@@ -717,6 +729,7 @@ Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 t
 Based on trait differences.
 
 ```{r}
+
 #define discrep function
 chisq<-function(o,e){(o-e)^2/(e+0.5)}
 
@@ -869,3 +882,5 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 gc()
 save.image("Observed.Rdata")
 ```
+
+
