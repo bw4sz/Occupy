@@ -6,8 +6,9 @@ output:
     toc: true
     number_sections: true
     theme: spacelab
+    keep_md: true
+
   word_document: default
-  keep_md: true
 ---
 
 ```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
@@ -41,7 +42,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-load("Observed.Rdata")
+#load("Observed.Rdata")
 ```
 
 #Observed dataset
@@ -70,13 +71,9 @@ int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersoni
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
-#Some reasonable level of presences, 20 points
-keep<-names(which(table(int$Hummingbird) > 25))
+#Some reasonable level of presences, 10 points
+keep<-names(which(table(int$Hummingbird) > 10))
 
-#sparkling violetear changes through time, seems to violate closed system assumption
-keep<-keep[!keep %in% "Sparkling Violetear"]
-int<-int[int$Hummingbird %in% keep, ]
-dim(int)
 m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
 
 #Does the data come from camera or transect?
@@ -345,9 +342,9 @@ $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
-# Poisson GLM
+# Poisson GLMM
 
-```{r,eval=F}
+```{r,eval=T}
 runs<-30000
 
 #trigger parallel
@@ -444,7 +441,7 @@ m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.95)
 
 ```{r}
 pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant")
-pars_dniave$Model<-"Poisson GLM"
+pars_dniave$Model<-"Poisson GLMM"
 ```
 
 ##Assess Convergence
@@ -460,8 +457,8 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 # Observed Data With Detection
 
-```{r,eval=F}
-runs<-20000
+```{r,eval=T}
+runs<-50000
 
 #trigger parallel
 paralleljags<-T
@@ -682,8 +679,9 @@ fitstat<-dcast(fitstat,Model+Draw+Chain~par,value.var="estimate")
 ymin<-round(min(fitstat$fit))
 ymax<-round(max(fitstat$fit))
 ab<-data.frame(x=0:ymax,y=0:ymax)
-disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew)))) + facet_wrap(~Model,scales = "free")
+disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
 disc_obs
+ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
 ```
 
 ##Detection table
@@ -695,6 +693,46 @@ tab<-merge(dp,jagsIndexBird,by.x="species",by.y="jBird")[,-1]
 tab[,c(4,1,2,3)]
 write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 ```
+
+##Sampling intensity and detection for each hummingbird species
+```{r}
+head(tab)
+```
+
+The probability of missing a species at each daily visit is 1 - detection probability.
+
+The probability of missing a species on sequential visits is (1- detection probability) * (1 - detection probability).
+
+We are interested in the number of sampling events that minimize this value to some reasonable threshold. I have chosen 0.05 by convention. 
+
+The following figure represesent the estimated number of daily surveys to capture a hummingbird event given that we know it occurs. These data can be thought of as successful draws from a negative binomial distribution.
+
+It is easiest to interpret as the number of days until you are likely to see an interaction, so i prefer to calculate:
+
+$$ 1-(1-p)^n $$
+$$ p = probability of detection$$
+$$ n = days sample $$
+
+```{r,fig.width=6,fig.height=8}
+dp<-function(n,p){
+  1-((1-p)^n)
+}
+
+ts<-split(tab,tab$Hummingbird,drop=T)
+detectd<-lapply(ts,function(x){
+  meanD<-dp(n=1:10,p=x$mean/100)
+  lowerD<-dp(n=1:10,p=x$lower/100)
+  upperD<- dp(n=1:10,p=x$upper/100)
+  data.frame(Days=1:10,mean=meanD,lower=lowerD,upper=upperD)
+})
+
+md<-melt(detectd,id.var="Days")
+md<-dcast(md,...~variable)
+ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,ncol=2) + geom_hline (yintercept=.5,linetype="dashed") + ylab("Probability of Detection") + scale_fill_discrete(guide="none") + theme_bw()
+ggsave("Figures/AppendixB.jpeg",height=9,width=5,dpi=300) + scale_x_continuous(breaks=seq(0,10,2))
+```
+
+The number of days it would take to have 50% confidence you have sampled enough to capture known interactions is the x axis value where the dotted line hits the curve.
 
 Number of samples per species
 
@@ -765,7 +803,7 @@ qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + ge
 
 #Compare Bayesian Occupancy and Multinomial using true known interactions
 
-## Poisson GLM
+## Poisson GLMM
 
 ```{r}
 N_niave<-pars_dniave[ pars_dniave$par %in% "ynew",]
@@ -837,7 +875,7 @@ simdat<-merge(mocc,mmat,by=c("Bird","Plant"))
 
 #occupancy with nodetection
 moccd<-melt(occ_nodetect_matrix)
-colnames(moccd)<-c("Bird","Plant","Poisson GLM","Iteration")
+colnames(moccd)<-c("Bird","Plant","Poisson GLMM","Iteration")
 
 simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
 
@@ -847,7 +885,7 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLM","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLMM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 ```

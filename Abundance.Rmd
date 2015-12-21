@@ -6,8 +6,8 @@ output:
     toc: true
     number_sections: true
     theme: spacelab
+    keep_md: true
   word_document: default
-  keep_md: true
 ---
 
 ```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
@@ -23,6 +23,7 @@ library(stringr)
 library(gridExtra)
 library(boot)
 library(picante)
+library(GGally)
 library(bipartite)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figure/")
@@ -60,12 +61,12 @@ $$\beta = N(-0.01,0.001)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=F}
+```{r,fig.height=5,fig.width=8,eval=T}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -94,7 +95,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=F}
+```{r,eval=T}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,cameras,days))
 lambda<-array(dim=c(h_species,plant_species))
@@ -182,7 +183,7 @@ $$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 #Simulated data without detection
 
-```{r,eval=F}
+```{r,eval=T}
 runs<-40000
 #runs<-1000
 
@@ -220,7 +221,7 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 2   #thinning rate
+  nt <- 5   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
@@ -252,7 +253,7 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
+  nt <- 5   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
   
@@ -273,9 +274,9 @@ if(paralleljags){
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-5000
+runs<-15000
 recompile(sim_niave)
-sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.75)
+sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.95)
 ```
 
 ```{r}
@@ -374,7 +375,7 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
+  nt <- 8   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
@@ -426,10 +427,10 @@ if(paralleljags){
 }
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-10000
 recompile(sim_detect)
 sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```
@@ -507,6 +508,18 @@ psim2
 #ggsave("Figures/SimulationHBoth.jpg",dpi=300,height=4,width=10)
 ```
 
+##Correlation in posteriors for Occupancy Model
+
+```{r}
+castdf<- pars %>% filter(Model =="Occupancy") %>% group_by(Chain) %>% select(par,estimate,Draw) %>% filter(par %in% c("gamma","intercept")) %>% dcast(Chain+Draw~par,value.var="estimate")
+head(castdf)
+ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
+
+castdf<- pars %>% filter(Model =="Occupancy") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
+head(castdf)
+ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
+```
+
 ##Predicted Relationship 
 
 Does accounting for non-independence and detection change our estimate of trait matching?
@@ -558,8 +571,9 @@ ymin<-round(min(c(fitstat$fit,fitstat$fitnew)))
 ymax<-round(max(c(fitstat$fit,fitstat$fitnew)))
 ab<-data.frame(x=ymin:ymax,y=ymin:ymax)
 p<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + coord_equal()
-psim4<-p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model") + geom_line(data=ab,aes(x=x,y=y)) + ggtitle("Simulated Data") + facet_wrap(~Model,scales="free")
+psim4<-p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model") + geom_line(data=ab,aes(x=x,y=y)) + ggtitle("Simulated Data")
 psim4
+ggsave("Figures/SimulationDisc.jpeg",height=5,width=5)
 ```
 
 ```{r,echo=FALSE}
@@ -694,7 +708,7 @@ simdat<-merge(mocc,mmat,by=c("Bird","Plant"),all.x=T)
 
 #occupancy with nodetection
 moccd<-melt(occ_nodetect_matrix)
-colnames(moccd)<-c("Bird","Plant","Poisson GLM","Iteration")
+colnames(moccd)<-c("Bird","Plant","Poisson GLMM","Iteration")
 
 simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
 
@@ -704,7 +718,7 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLM","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLMM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 
@@ -712,7 +726,7 @@ ggsave("Figures/PredictedState.jpeg",height=4,width=7)
 
 #difference in the middle
 simd<-dcast(simdat,...~variable)
-simd$Diff<-simd$Occupancy-simd$`Poisson GLM`
+simd$Diff<-simd$Occupancy-simd$`Poisson GLMM`
 ggplot(simd,aes(x=True_State,y=Diff)) + geom_point() + ylab("Difference in Occupancy and Poisson GLMM")
 ```
 

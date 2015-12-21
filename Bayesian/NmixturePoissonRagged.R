@@ -22,6 +22,7 @@ cat("
       }
     }
 
+    #Observed counts for each day of sampling at that camera
     for (x in 1:Nobs){
 
     #Observation Process

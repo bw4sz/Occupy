@@ -20,7 +20,9 @@ Department of Ecology and Evolution, Stony Brook University, Stony Brook, New Yo
 
 #File Structure
 
-* Abundance.Rmd: Main script that runs simulated, empirical models and creates main figures, can be viewed as a html version at https://htmlpreview.github.io/?https://github.com/bw4sz/Occupy/blob/master/Abundance.html
-* Appendix B.Rmd: Time to detection for each species. Can be viewed as html at: https://github.com/bw4sz/Occupy/blob/master/AppendixB.html
-* Bayesian/: Folder that contains jags models, NmixtureRagged.R for the empirical data for the model that estimates detection bias.
+* Abundance.md: Source code for Simulations.
+* Observed.md: Source code for Empirical Data
+* Bayesian/: Folder that contains jags models
+* * NmixturePossionRagged.R = Occupancy Model
+* * NoDetectNmxiturePoissonRagged = Poisson GLMM
 * InputData/: Holds csv files with species presences, elevation ranges and morphology.
