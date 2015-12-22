@@ -1,115 +1,139 @@
 "","Iplant_Double","Low","m","High","Index"
-"1","Abutilon pictum",1410,1415,1420,1
-"2","Alloplectus",1950,2060.41666666667,2232,2
-"3","Alloplectus purpureus",1370,1499.00735294118,1630,1
-"4","Alloplectus strigosus",2470,2470,2470,2
-"5","Alloplectus tenuis",1750,1765,1918,2
-"6","Alloplectus tetragonoides",1940,1972.91338582677,2010,2
-"7","Alloplectus teuscheri",2150,2267.39393939394,2380,2
-"8","Begonia",1860,1965,2070,2
-"9","Begonia longirostris",2140,2133.38461538462,2240,2
-"10","Begonia tiliifolia",1950,2002.5,2170,2
-"11","Besleria",1912,2031.25,2120,2
-"12","Besleria anomala",1810,1810,1810,2
-"13","Besleria quitensis",1786,1855,1924,2
-"14","Besleria solanoides",1800,1973.6172629188,2130,2
-"15","Blakea",1660,1690,1720,3
-"16","Blakea quadriflora",1600,1662.95566502463,1660,1
-"17","Bomarea multiflora",2382,2374.16666666667,2460,2
-"18","Bomarea pardina",1950,2101.02272727273,2276,2
-"19","Brugmansia",1734,1740,1746,2
-"20","Brugmansia candida",1736,1740,1744,2
-"21","Burmeistera",1750,1808.10810810811,1800,2
-"22","Burmeistera crispiloba",1736,1947.89473684211,2460,2
-"23","Burmeistera cylindrocarpa",1998,2091.41176470588,2130,2
-"24","Burmeistera multiflora",1570,1601.90751445087,1650,1
-"25","Calathea affinis",2120,2120,2120,2
-"26","Calathea ischnosiphonoides",1904,2003.33333333333,2126,2
-"27","Canna jaegeriana",1370,1372,1372,1
-"28","Capanea affinis",1960,2048.88888888889,2120,2
-"29","Cavendishia grandifolia",1580,1580,1580,1
-"30","Centropogon",2144,2180,2210,2
-"31","Centropogon nigricans",2140,2234.35754189944,2450,2
-"32","Centropogon solanifolius",1960,2076.84563758389,2230,2
-"33","Columnea",1970,2129.52380952381,2230,2
-"34","Columnea affinis",2120,2120,2120,2
-"35","Columnea ciliata",1370,1745.73440643863,2018,3
-"36","Columnea cinerea",1370,1535.91428571429,1680,1
-"37","Columnea katzensteiniae",1754,2088.57142857143,2374,2
-"38","Columnea kucyniakii",1850,1907.42071881607,2000,2
-"39","Columnea lanata",1690,1690,1690,1
-"40","Columnea medicinalis",2000,2090.47619047619,2210,2
-"41","Columnea ovatifolia",2360,2385.45454545455,2410,2
-"42","Columnea picta",1370,1511.53846153846,1650,1
-"43","Columnea purpurata",1446,1530,1614,1
-"44","Columnea stricta",1380,1380,1380,1
-"45","Columnea strigosa",2170,2296.35467980296,2410,2
-"46","Costus",1360,1367.27272727273,1370,1
-"47","Diastema racemiferum",1730,1742.5,1752,2
-"48","Drymonia brochidodroma",1722,1832.5,1950,2
-"49","Erythrina",1370,1549.44444444444,1740,3
-"50","Erythrina edulis",1590,1590,1590,1
-"51","Faramea calyptrata",1750,1929.72350230415,2258,2
-"52","Fuchsia macrostigma",1844,2114.0522875817,2300,2
-"53","Gasteranthus",1596,1660,1734,3
-"54","Gasteranthus lateralis",2160,2233.84615384615,2330,2
-"55","Gasteranthus leopardus",2020,2020,2020,2
-"56","Gasteranthus quitensis",1580,1709.52848722986,1820,3
-"57","Glossoloma oblongicalyx",2210,2294.1975308642,2420,2
-"58","Gunnera",1570,1570,1570,1
-"59","Gurania",1370,1436.66666666667,1380,1
-"60","Guzmania",1370,1594.88372093023,1940,3
-"61","Guzmania amplectens",1750,1870.25641025641,1950,2
-"62","Guzmania jaramilloi",1690,1825.92857142857,1952,3
-"63","Guzmania squarrosa",2240,2306.5,2360,2
-"64","Guzmania wittmackii",1368,1370,1372,1
-"65","Heliconia",1368,1370,1372,1
-"66","Heliconia burleana",1940,1977.27272727273,2030,2
-"67","Heliconia griggsiana",1580,1610.60975609756,1660,1
-"68","Heliconia impudica",1570,1663.0303030303,1770,3
-"69","Heliconia virginalis",1380,1419.23076923077,1442,1
-"70","Hydrangea peruviana",1770,1818.19277108434,1820,2
-"71","Justicia",1370,1370,1370,1
-"72","Justicia secunda",1370,1372.62068965517,1380,1
-"73","Kohleria",1730,1758,1742,2
-"74","Kohleria inaequalis",1740,1786,1790,2
-"75","Macleania",1472,1560.52631578947,1640,1
-"76","Macleania bullata",2128,2227.2,2348,2
-"77","Macleania macrantha",2400,2399.47368421053,2444,2
-"78","Macleania recumbens",1374,1566.66666666667,1722,3
-"79","Macleania stricta",1940,2133.26599326599,2400,2
-"80","Macrocarpaea sodiroana",1650,1650,1650,1
-"81","Marcgravia",2034,2096.66666666667,2172,2
-"82","Meriania",1744,1838.78787878788,1798,2
-"83","Meriania tomentosa",2140,2311.40221402214,2450,2
-"84","Mezobromelia",2124,2215,2296,2
-"85","Mezobromelia capituligera",1950,2127.14285714286,2340,2
-"86","Mimosa",1370,1371.66666666667,1370,1
-"87","Mimosa albida",1380,1380,1380,1
-"88","Neomortonia",1952,1980.95238095238,2010,2
-"89","Norantea anomala",1782,1870.8547008547,1950,2
-"90","Palicourea",2060,2136,2294,2
-"91","Palicourea acetosoides",1950,2094.12628487518,2260,2
-"92","Palicourea demissa",1370,1583.51574212894,1840,3
-"93","Palicourea lineata",2260,2359.63636363636,2450,2
-"94","Palicourea sodiroi",2120,2115.71428571429,2130,2
-"95","Pitcairnia sodiroi",2326,2358.63636363636,2434,2
-"96","Pitcairnia squarrosa",1740,1768.57142857143,1810,2
-"97","Podandrogyne",1730,1866.09756097561,1990,2
-"98","Psammisia aberrans",1590,1664.70238095238,1820,3
-"99","Psammisia debilis",2440,2440,2440,2
-"100","Psammisia ecuadorensis",1896,1915.55555555556,2000,2
-"101","Psammisia sodiroi",2130,2260.90163934426,2430,2
-"102","Psammisia ulbrichiana",1760,2062.13740458015,2400,2
-"103","Renealmia",1650,2158.33333333333,2450,3
-"104","Renealmia sessilifolia",1650,1721.41592920354,1810,3
-"105","Salvia",1380,1380,1380,1
-"106","Salvia quitensis",1370,1372.97142857143,1380,1
-"107","Sphyrospermum sodiroi",2450,2457.5,2464,2
-"108","Stromanthe",1380,1380,1380,1
-"109","Stromanthe stromanthoides",1360,1370.28673835125,1380,1
-"110","Tillandsia complanata",1950,2083.27586206897,2140,2
-"111","Tropaeolum",1760,1770,1774,2
-"112","Wercklea ferox",1590,1592.47422680412,1600,1
-"113","Werklea ferox",1570,1567.69230769231,1610,1
-"114",NA,1710,2022.73144605968,2340,2
+"1","",1730,1950.89361702128,2140,2
+"2"," ms1",2210,2292.60663507109,2370,2
+"3"," ms3",2130,2230,2330,2
+"4"," sp 1",1370,1581.66666666667,2008,3
+"5"," sp 2",1740,1751.33333333333,1800,2
+"6"," sp 3",1732,1735,1738,2
+"7"," sp 5",1816,1885,1954,2
+"8"," sp 7",1970,1985,2000,2
+"9"," sp 8",1940,2010,2066,2
+"10","??? ???",1950,1950,1950,2
+"11","Abutilon pictum",1410,1415,1420,1
+"12","Alloplectus",1950,2114.16666666667,2340,2
+"13","Alloplectus purpureus",1370,1499.34027777778,1630,1
+"14","Alloplectus strigosus",2470,2470,2470,2
+"15","Alloplectus tenuis",1750,1775,1950,2
+"16","Alloplectus tetragonoides",1940,1976.02941176471,2010,2
+"17","Alloplectus teuscheri",2150,2264.24324324324,2372,2
+"18","Begonia",2130,2081.66666666667,2150,2
+"19","Begonia longirostris",1776,2116.51162790698,2240,2
+"20","Begonia tiliifolia",1950,2002.5,2170,2
+"21","Besleria",1908,2021.11111111111,2120,2
+"22","Besleria anomala",1810,1810,1810,2
+"23","Besleria quitensis",1786,1855,1924,2
+"24","Besleria solanoides",1820,1984.6638457922,2130,2
+"25","Blakea",1634,1672.89156626506,1660,1
+"26","Blakea quadriflora",1614,1659.24369747899,1660,1
+"27","Bomarea multiflora",2378,2374,2430,2
+"28","Bomarea pardina",1950,2090.88888888889,2272,2
+"29","Brugmansia",1738,1758,1764,2
+"30","Brugmansia candida",1736,1740,1744,2
+"31","Burmeistera",1750,1840.59602649007,1870,2
+"32","Burmeistera crispiloba",1740,1946.66666666667,2460,2
+"33","Burmeistera cylindrocarpa",2010,2100.73770491803,2130,2
+"34","Burmeistera multiflora",1570,1603.2,1650,1
+"35","Calathea affinis",2120,2120,2120,2
+"36","Calathea ischnosiphonoides",1904,2003.33333333333,2126,2
+"37","Canna jaegeriana",1370,1372,1372,1
+"38","Capanea affinis",1960,2048.88888888889,2120,2
+"39","Cavendishia grandifolia",1580,1580,1580,1
+"40","Centropogon",2144,2180,2210,2
+"41","Centropogon nigricans",2140,2230.51282051282,2450,2
+"42","Centropogon solanifolius",1960,2083.51585014409,2230,2
+"43","Clusia",1750,1750,1750,2
+"44","Columnea",1988,2184.33333333333,2312,2
+"45","Columnea affinis",2120,2120,2120,2
+"46","Columnea ciliata",1370,1746.98,2012,3
+"47","Columnea cinerea",1370,1538.33773087071,1680,1
+"48","Columnea katzensteiniae",1754,2088.57142857143,2374,2
+"49","Columnea kucyniakii",1850,1907.42071881607,2000,2
+"50","Columnea lanata",1690,1690,1690,1
+"51","Columnea medicinalis",1990,2090.12891344383,2210,2
+"52","Columnea ovatifolia",2360,2385.45454545455,2410,2
+"53","Columnea picta",1370,1509.49044585987,1650,1
+"54","Columnea purpurata",1446,1530,1614,1
+"55","Columnea stricta",1380,1380,1380,1
+"56","Columnea strigosa",2170,2298.77358490566,2410,2
+"57","Costus",1360,1384.5,1422,1
+"58","Diastema racemiferum",1730,1742.5,1752,2
+"59","Drymonia",1370,1370,1370,1
+"60","Drymonia brochidodroma",1736,1818,1950,2
+"61","Erythrina",1370,1544.64285714286,1740,3
+"62","Erythrina edulis",1590,1590,1590,1
+"63","Faramea",1760,1760,1760,2
+"64","Faramea calyptrata",1760,1956.07287449393,2270,2
+"65","Fuchsia macrostigma",1848,2116.8125,2302,2
+"66","Gasteranthus",1596,1660,1734,3
+"67","Gasteranthus lateralis",2160,2233.30708661417,2330,2
+"68","Gasteranthus leopardus",2020,2020,2020,2
+"69","Gasteranthus quitensis",1580,1713.76492194674,1820,3
+"70","Glossoloma",1784,2080,2370,2
+"71","Glossoloma oblongicalyx",2200,2292.60312944523,2410,2
+"72","Gunnera",1722,1823.33333333333,1950,2
+"73","Gurania",1370,1420,1380,1
+"74","Guzmania",1370,1611.52173913043,1940,3
+"75","Guzmania amplectens",1750,1872.60869565217,1950,2
+"76","Guzmania jaramilloi",1706,1830.06756756757,1950,2
+"77","Guzmania squarrosa",2240,2306.5,2360,2
+"78","Guzmania wittmackii",1368,1370,1372,1
+"79","Heliconia",1366,1408.88888888889,1444,1
+"80","Heliconia burleana",1940,1977.27272727273,2030,2
+"81","Heliconia griggsiana",1580,1608.96551724138,1660,1
+"82","Heliconia impudica",1570,1661.21951219512,1770,3
+"83","Heliconia virginalis",1380,1419.23076923077,1442,1
+"84","Hydrangea peruviana",1760,1809.78260869565,1820,2
+"85","Inga",1360,1360,1360,1
+"86","Justicia",1370,1370,1370,1
+"87","Justicia secunda",1370,1372.67515923567,1380,1
+"88","Kohleria",1380,1708.65384615385,1916,3
+"89","Kohleria inaequalis",1732,1756.66666666667,1748,2
+"90","Lantana camara",1380,1380,1380,1
+"91","Macleania",1542,1637.72727272727,1640,1
+"92","Macleania bullata",2130,2236.2962962963,2372,2
+"93","Macleania macrantha",2400,2395.21739130435,2446,2
+"94","Macleania recumbens",1374,1566.66666666667,1722,3
+"95","Macleania stricta",1940,2129.33155080214,2400,2
+"96","Macrocarpaea sodiroana",1650,1650,1650,1
+"97","Marcgravia",1958,2154,2278,2
+"98","Meriania",1750,1829.43396226415,1830,2
+"99","Meriania tomentosa",2130,2306.33333333333,2440,2
+"100","Mezobromelia",2120,2166.66666666667,2360,2
+"101","Mezobromelia capituligera",1950,2125.39682539683,2340,2
+"102","Mimosa",1370,1373,1380,1
+"103","Mimosa albida",1380,1380,1380,1
+"104","Neomortonia",1954,1981.39534883721,2010,2
+"105","Norantea anomala",1780,1866.98924731183,1950,2
+"106","Palicourea",1592,1960,2270,3
+"107","Palicourea acetosoides",1960,2102.23097112861,2260,2
+"108","Palicourea demissa",1370,1596.17424242424,1950,3
+"109","Palicourea lineata",2260,2358.8345323741,2450,2
+"110","Palicourea sodiroi",2120,2115.71428571429,2130,2
+"111","Pitcairnia",1748,1770,1788,2
+"112","Pitcairnia sodiroi",2284,2336.60377358491,2426,2
+"113","Pitcairnia squarrosa",1740,1768.03571428571,1800,2
+"114","Podandrogyne",1740,1892.25806451613,2000,2
+"115","Psamisia",1386,1722.14285714286,1858,3
+"116","Psamisia acetosoides",1950,1950,1950,2
+"117","Psamisia leopardus",2410,2410,2410,2
+"118","Psamisia solanoides",1740,1740,1740,2
+"119","Psammisia",1620,1620,1620,1
+"120","Psammisia aberrans",1598,1662.76923076923,1802,3
+"121","Psammisia debilis",2440,2440,2440,2
+"122","Psammisia ecuadorensis",1850,1912,1992,2
+"123","Psammisia sodiroi",2130,2257.50788643533,2420,2
+"124","Psammisia ulbrichiana",1790,2073.31615120275,2400,2
+"125","Psychotria",1370,1370,1370,1
+"126","Renealmia",2340,2293.80952380952,2440,2
+"127","Renealmia sessilifolia",1640,1720.16172506739,1810,3
+"128","Salvia",1370,1376,1380,1
+"129","Salvia quitensis",1370,1372.88888888889,1380,1
+"130","Solanum",1698,1773.33333333333,1842,3
+"131","Sphyrospermum sodiroi",2450,2457.5,2464,2
+"132","Stromanthe",1380,1380,1380,1
+"133","Stromanthe stromanthoides",1360,1370.28673835125,1380,1
+"134","Tillandsia",1580,1580,1580,1
+"135","Tillandsia complanata",1950,2075.30612244898,2140,2
+"136","Tropaeolum",1760,1821.11111111111,1790,2
+"137","Wercklea ferox",1590,1592.42424242424,1600,1
+"138","Werklea ferox",1570,1567.69230769231,1610,1
