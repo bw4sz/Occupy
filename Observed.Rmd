@@ -551,7 +551,7 @@ if(paralleljags){
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-20000
