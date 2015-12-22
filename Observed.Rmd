@@ -42,7 +42,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-#load("Observed.Rdata")
+load("Observed.Rdata")
 ```
 
 #Observed dataset
@@ -554,7 +554,7 @@ if(paralleljags){
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-30000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=2)
 ```
