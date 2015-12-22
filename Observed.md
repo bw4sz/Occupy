@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2015-12-22 00:36:26"
+## [1] "Run Completed at 2015-12-22 11:18:44"
 ```
 
 
@@ -453,6 +453,25 @@ if(paralleljags){
 load.module("dic")
 runs<-20000
 recompile(m2_niave)
+```
+
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+##    Graph Size: 87109
+## 
+## Initializing model
+## 
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+##    Graph Size: 87109
+## 
+## Initializing model
+```
+
+```r
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.95)
 ```
 
@@ -835,7 +854,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 977353.8
+## [1] 11835.49
 ```
 
 ```r
@@ -1045,10 +1064,32 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial     32.29    1.08 14561.03
+## 1 Multinomial     32.33    1.09 14580.59
 ## 2   Occupancy      4.46    0.79  2010.57
-## 3 Poisson_GLM     45.56    3.82 20549.68
+## 3 Poisson_GLM     27.22    2.77 12274.50
 ```
+
+Merge with morphological data.
+
+
+```r
+jT<-indat %>% group_by(Bird=jBird,Plant=jPlant) %>% summarize(Traitmatch=unique(Traitmatch))
+simdat<-merge(simdat,jT,by=c("Bird","Plant"))
+
+mmat<-merge(mmat,jT,by=c("Bird","Plant"))
+```
+
+#Predicted total number of visits based on morphology
+
+
+```r
+simT<-simdat %>% group_by(variable,Traitmatch) %>% summarize(Lower=quantile(value,0.05),Upper=quantile(value,0.95),y=mean(value))
+
+ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.6) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw() + facet_wrap(~variable,nrow=3) + geom_point(data=mmat,aes(y=True_State))
+```
+
+<img src="figureObserved/unnamed-chunk-43-1.png" title="" alt="" style="display: block; margin: auto;" />
+
 
 
 ```r
@@ -1057,8 +1098,8 @@ gc()
 
 ```
 ##              used    (Mb) gc trigger    (Mb)   max used    (Mb)
-## Ncells   50265782  2684.5   90464440  4831.4   90464440  4831.4
-## Vcells 1586615033 12105.0 3386964142 25840.5 3386949137 25840.4
+## Ncells   50257384  2684.1   90464440  4831.4   90464440  4831.4
+## Vcells 1479361904 11286.7 2782421106 21228.2 2782419736 21228.2
 ```
 
 ```r

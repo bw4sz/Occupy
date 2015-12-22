@@ -7,7 +7,6 @@ output:
     number_sections: true
     theme: spacelab
     keep_md: true
-
   word_document: default
 ---
 
@@ -245,20 +244,30 @@ for(x in 1:dim(indatlong)[3]){
   pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
   indatlong[,colnames(a) %in% toNA,x,]<-NA
   
-  #match elevation if there were presences, slightly terse code.
+  #match elevation if there were presences
+  #for each plant there was a presence point
   if(length(pres)>0){
     for (y in 1:length(pres)){
-      #Plant range
-      pr<-elevP[elevP$Plant %in% pres[y],"Elevation"]
-      #if there is not enough elevation area, make NA
-      if(is.na(pr)|!pr==3){
-        helim<-elevH[!elevH$Elevation %in% c(pr,3),"Bird"]
-        #sanity check, make sure rows don't have values
-        sums<-indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x,]==0
-        helim<-helim[sums]
-        #set to NA if they are outside of elevation and are blank
-        indatlong[rownames(a) %in% helim ,colnames(a) %in% pres[y],x,]<-NA
+      
+      #Get elevation point of that camera.
+      cam<-as.numeric(dimnames(indatlong)[[3]][x])
+      camelev<-indatraw %>% filter(Camera==cam) %>% .$Elev %>% unique()
+      
+      #for each hummingbird, was that camera within elevation?
+      for(i in 1:dim(a)[1]){
+        low<-elevH[elevH$Bird == rownames(a)[i],"Low"]
+        high<-elevH[elevH$Bird == rownames(a)[i],"High"]
+        
+        #if not in elev range, set to NA
+        if(!(low < camelev) & (camelev < high)){
+          #if you had a wandering individual outside range, allow interaction to occur.
+          if(sum(indatlong[i,,x,],na.rm=T)>0){
+            print(c(i,x))
+            next}
+          #Othersise set to NA
+          indatlong[i,,x,]<-NA
         }
+      }
     }
   }
 }
@@ -336,18 +345,16 @@ $$intercept \sim N(0,0.0001)$$
 
 $$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
 $$\tau_\beta \sim Gamma(0.0001,0.0001)$$
-$$\tau_detect \sim Gamma(0.0001,0.0001)$$
 
 **Derived quantities**
 
 $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
-$$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 # Poisson GLMM
 
-```{r,eval=F}
-runs<-50000
+```{r,eval=T}
+runs<-55000
 
 #trigger parallel
 paralleljags<-T
@@ -459,7 +466,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 # Observed Data With Detection
 
-```{r,eval=F}
+```{r,eval=T}
 runs<-70000
 
 #trigger parallel
@@ -494,12 +501,12 @@ if(paralleljags){
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","lambda")
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 8   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 3   #thinning rate
+  nb <- runs*.90 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
@@ -532,8 +539,8 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 3   #thinning rate
+  nb <- runs*.9 # number to discard for burn-in
   nc <- 2  # number of chains
   
   #Jags
@@ -914,6 +921,24 @@ colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 
 d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=round(mean(mean),2),mean_sd=round(sd(mean),2),mean_sum=round(mean(sum),2))
 ```
+
+Merge with morphological data.
+
+```{r}
+jT<-indat %>% group_by(Bird=jBird,Plant=jPlant) %>% summarize(Traitmatch=unique(Traitmatch))
+simdat<-merge(simdat,jT,by=c("Bird","Plant"))
+
+mmat<-merge(mmat,jT,by=c("Bird","Plant"))
+```
+
+#Predicted total number of visits based on morphology
+
+```{r}
+simT<-simdat %>% group_by(variable,Traitmatch) %>% summarize(Lower=quantile(value,0.05),Upper=quantile(value,0.95),y=mean(value))
+
+ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.6) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw() + facet_wrap(~variable,nrow=3) + geom_point(data=mmat,aes(y=True_State))
+```
+
 
 ```{r}
 gc()
