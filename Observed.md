@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2015-12-22 19:33:04"
+## [1] "Run Completed at 2015-12-23 16:39:15"
 ```
 
 
@@ -271,10 +271,10 @@ for(x in 1:dim(indatlong)[3]){
         high<-elevH[elevH$Bird == rownames(a)[i],"High"]
         
         #if not in elev range, set to NA
-        if(!(low < camelev) & (camelev < high)){
+        if(!((low < camelev) & (camelev < high))){
           #if you had a wandering individual outside range, allow interaction to occur.
           if(sum(indatlong[i,,x,],na.rm=T)>0){
-            print(c(i,x))
+            #print(c(i,x))
             next}
           #Othersise set to NA
           indatlong[i,,x,]<-NA
@@ -283,55 +283,7 @@ for(x in 1:dim(indatlong)[3]){
     }
   }
 }
-```
 
-```
-## [1] 11 11
-## [1] 11 12
-## [1]  9 51
-## [1] 11 68
-## [1]   8 137
-## [1]  11 199
-## [1]   2 210
-## [1]   1 212
-## [1]   2 212
-## [1]   1 215
-## [1]   4 215
-## [1]   4 218
-## [1]   2 240
-## [1]   4 240
-## [1]   1 242
-## [1]   4 242
-## [1]   5 246
-## [1]   5 249
-## [1]   6 258
-## [1]   8 260
-## [1]  10 260
-## [1]   3 271
-## [1]   4 272
-## [1]   4 273
-## [1]   5 274
-## [1]   6 281
-## [1]   3 284
-## [1]   3 284
-## [1]   1 291
-## [1]   2 291
-## [1]   3 292
-## [1]   6 296
-## [1]   4 297
-## [1]   1 301
-## [1]   3 305
-## [1]   5 307
-## [1]   5 314
-## [1]   4 316
-## [1]   5 316
-## [1]   5 322
-## [1]   5 322
-## [1]   6 323
-## [1]   6 324
-```
-
-```r
 ### There can't be absences in days that weren't sampled.
 for (x in 1:dim(indatlong)[3]){
   cam<-indatlong[,,x,]
@@ -507,9 +459,9 @@ if(paralleljags){
 ```r
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-30000
 recompile(m2_niave)
-m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.95)
+m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
 
 
@@ -634,7 +586,7 @@ if(paralleljags){
 ```r
 #recompile if needed
 load.module("dic")
-runs<-30000
+runs<-50000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```
@@ -777,7 +729,7 @@ predy<-rbind_all(lapply(castdf,function(i){
   }))
 
 #plot and compare to original data
-ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),col="black",fill="black",size=2) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.6)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + ylab("Interactions per day") + ylim(0,13)
+ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),col="black",fill="black",size=2) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.6)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + ylab("Interactions per day") + ylim(0,17)
 ```
 
 <img src="figureObserved/unnamed-chunk-30-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -821,17 +773,17 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                Hummingbird mean lower upper
-## 1       Booted Racket-tail 25.1  18.7  31.7
-## 2               Brown Inca 22.8  17.9  27.9
-## 3      Buff-tailed Coronet 41.9  31.4  49.4
-## 4            Collared Inca 16.6   8.9  24.6
-## 5        Gorgeted Sunangel 38.6  30.5  46.8
-## 6  Green-fronted Lancebill 15.4   5.7  27.1
-## 7     Speckled Hummingbird  3.9   0.8   9.6
-## 8   Stripe-throated Hermit 37.4  31.4  43.5
-## 9     Tawny-bellied Hermit 15.8  11.6  20.3
-## 10     Violet-tailed Sylph 13.9   9.9  17.8
-## 11  White-whiskered Hermit 34.5  29.3  39.7
+## 1       Booted Racket-tail 23.8  17.2  30.4
+## 2               Brown Inca 20.6  15.5  25.7
+## 3      Buff-tailed Coronet 41.7  30.9  49.4
+## 4            Collared Inca 16.8   9.3  25.1
+## 5        Gorgeted Sunangel 38.5  29.9  46.6
+## 6  Green-fronted Lancebill 14.2   4.9  26.0
+## 7     Speckled Hummingbird  3.6   0.6   9.1
+## 8   Stripe-throated Hermit 30.5  23.2  38.3
+## 9     Tawny-bellied Hermit 14.5  10.4  18.7
+## 10     Violet-tailed Sylph 12.6   8.8  16.7
+## 11  White-whiskered Hermit 25.8  19.7  32.0
 ```
 
 ```r
@@ -891,7 +843,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 11891.06
+## [1] 10339.55
 ```
 
 ```r
@@ -899,7 +851,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 10524.5
+## [1] 10024.93
 ```
 
 #Predicted versus Observed Data
@@ -1101,9 +1053,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial     32.56    1.09 14682.66
-## 2   Occupancy      4.54    0.72  2048.30
-## 3 Poisson_GLM     26.51    2.43 11956.49
+## 1 Multinomial     32.56    1.08 14683.83
+## 2   Occupancy      4.39    0.76  1979.32
+## 3 Poisson_GLM     20.75    2.38  9358.95
 ```
 
 Merge with morphological data.
@@ -1134,9 +1086,9 @@ gc()
 ```
 
 ```
-##              used   (Mb) gc trigger    (Mb)   max used    (Mb)
-## Ncells   44295568 2365.7   75353700  4024.4   75353700  4024.4
-## Vcells 1285304287 9806.1 2137305398 16306.4 2137304682 16306.4
+##             used   (Mb) gc trigger    (Mb)   max used    (Mb)
+## Ncells  32082371 1713.4   52267848  2791.5   52267848  2791.5
+## Vcells 932338339 7113.2 1941461747 14812.2 1941461747 14812.2
 ```
 
 ```r
