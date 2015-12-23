@@ -41,7 +41,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-load("Observed.Rdata")
+#load("Observed.Rdata")
 ```
 
 #Observed dataset
@@ -259,10 +259,10 @@ for(x in 1:dim(indatlong)[3]){
         high<-elevH[elevH$Bird == rownames(a)[i],"High"]
         
         #if not in elev range, set to NA
-        if(!(low < camelev) & (camelev < high)){
+        if(!((low < camelev) & (camelev < high))){
           #if you had a wandering individual outside range, allow interaction to occur.
           if(sum(indatlong[i,,x,],na.rm=T)>0){
-            print(c(i,x))
+            #print(c(i,x))
             next}
           #Othersise set to NA
           indatlong[i,,x,]<-NA
@@ -440,12 +440,12 @@ if(paralleljags){
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-30000
 recompile(m2_niave)
-m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.95)
+m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
 
 ```{r}
@@ -558,10 +558,10 @@ if(paralleljags){
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-30000
+runs<-20000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```
