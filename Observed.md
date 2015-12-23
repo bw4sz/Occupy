@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2015-12-22 11:18:44"
+## [1] "Run Completed at 2015-12-22 19:33:04"
 ```
 
 
@@ -256,24 +256,82 @@ for(x in 1:dim(indatlong)[3]){
   pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
   indatlong[,colnames(a) %in% toNA,x,]<-NA
   
-  #match elevation if there were presences, slightly terse code.
+  #match elevation if there were presences
+  #for each plant there was a presence point
   if(length(pres)>0){
     for (y in 1:length(pres)){
-      #Plant range
-      pr<-elevP[elevP$Plant %in% pres[y],"Elevation"]
-      #if there is not enough elevation area, make NA
-      if(is.na(pr)|!pr==3){
-        helim<-elevH[!elevH$Elevation %in% c(pr,3),"Bird"]
-        #sanity check, make sure rows don't have values
-        sums<-indatlong[rownames(a) %in% helim,colnames(a) %in% pres[y],x,]==0
-        helim<-helim[sums]
-        #set to NA if they are outside of elevation and are blank
-        indatlong[rownames(a) %in% helim ,colnames(a) %in% pres[y],x,]<-NA
+      
+      #Get elevation point of that camera.
+      cam<-as.numeric(dimnames(indatlong)[[3]][x])
+      camelev<-indatraw %>% filter(Camera==cam) %>% .$Elev %>% unique()
+      
+      #for each hummingbird, was that camera within elevation?
+      for(i in 1:dim(a)[1]){
+        low<-elevH[elevH$Bird == rownames(a)[i],"Low"]
+        high<-elevH[elevH$Bird == rownames(a)[i],"High"]
+        
+        #if not in elev range, set to NA
+        if(!(low < camelev) & (camelev < high)){
+          #if you had a wandering individual outside range, allow interaction to occur.
+          if(sum(indatlong[i,,x,],na.rm=T)>0){
+            print(c(i,x))
+            next}
+          #Othersise set to NA
+          indatlong[i,,x,]<-NA
         }
+      }
     }
   }
 }
+```
 
+```
+## [1] 11 11
+## [1] 11 12
+## [1]  9 51
+## [1] 11 68
+## [1]   8 137
+## [1]  11 199
+## [1]   2 210
+## [1]   1 212
+## [1]   2 212
+## [1]   1 215
+## [1]   4 215
+## [1]   4 218
+## [1]   2 240
+## [1]   4 240
+## [1]   1 242
+## [1]   4 242
+## [1]   5 246
+## [1]   5 249
+## [1]   6 258
+## [1]   8 260
+## [1]  10 260
+## [1]   3 271
+## [1]   4 272
+## [1]   4 273
+## [1]   5 274
+## [1]   6 281
+## [1]   3 284
+## [1]   3 284
+## [1]   1 291
+## [1]   2 291
+## [1]   3 292
+## [1]   6 296
+## [1]   4 297
+## [1]   1 301
+## [1]   3 305
+## [1]   5 307
+## [1]   5 314
+## [1]   4 316
+## [1]   5 316
+## [1]   5 322
+## [1]   5 322
+## [1]   6 323
+## [1]   6 324
+```
+
+```r
 ### There can't be absences in days that weren't sampled.
 for (x in 1:dim(indatlong)[3]){
   cam<-indatlong[,,x,]
@@ -349,19 +407,17 @@ $$intercept \sim N(0,0.0001)$$
 
 $$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
 $$\tau_\beta \sim Gamma(0.0001,0.0001)$$
-$$\tau_detect \sim Gamma(0.0001,0.0001)$$
 
 **Derived quantities**
 
 $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
-$$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 # Poisson GLMM
 
 
 ```r
-runs<-50000
+runs<-55000
 
 #trigger parallel
 paralleljags<-T
@@ -453,25 +509,6 @@ if(paralleljags){
 load.module("dic")
 runs<-20000
 recompile(m2_niave)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 87109
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 87109
-## 
-## Initializing model
-```
-
-```r
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.95)
 ```
 
@@ -536,12 +573,12 @@ if(paralleljags){
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","lambda")
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 8   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 3   #thinning rate
+  nb <- runs*.90 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
@@ -574,8 +611,8 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 3   #thinning rate
+  nb <- runs*.9 # number to discard for burn-in
   nc <- 2  # number of chains
   
   #Jags
@@ -599,7 +636,7 @@ if(paralleljags){
 load.module("dic")
 runs<-30000
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=2)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```
 
 
@@ -784,17 +821,17 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                Hummingbird mean lower upper
-## 1       Booted Racket-tail 25.5  19.3  32.0
-## 2               Brown Inca 25.4  20.7  30.4
-## 3      Buff-tailed Coronet 42.3  32.4  49.4
-## 4            Collared Inca 19.3  11.8  27.5
-## 5        Gorgeted Sunangel 40.2  32.3  47.9
-## 6  Green-fronted Lancebill 17.1   7.3  28.1
-## 7     Speckled Hummingbird  7.6   2.6  15.0
-## 8   Stripe-throated Hermit 34.1  26.9  41.5
-## 9     Tawny-bellied Hermit 17.0  13.0  21.3
-## 10     Violet-tailed Sylph 18.4  14.5  22.6
-## 11  White-whiskered Hermit 28.9  22.6  35.3
+## 1       Booted Racket-tail 25.1  18.7  31.7
+## 2               Brown Inca 22.8  17.9  27.9
+## 3      Buff-tailed Coronet 41.9  31.4  49.4
+## 4            Collared Inca 16.6   8.9  24.6
+## 5        Gorgeted Sunangel 38.6  30.5  46.8
+## 6  Green-fronted Lancebill 15.4   5.7  27.1
+## 7     Speckled Hummingbird  3.9   0.8   9.6
+## 8   Stripe-throated Hermit 37.4  31.4  43.5
+## 9     Tawny-bellied Hermit 15.8  11.6  20.3
+## 10     Violet-tailed Sylph 13.9   9.9  17.8
+## 11  White-whiskered Hermit 34.5  29.3  39.7
 ```
 
 ```r
@@ -854,7 +891,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 11835.49
+## [1] 11891.06
 ```
 
 ```r
@@ -862,7 +899,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 10750.06
+## [1] 10524.5
 ```
 
 #Predicted versus Observed Data
@@ -881,7 +918,7 @@ dmultinom(true_state,prob=m,log=T)
 ```
 
 ```
-## [1] -3298.957
+## [1] -3298.351
 ```
 
 ```r
@@ -1064,9 +1101,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial     32.33    1.09 14580.59
-## 2   Occupancy      4.46    0.79  2010.57
-## 3 Poisson_GLM     27.22    2.77 12274.50
+## 1 Multinomial     32.56    1.09 14682.66
+## 2   Occupancy      4.54    0.72  2048.30
+## 3 Poisson_GLM     26.51    2.43 11956.49
 ```
 
 Merge with morphological data.
@@ -1097,9 +1134,9 @@ gc()
 ```
 
 ```
-##              used    (Mb) gc trigger    (Mb)   max used    (Mb)
-## Ncells   50257384  2684.1   90464440  4831.4   90464440  4831.4
-## Vcells 1479361904 11286.7 2782421106 21228.2 2782419736 21228.2
+##              used   (Mb) gc trigger    (Mb)   max used    (Mb)
+## Ncells   44295568 2365.7   75353700  4024.4   75353700  4024.4
+## Vcells 1285304287 9806.1 2137305398 16306.4 2137304682 16306.4
 ```
 
 ```r

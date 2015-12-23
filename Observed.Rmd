@@ -353,7 +353,7 @@ $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 
 # Poisson GLMM
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-55000
 
 #trigger parallel
@@ -466,7 +466,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 # Observed Data With Detection
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-70000
 
 #trigger parallel
@@ -563,7 +563,7 @@ if(paralleljags){
 load.module("dic")
 runs<-30000
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=2)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```
 
 ```{r}

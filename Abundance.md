@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2015-12-21 19:21:49"
+## [1] "Run Completed at 2015-12-22 14:01:11"
 ```
 
 #Simulation   
@@ -13,14 +13,14 @@ Ben Weinstein - Stony Brook University
 ### Parameters
 
 * 10 hummingbird species
-* Range of hummingbird bill sizes (mm) ~ Pois(2)
+* Range of hummingbird bill sizes (in mm) ~ Pois(10)/10
 * Twenty plants
-* Range of corolla sizes (mm) ~ Pois(2)
+* Range of corolla sizes (in mm) ~ Pois(15)/10
 * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
 * Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
 $$log(\lambda)<-\alpha_i + \beta_i *traitmatch$$
-$$\alpha=N(3,0.01)$$
-$$\beta = N(-0.01,0.001)$$
+$$\alpha=N(3,0.2)$$
+$$\beta = N(1,0.2)$$
 
 * Imperfect detection 
 * $$ p_i = U(0,0.5) $$ 
@@ -156,7 +156,6 @@ $$\tau_\beta \sim Gamma(0.0001,0.0001)$$
 
 $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
-$$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 
 #Simulated data without detection
 
@@ -255,25 +254,6 @@ if(paralleljags){
 load.module("dic")
 runs<-30000
 recompile(sim_niave)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 86685
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 86685
-## 
-## Initializing model
-```
-
-```r
 sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.95)
 ```
 
@@ -447,25 +427,6 @@ if(paralleljags){
 load.module("dic")
 runs<-10000
 recompile(sim_detect)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 135200
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 135200
-## 
-## Initializing model
-```
-
-```r
 sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 ```
 
@@ -847,18 +808,23 @@ ggplot(simd,aes(x=True_State,y=Diff)) + geom_point() + ylab("Difference in Occup
 
 <img src="figure/unnamed-chunk-33-2.png" title="" alt="" style="display: block; margin: auto;" />
 
-## View predicted trait-matching relationship with multinomial included.
+## View predicted trait-matching relationship with tl number of visits.
 
 ```r
-#merge multinomial with trait relationship
-multmats<-merge(multmats,traitmelt)
-
-multline<-multmats %>% group_by(traitmatch) %>% summarize(y=mean(Multinomial),Upper=quantile(Multinomial,0.95),Lower=quantile(Multinomial,0.05)) 
-
-psim3 + geom_ribbon(data=multline,aes(x=traitmatch,ymin=Lower,ymax=Upper),alpha=0.5,fill='gray') + geom_line(data=multline,aes(x=traitmatch,y=y),linetype='dashed')
+simdat<-merge(simdat,traitmelt,c("Bird","Plant"))
+mmat<-merge(mmat,traitmelt,by=c("Bird","Plant"))
 ```
 
-<img src="figure/unnamed-chunk-34-1.png" title="" alt="" style="display: block; margin: auto;" />
+#Predicted total number of visits based on morphology
+
+
+```r
+simT<-simdat %>% group_by(variable,traitmatch) %>% summarize(Lower=quantile(value,0.05),Upper=quantile(value,0.95),y=mean(value))
+
+ggplot(simT,aes(x=traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.4) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw()  + geom_point(data=mmat,aes(y=True_State)) + labs(x="Difference in Bill and Corolla Length",y="Total Predicted Visits",fill="Model",col='Model')
+```
+
+<img src="figure/unnamed-chunk-35-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 View a couple example data points from across the type of interactions.
 
@@ -870,7 +836,7 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("High Visitation Example")
 ```
 
-<img src="figure/unnamed-chunk-35-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
@@ -879,7 +845,7 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
 ```
 
-<img src="figure/unnamed-chunk-35-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-36-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Summary of discrepancy of predicted matrices
 
@@ -898,7 +864,7 @@ occ_disc<-sapply(occ,function(x) median(x))
 ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-<img src="figure/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-37-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Comparison of summary statistics for all three approaches
 
@@ -916,7 +882,7 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial    184.47    1.56 36893.33
+## 1 Multinomial    184.43    1.50 36886.36
 ## 2   Occupancy      1.67    0.21   334.05
 ## 3 Poisson_GLM      2.65    0.26   530.23
 ```
