@@ -911,6 +911,7 @@ simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLMM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
+
 ```
 
 ##Summary of discrepancy of predicted matrices

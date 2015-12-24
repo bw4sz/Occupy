@@ -721,7 +721,7 @@ simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLMM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 
-ggsave("Figures/PredictedState.jpeg",height=4,width=7)
+ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
 #difference in the middle
 simd<-dcast(simdat,...~variable)
