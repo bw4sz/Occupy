@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2015-12-23 16:39:15"
+## [1] "Run Completed at 2015-12-23 19:30:53"
 ```
 
 
@@ -586,7 +586,7 @@ if(paralleljags){
 ```r
 #recompile if needed
 load.module("dic")
-runs<-50000
+runs<-40000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```
@@ -822,13 +822,30 @@ detectd<-lapply(ts,function(x){
 
 md<-melt(detectd,id.var="Days")
 md<-dcast(md,...~variable)
-ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,ncol=3) + geom_hline (yintercept=.5,linetype="dashed") + ylab("Probability of Detection") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,1))
+
+#get the 0.5 line
+dpn<-function(t,p){
+  n<-(1 - (1-t))/(p/100)
+  return(n)
+}
+
+#for each bird get the upper and middle estimate for 50% chance.
+daydf<-list()
+for (x in 1:nrow(tab)){
+  mean_day=dpn(t=0.5,tab$mean[x])
+  lower_day=dpn(t=0.5,tab$lower[x])
+  upper_day=dpn(t=0.5,tab$upper[x])
+  daydf[[x]]<-data.frame(L1=tab$Hummingbird[x],mean=mean_day,lower=lower_day,upper=upper_day)
+}
+daydf<-rbind_all(daydf)
+
+ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=2)  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
 ```
 
 <img src="figureObserved/unnamed-chunk-33-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
-ggsave("Figures/DetectionDays.jpeg",height=9,width=5,dpi=300) 
+ggsave("Figures/DetectionDays.jpeg",height=5,width=9,dpi=300) 
 ```
 
 The number of days it would take to have 50% confidence you have sampled enough to capture known interactions is the x axis value where the dotted line hits the curve.
@@ -1053,7 +1070,7 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial     32.56    1.08 14683.83
+## 1 Multinomial     32.59    1.10 14697.93
 ## 2   Occupancy      4.39    0.76  1979.32
 ## 3 Poisson_GLM     20.75    2.38  9358.95
 ```
@@ -1087,8 +1104,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger    (Mb)   max used    (Mb)
-## Ncells  32082371 1713.4   52267848  2791.5   52267848  2791.5
-## Vcells 932338339 7113.2 1941461747 14812.2 1941461747 14812.2
+## Ncells  32082377 1713.4   52267848  2791.5   52267848  2791.5
+## Vcells 932340304 7113.2 1739412932 13270.7 1739411295 13270.7
 ```
 
 ```r
