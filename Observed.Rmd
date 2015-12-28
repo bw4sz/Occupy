@@ -278,7 +278,7 @@ for (x in 1:dim(indatlong)[3]){
   for (y in 1:dim(cam)[3]){
     sc<-sum(cam[,,y],na.rm=T)
     if (sc ==0){
-      cam[,,y]<-NA
+      indatlong[,,x,y]<-NA
     }
   }
 }
@@ -962,5 +962,4 @@ ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=vari
 gc()
 save.image("Observed.Rdata")
 ```
-
 
