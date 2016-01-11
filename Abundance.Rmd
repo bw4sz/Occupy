@@ -182,8 +182,8 @@ $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 
 #Simulated data without detection
 
-```{r,eval=F}
-runs<-40000
+```{r,eval=T}
+runs<-70000
 #runs<-1000
 
 #trigger parallel
@@ -335,8 +335,8 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 # Simulated data with detection
 
-```{r,eval=F}
-runs<-60000
+```{r,eval=T}
+runs<-90000
 
 #trigger parallel
 paralleljags<-T

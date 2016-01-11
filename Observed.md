@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2015-12-23 19:30:53"
+## [1] "Run Completed at 2016-01-11 15:13:22"
 ```
 
 
@@ -167,8 +167,8 @@ indatraw[order(indatraw$Yobs,decreasing=T),]
 ```
 
 ```
-## Source: local data frame [562 x 7]
-## Groups: Bird, Plant, ID [467]
+## Source: local data frame [568 x 7]
+## Groups: Bird, Plant, ID [473]
 ## 
 ##     Bird Plant     ID      DateP  Yobs  Elev Transect_R
 ##    (int) (int)  (chr)     (fctr) (int) (dbl)      (lgl)
@@ -176,12 +176,12 @@ indatraw[order(indatraw$Yobs,decreasing=T),]
 ## 2     20   109  FH616 2014-05-07    17  2450         NA
 ## 3     14   101  FH414 2014-04-22    13  1990         NA
 ## 4     18   123  FL083 2013-07-29    13  2350         NA
-## 5      2   120  FL061 2013-07-10    12  1325         NA
-## 6     11    28  FH303 2013-11-19    12  1940         NA
-## 7     11   101 FH1213 2015-02-11    11  1990         NA
-## 8     18   123  FL083 2013-07-28    11  2350         NA
-## 9      3    13  FL057 2013-07-05    10  1390         NA
-## 10     8   108  NF084 2014-05-24    10  1513         NA
+## 5     11    28  FH303 2013-11-19    12  1940         NA
+## 6     11   101 FH1213 2015-02-11    11  1990         NA
+## 7     18   123  FL083 2013-07-28    11  2350         NA
+## 8      8   108  NF084 2014-05-24    10  1513         NA
+## 9     10    81  NF011 2013-11-30    10  1421         NA
+## 10    11    82 FH1229 2015-10-07    10  1770         NA
 ## ..   ...   ...    ...        ...   ...   ...        ...
 ```
 
@@ -245,44 +245,39 @@ indatlong[is.na(indatlong)]<-0
 ```r
 #Only non-detections are real 0's, the rest are NA's and are removed.
 #Plants not surveyed in that time period
-#Hummingbirds not present at that site
+#Hummingbirds not present at that elevation
 
-for(x in 1:dim(indatlong)[3]){
+  for(x in 1:dim(indatlong)[3]){
+  
   #Remove non sampled plants 
   a<-indatlong[,,x,]
-  
+
   #No observations at that plant
   toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
   pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
   indatlong[,colnames(a) %in% toNA,x,]<-NA
+
+  if(length(pres)==0){next} else {
+
+  #Get elevation point of that sampling event
+  cam<-dimnames(indatlong)[[3]][x]
+  camelev<-    indatraw %>% filter(Camera==cam)  %>% .$Elev %>% mean()
   
-  #match elevation if there were presences
-  #for each plant there was a presence point
-  if(length(pres)>0){
-    for (y in 1:length(pres)){
-      
-      #Get elevation point of that camera.
-      cam<-as.numeric(dimnames(indatlong)[[3]][x])
-      camelev<-indatraw %>% filter(Camera==cam) %>% .$Elev %>% unique()
-      
-      #for each hummingbird, was that camera within elevation?
-      for(i in 1:dim(a)[1]){
-        low<-elevH[elevH$Bird == rownames(a)[i],"Low"]
-        high<-elevH[elevH$Bird == rownames(a)[i],"High"]
+  #for each hummingbird, was that camera within elevation?
+  for(i in 1:dim(a)[1]){
+      low<-elevH[elevH$Bird == rownames(a)[i],"Low"]
+      high<-elevH[elevH$Bird == rownames(a)[i],"High"]
         
         #if not in elev range, set to NA
+        
         if(!((low < camelev) & (camelev < high))){
+            if(sum(indatlong[i,,x,],na.rm=T)>0){next}
           #if you had a wandering individual outside range, allow interaction to occur.
-          if(sum(indatlong[i,,x,],na.rm=T)>0){
-            #print(c(i,x))
-            next}
-          #Othersise set to NA
-          indatlong[i,,x,]<-NA
+                indatlong[i,,x,]<-NA
         }
       }
     }
   }
-}
 
 ### There can't be absences in days that weren't sampled.
 for (x in 1:dim(indatlong)[3]){
@@ -290,25 +285,31 @@ for (x in 1:dim(indatlong)[3]){
   for (y in 1:dim(cam)[3]){
     sc<-sum(cam[,,y],na.rm=T)
     if (sc ==0){
-      cam[,,y]<-NA
+      indatlong[,,x,y]<-NA
     }
   }
 }
 
+
 #melt and remove Na's
 indat<-melt(indatlong)
-indat<-indat[!is.na(indat$value),]
+
+#get only absence data
+indat<-indat[indat$value %in% 0,]
 
 colnames(indat)<-c("Bird","Plant","Camera","Day","Yobs")
 ```
 
 
 ```r
-#remerge the time period data
-Timelookup<-indatraw %>% dplyr::select(Camera,DateP,Transect_R,Month,Year) %>% group_by(Camera,DateP,Transect_R,Month,Year) %>% distinct() %>% arrange(Camera)
+#remerge the time period data for absences
+Timelookup<-indatraw %>% dplyr::select(Camera,Transect_R,Month,Year,Day,DateP) %>% unique()
 
 #Get time information
-indat<-merge(indat,Timelookup,by=c("Camera"))
+indat<-merge(indat,Timelookup,by=c("Camera","Day"))
+
+#bind to presence data
+indat<-as.data.frame(rbind_all(list(indat,indatraw)))
 
 #Species names
 for (x in 1:nrow(indat)){
@@ -369,7 +370,7 @@ $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 
 
 ```r
-runs<-55000
+runs<-100000
 
 #trigger parallel
 paralleljags<-T
@@ -461,6 +462,25 @@ if(paralleljags){
 load.module("dic")
 runs<-30000
 recompile(m2_niave)
+```
+
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+##    Graph Size: 21374
+## 
+## Initializing model
+## 
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+##    Graph Size: 21374
+## 
+## Initializing model
+```
+
+```r
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
 
@@ -491,7 +511,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 
 ```r
-runs<-70000
+runs<-150000
 
 #trigger parallel
 paralleljags<-T
@@ -588,6 +608,25 @@ if(paralleljags){
 load.module("dic")
 runs<-40000
 recompile(m2)
+```
+
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+##    Graph Size: 184833
+## 
+## Initializing model
+## 
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+##    Graph Size: 184833
+## 
+## Initializing model
+```
+
+```r
 m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```
 
@@ -773,17 +812,17 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                Hummingbird mean lower upper
-## 1       Booted Racket-tail 23.8  17.2  30.4
-## 2               Brown Inca 20.6  15.5  25.7
-## 3      Buff-tailed Coronet 41.7  30.9  49.4
-## 4            Collared Inca 16.8   9.3  25.1
-## 5        Gorgeted Sunangel 38.5  29.9  46.6
-## 6  Green-fronted Lancebill 14.2   4.9  26.0
-## 7     Speckled Hummingbird  3.6   0.6   9.1
-## 8   Stripe-throated Hermit 30.5  23.2  38.3
-## 9     Tawny-bellied Hermit 14.5  10.4  18.7
-## 10     Violet-tailed Sylph 12.6   8.8  16.7
-## 11  White-whiskered Hermit 25.8  19.7  32.0
+## 1       Booted Racket-tail 27.5   9.9  46.2
+## 2               Brown Inca 45.8  29.3  61.1
+## 3      Buff-tailed Coronet 31.1  11.9  53.3
+## 4            Collared Inca 50.0  19.9  78.2
+## 5        Gorgeted Sunangel 83.6  68.1  94.5
+## 6  Green-fronted Lancebill 43.5  10.3  79.8
+## 7     Speckled Hummingbird 67.5  25.7  95.5
+## 8   Stripe-throated Hermit 40.0  20.9  58.6
+## 9     Tawny-bellied Hermit 40.6  24.6  55.9
+## 10     Violet-tailed Sylph 38.8  21.2  56.4
+## 11  White-whiskered Hermit 27.7  11.0  46.2
 ```
 
 ```r
@@ -839,13 +878,13 @@ for (x in 1:nrow(tab)){
 }
 daydf<-rbind_all(daydf)
 
-ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=2)  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
+ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=2,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
 ```
 
 <img src="figureObserved/unnamed-chunk-33-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
-ggsave("Figures/DetectionDays.jpeg",height=5,width=9,dpi=300) 
+ggsave("Figures/DetectionDays.jpeg",height=5,width=10,dpi=300) 
 ```
 
 The number of days it would take to have 50% confidence you have sampled enough to capture known interactions is the x axis value where the dotted line hits the curve.
@@ -860,7 +899,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 10339.55
+## [1] 4905.319
 ```
 
 ```r
@@ -868,7 +907,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 10024.93
+## [1] 11410.96
 ```
 
 #Predicted versus Observed Data
@@ -887,7 +926,7 @@ dmultinom(true_state,prob=m,log=T)
 ```
 
 ```
-## [1] -3298.351
+## [1] -2078.445
 ```
 
 ```r
@@ -1070,9 +1109,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial     32.59    1.10 14697.93
-## 2   Occupancy      4.39    0.76  1979.32
-## 3 Poisson_GLM     20.75    2.38  9358.95
+## 1 Multinomial     14.53    0.58  6553.71
+## 2   Occupancy      2.64    0.51  1189.04
+## 3 Poisson_GLM      9.80    1.27  4420.91
 ```
 
 Merge with morphological data.
@@ -1103,13 +1142,12 @@ gc()
 ```
 
 ```
-##             used   (Mb) gc trigger    (Mb)   max used    (Mb)
-## Ncells  32082377 1713.4   52267848  2791.5   52267848  2791.5
-## Vcells 932340304 7113.2 1739412932 13270.7 1739411295 13270.7
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells  11829240  631.8   17371378  927.8  17371378  927.8
+## Vcells 337322635 2573.6  709674765 5414.4 709340294 5411.9
 ```
 
 ```r
 save.image("Observed.Rdata")
 ```
-
 

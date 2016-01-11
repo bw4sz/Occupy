@@ -40,7 +40,7 @@ cat("
     }
     
     for (i in 1:Birds){
-    detect[i] ~ dunif(0,0.5)
+    detect[i] ~ dunif(0,1)
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta[i] ~ dnorm(gamma,tau_beta)    
     }
@@ -54,7 +54,7 @@ cat("
 
     # Group intercept variance
     tau_alpha ~ dgamma(0.0001,0.0001)
-    sigma_int<-pow(1/tau_alpha,0.5) 
+    sigma_int<-pow(1/tau_alpha,.5) 
     
     #Derived Quantity
     

@@ -233,44 +233,39 @@ indatlong[is.na(indatlong)]<-0
 ```{r}
 #Only non-detections are real 0's, the rest are NA's and are removed.
 #Plants not surveyed in that time period
-#Hummingbirds not present at that site
+#Hummingbirds not present at that elevation
 
-for(x in 1:dim(indatlong)[3]){
+  for(x in 1:dim(indatlong)[3]){
+  
   #Remove non sampled plants 
   a<-indatlong[,,x,]
-  
+
   #No observations at that plant
   toNA<-as.numeric(names(which(apply(a,2,sum)==0)))
   pres<-as.numeric(names(which(!apply(a,2,sum)==0)))
   indatlong[,colnames(a) %in% toNA,x,]<-NA
+
+  if(length(pres)==0){next} else {
+
+  #Get elevation point of that sampling event
+  cam<-dimnames(indatlong)[[3]][x]
+  camelev<-    indatraw %>% filter(Camera==cam)  %>% .$Elev %>% mean()
   
-  #match elevation if there were presences
-  #for each plant there was a presence point
-  if(length(pres)>0){
-    for (y in 1:length(pres)){
-      
-      #Get elevation point of that camera.
-      cam<-as.numeric(dimnames(indatlong)[[3]][x])
-      camelev<-indatraw %>% filter(Camera==cam) %>% .$Elev %>% unique()
-      
-      #for each hummingbird, was that camera within elevation?
-      for(i in 1:dim(a)[1]){
-        low<-elevH[elevH$Bird == rownames(a)[i],"Low"]
-        high<-elevH[elevH$Bird == rownames(a)[i],"High"]
+  #for each hummingbird, was that camera within elevation?
+  for(i in 1:dim(a)[1]){
+      low<-elevH[elevH$Bird == rownames(a)[i],"Low"]
+      high<-elevH[elevH$Bird == rownames(a)[i],"High"]
         
         #if not in elev range, set to NA
+        
         if(!((low < camelev) & (camelev < high))){
+            if(sum(indatlong[i,,x,],na.rm=T)>0){next}
           #if you had a wandering individual outside range, allow interaction to occur.
-          if(sum(indatlong[i,,x,],na.rm=T)>0){
-            #print(c(i,x))
-            next}
-          #Othersise set to NA
-          indatlong[i,,x,]<-NA
+                indatlong[i,,x,]<-NA
         }
       }
     }
   }
-}
 
 ### There can't be absences in days that weren't sampled.
 for (x in 1:dim(indatlong)[3]){
@@ -283,19 +278,25 @@ for (x in 1:dim(indatlong)[3]){
   }
 }
 
+
 #melt and remove Na's
 indat<-melt(indatlong)
-indat<-indat[!is.na(indat$value),]
+
+#get only absence data
+indat<-indat[indat$value %in% 0,]
 
 colnames(indat)<-c("Bird","Plant","Camera","Day","Yobs")
 ```
 
 ```{r}
-#remerge the time period data
-Timelookup<-indatraw %>% dplyr::select(Camera,DateP,Transect_R,Month,Year) %>% group_by(Camera,DateP,Transect_R,Month,Year) %>% distinct() %>% arrange(Camera)
+#remerge the time period data for absences
+Timelookup<-indatraw %>% dplyr::select(Camera,Transect_R,Month,Year,Day,DateP) %>% unique()
 
 #Get time information
-indat<-merge(indat,Timelookup,by=c("Camera"))
+indat<-merge(indat,Timelookup,by=c("Camera","Day"))
+
+#bind to presence data
+indat<-as.data.frame(rbind_all(list(indat,indatraw)))
 
 #Species names
 for (x in 1:nrow(indat)){
@@ -354,7 +355,7 @@ $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 # Poisson GLMM
 
 ```{r,eval=F}
-runs<-55000
+runs<-100000
 
 #trigger parallel
 paralleljags<-T
@@ -440,7 +441,7 @@ if(paralleljags){
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
 runs<-30000
@@ -467,7 +468,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-70000
+runs<-150000
 
 #trigger parallel
 paralleljags<-T
@@ -558,7 +559,7 @@ if(paralleljags){
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
 runs<-40000
@@ -719,7 +720,7 @@ $$ 1-(1-p)^n $$
 $$ p = probability of detection$$
 $$ n = days sample $$
 
-```{r,fig.width=6,fig.height=8}
+```{r,fig.width=13,fig.height=6}
 dp<-function(n,p){
   1-((1-p)^n)
 }
