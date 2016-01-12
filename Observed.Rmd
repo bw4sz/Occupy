@@ -41,7 +41,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-load("Observed.Rdata")
+#load("Observed.Rdata")
 ```
 
 #Observed dataset
@@ -75,8 +75,8 @@ int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersoni
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
-#Some reasonable level of presences, 20 points
-keep<-names(which(table(int$Hummingbird) > 20))
+#Some reasonable level of presences, 5 points
+keep<-names(which(table(int$Hummingbird) > 5))
 
 int<-int[int$Hummingbird %in% keep,]
 
@@ -106,9 +106,6 @@ missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 
 #print(paste("Missing Trait Information:",missingTraits))
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
-
-#Drop piercing events, since they don't represent correlation
-dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
 ##Match Species to Morphology
@@ -292,7 +289,7 @@ colnames(indat)<-c("Bird","Plant","Camera","Day","Yobs")
 
 ```{r}
 #remerge the time period data for absences
-Timelookup<-indatraw %>% dplyr::select(Camera,Transect_R,Month,Year,Day,DateP) %>% unique()
+Timelookup<-indatraw %>% dplyr::select(Camera,Transect_R,Month,Year,Day,DateP,ID) %>% unique()
 
 #Get time information
 indat<-merge(indat,Timelookup,by=c("Camera","Day"))
@@ -309,6 +306,13 @@ for (x in 1:nrow(indat)){
 #Get trait information
 #match the traits
 indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
+```
+
+Which species to evaluate? We need atleast some replicates to estimate detection rates. Remove the extremely rare species (less than 5 presences)
+
+```{r}
+
+
 ```
 
 Reformat index for jags.
@@ -356,7 +360,7 @@ $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 
 # Poisson GLMM
 
-```{r,eval=F}
+```{r,eval=T}
 runs<-150000
 
 #trigger parallel
@@ -443,7 +447,7 @@ if(paralleljags){
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-50000
@@ -469,7 +473,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 # Observed Data With Detection
 
-```{r,eval=F}
+```{r,eval=T}
 runs<-200000
 
 #trigger parallel
@@ -561,7 +565,7 @@ if(paralleljags){
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-100000
