@@ -308,11 +308,11 @@ for (x in 1:nrow(indat)){
 indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 ```
 
-Which species to evaluate? We need atleast some replicates to estimate detection rates. Remove the extremely rare species (less than 5 presences)
+Which species to evaluate? We need atleast some replicates to estimate detection rates. Remove the extremely rare species (less than 10 presences.)
 
 ```{r}
-
-
+keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>10) %>% .$Hummingbird
+indat<-indat[indat$Hummingbird %in% keep,]
 ```
 
 Reformat index for jags.
@@ -474,7 +474,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=T}
-runs<-200000
+runs<-250000
 
 #trigger parallel
 paralleljags<-T
@@ -776,7 +776,7 @@ m2$BUGSoutput$DIC
 #Predicted versus Observed Data
 
 ```{r}
-m<-max(traitmatchT)-traitmatchT
+m<-max(jTraitmatch)-jTraitmatch
 
 mat<-indat %>% group_by(jBird,jPlant) %>% summarize(n=sum(Yobs))
 true_state<-acast(mat,jBird~jPlant,fill=0)
