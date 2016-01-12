@@ -57,6 +57,11 @@ fl.morph<-fl.morph[-1,]
 #Bring in Hummingbird Morphology Dataset, comes from
 hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",sep=""))
 
+#taxonomy change, we are calling them Crowned Woodnymph's now.
+hum.morph$English<-as.character(hum.morph$English)
+
+hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Woodnymph"
+
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
@@ -70,7 +75,7 @@ int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersoni
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
-#Some reasonable level of presences, 25 points
+#Some reasonable level of presences, 20 points
 keep<-names(which(table(int$Hummingbird) > 20))
 
 int<-int[int$Hummingbird %in% keep,]
@@ -109,9 +114,6 @@ dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ##Match Species to Morphology
 
 ```{r}
-#remove species with less than  10 observations
-keep<-names(which(table(dath$Hummingbird) > 20))
-
 dath<-droplevels(dath[dath$Hummingbird %in% keep,])
 
 #observed traitmatching
@@ -355,7 +357,7 @@ $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 # Poisson GLMM
 
 ```{r,eval=F}
-runs<-100000
+runs<-150000
 
 #trigger parallel
 paralleljags<-T
@@ -444,7 +446,7 @@ if(paralleljags){
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-30000
+runs<-50000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
@@ -468,7 +470,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-150000
+runs<-200000
 
 #trigger parallel
 paralleljags<-T
@@ -562,7 +564,7 @@ if(paralleljags){
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-40000
+runs<-100000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```

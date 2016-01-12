@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-01-11 15:13:22"
+## [1] "Run Completed at 2016-01-11 22:05:41"
 ```
 
 
@@ -28,6 +28,11 @@ fl.morph<-fl.morph[-1,]
 #Bring in Hummingbird Morphology Dataset, comes from
 hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",sep=""))
 
+#taxonomy change, we are calling them Crowned Woodnymph's now.
+hum.morph$English<-as.character(hum.morph$English)
+
+hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Woodnymph"
+
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
@@ -41,7 +46,7 @@ int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersoni
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
-#Some reasonable level of presences, 25 points
+#Some reasonable level of presences, 20 points
 keep<-names(which(table(int$Hummingbird) > 20))
 
 int<-int[int$Hummingbird %in% keep,]
@@ -81,9 +86,6 @@ dath<-dath[!dath$Pierce %in% c("y","Y"),]
 
 
 ```r
-#remove species with less than  10 observations
-keep<-names(which(table(dath$Hummingbird) > 20))
-
 dath<-droplevels(dath[dath$Hummingbird %in% keep,])
 
 #observed traitmatching
@@ -115,13 +117,13 @@ head(elevH)
 ```
 
 ```
-##                 Hummingbird  Low        m High Index
-## 1            Andean Emerald 1378 1378.632 1380     1
-## 2    White-whiskered Hermit 1331 1430.091 1621     1
-## 3    Stripe-throated Hermit 1340 1462.730 1558     1
-## 4         Crowned Woodnymph 1360 1523.477 2049     1
-## 5 Rufous-tailed Hummingbird 1370 1532.000 1862     3
-## 6  Wedge-billed Hummingbird 1331 1606.158 1966     3
+##                 Hummingbird  Low        m   High Index
+## 1            Andean Emerald 1378 1378.632 1380.0     1
+## 2    White-whiskered Hermit 1340 1437.024 1614.2     1
+## 3    Stripe-throated Hermit 1360 1455.084 1527.4     1
+## 4         Crowned Woodnymph 1360 1523.420 2049.0     1
+## 5 Rufous-tailed Hummingbird 1370 1531.929 1862.0     3
+## 6  Wedge-billed Hummingbird 1331 1624.850 2003.0     3
 ```
 
 ```r
@@ -167,8 +169,8 @@ indatraw[order(indatraw$Yobs,decreasing=T),]
 ```
 
 ```
-## Source: local data frame [568 x 7]
-## Groups: Bird, Plant, ID [473]
+## Source: local data frame [590 x 7]
+## Groups: Bird, Plant, ID [499]
 ## 
 ##     Bird Plant     ID      DateP  Yobs  Elev Transect_R
 ##    (int) (int)  (chr)     (fctr) (int) (dbl)      (lgl)
@@ -370,7 +372,7 @@ $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 
 
 ```r
-runs<-100000
+runs<-150000
 
 #trigger parallel
 paralleljags<-T
@@ -460,7 +462,7 @@ if(paralleljags){
 ```r
 #recompile if needed
 load.module("dic")
-runs<-30000
+runs<-50000
 recompile(m2_niave)
 ```
 
@@ -468,14 +470,14 @@ recompile(m2_niave)
 ## Compiling model graph
 ##    Resolving undeclared variables
 ##    Allocating nodes
-##    Graph Size: 21374
+##    Graph Size: 24201
 ## 
 ## Initializing model
 ## 
 ## Compiling model graph
 ##    Resolving undeclared variables
 ##    Allocating nodes
-##    Graph Size: 21374
+##    Graph Size: 24201
 ## 
 ## Initializing model
 ```
@@ -511,7 +513,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 
 ```r
-runs<-150000
+runs<-200000
 
 #trigger parallel
 paralleljags<-T
@@ -606,7 +608,7 @@ if(paralleljags){
 ```r
 #recompile if needed
 load.module("dic")
-runs<-40000
+runs<-100000
 recompile(m2)
 ```
 
@@ -614,14 +616,14 @@ recompile(m2)
 ## Compiling model graph
 ##    Resolving undeclared variables
 ##    Allocating nodes
-##    Graph Size: 184833
+##    Graph Size: 219508
 ## 
 ## Initializing model
 ## 
 ## Compiling model graph
 ##    Resolving undeclared variables
 ##    Allocating nodes
-##    Graph Size: 184833
+##    Graph Size: 219508
 ## 
 ## Initializing model
 ```
@@ -812,17 +814,19 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                Hummingbird mean lower upper
-## 1       Booted Racket-tail 27.5   9.9  46.2
-## 2               Brown Inca 45.8  29.3  61.1
-## 3      Buff-tailed Coronet 31.1  11.9  53.3
-## 4            Collared Inca 50.0  19.9  78.2
-## 5        Gorgeted Sunangel 83.6  68.1  94.5
-## 6  Green-fronted Lancebill 43.5  10.3  79.8
-## 7     Speckled Hummingbird 67.5  25.7  95.5
-## 8   Stripe-throated Hermit 40.0  20.9  58.6
-## 9     Tawny-bellied Hermit 40.6  24.6  55.9
-## 10     Violet-tailed Sylph 38.8  21.2  56.4
-## 11  White-whiskered Hermit 27.7  11.0  46.2
+## 1       Booted Racket-tail 27.1  11.4  44.4
+## 2               Brown Inca 45.1  26.9  61.1
+## 3      Buff-tailed Coronet 23.6   7.6  47.1
+## 4            Collared Inca 46.2  14.8  74.4
+## 5        Crowned Woodnymph 26.4   7.9  50.0
+## 6  Fawn-breasted Brilliant 15.4   1.7  52.9
+## 7        Gorgeted Sunangel 82.9  66.8  94.1
+## 8  Green-fronted Lancebill 43.0  10.0  80.4
+## 9     Speckled Hummingbird 67.6  27.1  95.0
+## 10  Stripe-throated Hermit 38.8  18.5  58.7
+## 11    Tawny-bellied Hermit 37.8  20.3  54.0
+## 12     Violet-tailed Sylph 38.2  20.6  54.8
+## 13  White-whiskered Hermit 24.8  10.1  40.4
 ```
 
 ```r
@@ -899,7 +903,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 4905.319
+## [1] 5139.279
 ```
 
 ```r
@@ -907,7 +911,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 11410.96
+## [1] 12760.91
 ```
 
 #Predicted versus Observed Data
@@ -926,7 +930,7 @@ dmultinom(true_state,prob=m,log=T)
 ```
 
 ```
-## [1] -2078.445
+## [1] -2294.864
 ```
 
 ```r
@@ -934,7 +938,7 @@ paste("Correlation coefficient is:", round(cor(c(true_state),c(m),method="spearm
 ```
 
 ```
-## [1] "Correlation coefficient is: 0.25"
+## [1] "Correlation coefficient is: 0.2"
 ```
 
 ###Test Statistic
@@ -1109,9 +1113,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial     14.53    0.58  6553.71
-## 2   Occupancy      2.64    0.51  1189.04
-## 3 Poisson_GLM      9.80    1.27  4420.91
+## 1 Multinomial     12.39    0.47  6604.72
+## 2   Occupancy      2.53    0.45  1350.70
+## 3 Poisson_GLM      8.39    1.06  4471.21
 ```
 
 Merge with morphological data.
@@ -1143,8 +1147,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  11829240  631.8   17371378  927.8  17371378  927.8
-## Vcells 337322635 2573.6  709674765 5414.4 709340294 5411.9
+## Ncells  13118789  700.7   20885653 1115.5  20885653 1115.5
+## Vcells 380180708 2900.6  865989594 6607.0 865625357 6604.2
 ```
 
 ```r
