@@ -308,10 +308,10 @@ for (x in 1:nrow(indat)){
 indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 ```
 
-Which species to evaluate? We need atleast some replicates to estimate detection rates. Remove the extremely rare species (less than 10 presences.)
+Which species to evaluate? We need atleast some replicates to estimate detection rates. Remove the extremely rare species (less than 5 presences.)
 
 ```{r}
-keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>10) %>% .$Hummingbird
+keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>=10) %>% .$Hummingbird
 indat<-indat[indat$Hummingbird %in% keep,]
 ```
 
@@ -336,10 +336,12 @@ write.csv(indat,"InputData/ObservedData.csv")
 
 # Hierarcichal Occupancy Model
 
+Normal distributions are parameterized in precision (1/variance) in jags. N(0,0.0001) is a broad prior.
+
 $$ Y_{i,j,k} \sim Binom(N_{i,j,k},detect_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
-$$detect_i \sim U(0,0.5)$$     
+$$logit(detect_i) \sim N(dprior,\tau_{detect})$$  
 
 **Priors**
 
@@ -349,19 +351,21 @@ $$\beta_i \sim N(\gamma,\tau_{detect})$$
 **Hyperpriors**
 $$gamma \sim N(0,0.0001)$$
 $$intercept \sim N(0,0.0001)$$
+$$dprior \sim N(0,0.5)$$
 
 $$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
 $$\tau_\beta \sim Gamma(0.0001,0.0001)$$
+$$\tau_detect \sim U(0,10)$$
 
 **Derived quantities**
 
 $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
-
+$$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
 # Poisson GLMM
 
-```{r,eval=F}
-runs<-150000
+```{r,eval=T}
+runs<-60000
 
 #trigger parallel
 paralleljags<-T
@@ -389,7 +393,7 @@ if(paralleljags){
   Ninit<-rep(max(indat$Yobs)+1,Nobs)
   
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,dprior=0,gamma=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -474,7 +478,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-250000
+runs<-80000
 
 #trigger parallel
 paralleljags<-T
@@ -508,7 +512,7 @@ if(paralleljags){
   InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","dprior","sigma_detect")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -568,7 +572,7 @@ if(paralleljags){
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-300000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```
@@ -591,7 +595,7 @@ ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta"),],aes(x=Draw,
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect[pars_detect$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
 ```
@@ -619,7 +623,7 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
 ```{r,cache=FALSE,fig.height=5,fig.width=13}
-ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
 ##Species Predictions
