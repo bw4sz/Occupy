@@ -25,7 +25,7 @@ library(boot)
 library(picante)
 library(bipartite)
 
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=6,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
 setwd("C:/Users/Ben/Documents/Occupy/")
 
@@ -41,7 +41,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-#load("Observed.Rdata")
+load("Observed.Rdata")
 ```
 
 #Observed dataset
@@ -360,7 +360,7 @@ $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
 
 # Poisson GLMM
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-150000
 
 #trigger parallel
@@ -447,10 +447,10 @@ if(paralleljags){
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-50000
+runs<-150000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
@@ -473,7 +473,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 # Observed Data With Detection
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-250000
 
 #trigger parallel
@@ -565,7 +565,7 @@ if(paralleljags){
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
 runs<-100000
