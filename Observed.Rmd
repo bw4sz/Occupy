@@ -75,8 +75,8 @@ int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersoni
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
-#Some reasonable level of presences, 5 points
-keep<-names(which(table(int$Hummingbird) > 5))
+#Some reasonable level of presences, 3 points
+keep<-names(which(table(int$Hummingbird) > 3))
 
 int<-int[int$Hummingbird %in% keep,]
 
@@ -311,7 +311,7 @@ indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 Which species to evaluate? We need atleast some replicates to estimate detection rates. Remove the extremely rare species (less than 5 presences.)
 
 ```{r}
-keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>=10) %>% .$Hummingbird
+keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>10) %>% .$Hummingbird
 indat<-indat[indat$Hummingbird %in% keep,]
 ```
 
@@ -341,7 +341,7 @@ Normal distributions are parameterized in precision (1/variance) in jags. N(0,0.
 $$ Y_{i,j,k} \sim Binom(N_{i,j,k},detect_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
-$$logit(detect_i) \sim N(dprior,\tau_{detect})$$  
+$$detect_i \sim U(0,0.75)$$  
 
 **Priors**
 
@@ -351,24 +351,19 @@ $$\beta_i \sim N(\gamma,\tau_{detect})$$
 **Hyperpriors**
 $$gamma \sim N(0,0.0001)$$
 $$intercept \sim N(0,0.0001)$$
-$$dprior \sim N(0,0.5)$$
 
 $$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
 $$\tau_\beta \sim Gamma(0.0001,0.0001)$$
-$$\tau_detect \sim U(0,10)$$
 
 **Derived quantities**
 
 $$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 $$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
-$$\sigma_{detect} = \sqrt[2]{\frac{1}{\tau_detect}}$$
+
 # Poisson GLMM
 
-```{r,eval=T}
-runs<-60000
-
-#trigger parallel
-paralleljags<-T
+```{r,eval=F}
+runs<-100000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -376,7 +371,6 @@ source("Bayesian/NoDetectNmixturePoissonRagged.R")
 #print model
 print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
-if(paralleljags){
 
   #for parallel run
   Yobs=indat$Yobs
@@ -408,53 +402,13 @@ if(paralleljags){
 
     m2_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
-  } else {
- #Input Data
-  Dat <- list(
-    Yobs=indat$Yobs,
-    Bird=indat$jBird,
-    Plant=indat$jPlant,
-    Plants=max(indat$jPlant),
-    Time=indat$Camera,
-    Traitmatch=jTraitmatch,
-    #number of birds to iterate
-    Birds=max(indat$jBird),
-    Nobs=length(indat$Yobs))
-  
-    #A blank Y matrix - all present
-    Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
-  
-    #Inits
-  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
-  
-  #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
-  
-  #MCMC options
-  ni <- runs  # number of draws from the posterior
-  nt <- 2   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
-  nc <- 2  # number of chains
-  
-  #Jags
-  
-  m2_niave <- jags(inits=InitStage,
-                   n.chains=nc, model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",
-                   working.directory=getwd(),
-                   data=Dat,
-                   parameters.to.save=ParsStage,
-                   n.thin=nt,
-                   n.iter=ni,
-                   n.burnin=nb,
-                   DIC=T)
-}
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-150000
+runs<-100000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
@@ -478,18 +432,13 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-80000
-
-#trigger parallel
-paralleljags<-T
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
 
 #print model
 print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
-
-if(paralleljags){
 
   #for parallel run
   Yobs=indat$Yobs
@@ -509,70 +458,28 @@ if(paralleljags){
   Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","dprior","sigma_detect")
+  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 3   #thinning rate
+  nt <- 4   #thinning rate
   nb <- runs*.90 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
 
     system.time(m2<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
-  } else {
-  #Input Data
-  Dat <- list(
-     Yobs=indat$Yobs,
-    Bird=indat$jBird,
-    Plant=indat$jPlant,
-    Camera=indat$Camera,
-    Cameras=max(indat$Camera),
-    Day<-indat$Day,
-    Days<-max(indat$Day),
-    Traitmatch=traitmatch,
-    #number of birds to iterate
-    Birds=max(indat$jBird),
-    Plants=max(indat$jPlant),
-    Nobs=length(indat$Yobs)
-  )
-    #A blank Y matrix - all present
-  Ninit<-array(dim=c(Dat$Birds,Dat$Plants,Dat$Cameras),data=max(indat$Yobs)+1)
   
-    #Inits
-  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
-  
-  #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew","lambda")
-  
-  #MCMC options
-  ni <- runs  # number of draws from the posterior
-  nt <- 3   #thinning rate
-  nb <- runs*.9 # number to discard for burn-in
-  nc <- 2  # number of chains
-  
-  #Jags
-  
-  system.time(m2 <- jags(inits=InitStage,
-                   n.chains=nc, model.file="Bayesian/NmixturePoissonRagged.jags",
-                   working.directory=getwd(),
-                   data=Dat,
-                   parameters.to.save=ParsStage,
-                   n.thin=nt,
-                   n.iter=ni,
-                   n.burnin=nb,
-                   DIC=T))
-}
 ```
 
 
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-300000
+runs<-100000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
 ```

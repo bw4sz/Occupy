@@ -40,7 +40,8 @@ cat("
     }
     
     for (i in 1:Birds){
-    logit(detect[i]) ~ dnorm(dprior,tau_detect)
+    logit(detect[i]) <- detect_logit[i]
+    detect_logit[i] ~ dnorm(dprior,tau_detect)
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta[i] ~ dnorm(gamma,tau_beta)    
     }
@@ -57,7 +58,7 @@ cat("
     sigma_int<-pow(1/tau_alpha,.5) 
 
     #Detect grouping
-    dprior<-dnorm(0,.5)
+    dprior ~ dnorm(0,.5)
 
   # Detect variance
     tau_detect ~ dunif(0,10)
