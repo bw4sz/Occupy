@@ -437,7 +437,7 @@ pars$Model<-"Occupancy"
 ```
 
 ```{r}
-pO<-rbind_all(pars_niave,pars)
+pO<-rbind_all(list(pars_niave,pars))
 filename<-paste("Dispersion/Allpars",detection,".csv",sep="")
 write.csv(pO,filename)
 ```
