@@ -59,10 +59,6 @@ $$\beta = N(1,0.2)$$
 
 **View simulated strength and form of trait matching **
 
-```{r}
-load("Abundance.RData")
-```
-
 #Simulation Parameters
 
 ```{r,fig.height=5,fig.width=8,eval=F}
