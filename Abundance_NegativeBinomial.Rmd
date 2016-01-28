@@ -140,7 +140,7 @@ traitmelt<-melt(traitmatch)
 colnames(traitmelt)<-c("Bird","Plant","traitmatch")
 
 mdat<-merge(mdat,traitmelt,c("Bird","Plant"))
-ggplot(mdat,aes(x=traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson") + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
+ggplot(mdat,aes(x=traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args=list(family="Poisson") ) + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
 ```
 
 ##View Detection Rates
