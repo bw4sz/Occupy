@@ -1,3 +1,5 @@
+#!/bin/bash 
+
 #Clone git repo
 git clone https://github.com/bw4sz/Occupy.git
 
