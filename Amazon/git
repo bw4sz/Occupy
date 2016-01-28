@@ -25,6 +25,8 @@ git commit -m "ec2 run complete"
 #slightly tricky part, trying not to type this all in plain text.
 git push "https://bw4sz:$pas@github.com/bw4sz/Occupy.git" master
 
+#Kill the instance
+sudo halt
 
 
 
