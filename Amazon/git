@@ -3,6 +3,10 @@
 #Clone git repo
 git clone https://github.com/bw4sz/Occupy.git
 
+#cd into directory
+cd Occupy
+cd Amazon
+
 #collect password from cmd line
 pas=$1
 
@@ -13,8 +17,9 @@ git config --global user.name "bw4sz"
 #install packages
 Rscript install.R
 
+cd .. 
 #Run source
-Rscript Abunance_NegativeBinomial.Rmd
+Rscript Abundance_NegativeBinomial.Rmd
 
 #add changes
 git add --all

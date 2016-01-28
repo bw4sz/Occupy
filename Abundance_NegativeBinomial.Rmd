@@ -29,8 +29,6 @@ library(MASS)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figure/")
 
-setwd("C:/Users/Ben/Documents/Occupy/")
-
 set.seed(3)
 #source functions
 
