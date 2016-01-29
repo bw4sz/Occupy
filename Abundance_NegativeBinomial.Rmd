@@ -438,6 +438,6 @@ pars$Model<-"Occupancy"
 
 ```{r}
 pO<-rbind_all(list(pars_niave,pars))
-filename<-paste("Dispersion/Allpars",detection,".csv",sep="")
+filename<-paste("Dispersion/Allpars",dispersion,".csv",sep="")
 write.csv(pO,filename)
 ```
