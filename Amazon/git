@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 #Clone git repo
-git clone https://github.com/bw4sz/Occupy.git
+git clone https://github.com/bw4sz/Occupy.git --branch Amazon
 
 #cd into directory
 cd Occupy
@@ -27,6 +27,9 @@ PATH=/usr/lib/rstudio-server/bin/pandoc/:$PATH
 #Knit the .Rmd
 cd ..
 Rscript NegativeBinomial.R
+
+#creates a useless Rplots file
+rm Rplots.pdf
 
 #add changes
 git add --all
