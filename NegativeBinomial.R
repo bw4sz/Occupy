@@ -50,7 +50,7 @@ days<-3
 
 #set dispersion parameter, get from command line
 args <- commandArgs(trailingOnly = TRUE)
-dispersion<-args[1]
+dispersion<-as.numeric(args[1])
 
 #Bill sizes
 Bill<-rpois(h_species,10)
