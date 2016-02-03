@@ -48,8 +48,9 @@ plant_species=20
 cameras<-20
 days<-3
 
-#set dispersion parameter
-dispersion<-1
+#set dispersion parameter, get from command line
+args <- commandArgs(trailingOnly = TRUE)
+dispersion<-args[1]
 
 #Bill sizes
 Bill<-rpois(h_species,10)

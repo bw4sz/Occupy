@@ -12,7 +12,6 @@ git checkout Amazon
 cd Amazon
 
 #collect password from cmd line
-pas=$1
 
 #set global 
 git config --global email.address "benweinstein2010@gmail.com"
@@ -26,7 +25,7 @@ PATH=/usr/lib/rstudio-server/bin/pandoc/:$PATH
 
 #Knit the .Rmd
 cd ..
-Rscript NegativeBinomial.R
+Rscript NegativeBinomial.R 2
 
 #creates a useless Rplots file
 rm Rplots.pdf
