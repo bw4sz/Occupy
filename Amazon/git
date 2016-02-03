@@ -3,11 +3,12 @@
 #Clone git repo
 git clone https://github.com/bw4sz/Occupy.git
 
-#branch
-git checkout -b Amazon
-
 #cd into directory
 cd Occupy
+
+#branch
+git checkout Amazon
+
 cd Amazon
 
 #collect password from cmd line
@@ -34,7 +35,7 @@ git add --all
 git commit -m "ec2 run complete"
 
 #slightly tricky part, trying not to type this all in plain text.
-git push "https://bw4sz:$pas@github.com/bw4sz/Occupy.git" origin Amazon
+git push https://bw4sz:$pas@github.com/bw4sz/Occupy.git Amazon
 
 #Kill the instance, need to pass rstudio password
 echo 'rstudio' | sudo -S halt
