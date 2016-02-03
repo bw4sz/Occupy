@@ -156,7 +156,7 @@ ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Camera)) + geom_point() + theme_b
   #Simulated data without detection
   
 #runs<-70000
-runs<-1000
+runs<-10000
 
 #trigger parallel
 paralleljags<-T
@@ -285,7 +285,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 # Simulated data with detection
 
-runs<-900
+runs<-10000
 
 #trigger parallel
 paralleljags<-T
