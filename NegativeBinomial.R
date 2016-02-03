@@ -49,7 +49,7 @@ cameras<-20
 days<-3
 
 #set dispersion parameter, get from command line
-args <- commandArgs(trailingOnly = TRUE)
+args <- commandArgs(TRUE)
 print(args)
 dispersion<-as.numeric(args[1])
 
