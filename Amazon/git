@@ -17,13 +17,13 @@ git config --global user.name "bw4sz"
 #install packages
 sudo Rscript install.R
 
-cd .. 
 
 #add pandoc to the path
 PATH=/usr/lib/rstudio-server/bin/pandoc/:$PATH
 
 #Knit the .Rmd
-Rscript -e "rmarkdown::render('test.Rmd')"
+cd ..
+Rscript -e "rmarkdown::render('Abundance_NegativeBinomial.Rmd')"
 
 #add changes
 git add --all
