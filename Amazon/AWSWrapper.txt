@@ -6,9 +6,8 @@ echo $dns
 
 for i in $dns; do
 	echo DNS: $i
-	#./init 7 | ssh -t -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@$i 'pas=puffin;echo Password is $pas'
-	
-	ssh -t -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@$i 'rm -rf Occupy'
+	./init 7 | ssh -t -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@$i 'pas=puffin;echo Password is $pas'
+
 	# Need to confirm host?
 	echo "Yes"
 done
