@@ -289,4 +289,5 @@ colnames(mocc)<-c("Bird","Plant","Occupancy","Iteration")
 simdat<-merge(mocc,mmat,by=c("Bird","Plant"),all.x=T)
 
 filename<-paste("Dispersion/simdat",dispersion,".csv",sep="")
+write.csv(simdat,filename)
 
