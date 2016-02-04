@@ -23,7 +23,7 @@ PATH=/usr/lib/rstudio-server/bin/pandoc/:$PATH
 
 #Knit the .Rmd
 cd ..
-Rscript NegativeBinomial.R 2
+Rscript NegativeBinomial.R 10
 
 #creates a useless Rplots file
 rm Rplots.pdf
