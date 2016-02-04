@@ -51,8 +51,8 @@ days<-3
 #set dispersion parameter, get from command line
 args <- commandArgs(TRUE)
 print(args)
-dispersion<-as.numeric(args[1])
-
+#dispersion<-as.numeric(args[1])
+dispersion<-5
 #Bill sizes
 Bill<-rpois(h_species,10)
 
@@ -156,7 +156,7 @@ ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Camera)) + geom_point() + theme_b
 
 # Simulated data with detection
 
-runs<-1000
+runs<-2000
 
 #trigger parallel
 paralleljags<-T
@@ -194,8 +194,8 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 8   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 3   #thinning rate
+  nb <- runs*.9 # number to discard for burn-in
   nc <- 2  # number of chains
   
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")

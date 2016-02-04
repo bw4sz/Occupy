@@ -1,0 +1,52 @@
+---
+title: "PoissonVariance"
+output: html_document
+---
+
+
+```{r}
+library(ggplot2)
+library(stringr)
+library(dplyr)
+```
+
+#Read in posteriors from each dispersion
+
+```{r}
+parfiles<-list.files("Dispersion",full.names = T,pattern="Allpars*")
+pf<-lapply(parfiles,read.csv,row.names=1)
+
+names(pf)<-  sapply(parfiles,function(x) {str_extract(x,"\\d+")})
+
+#name by dispersion
+for (x in 1:length(pf)){
+  pf[[x]]$Dispersion<-as.numeric(names(pf)[[x]])
+}
+
+dat<-rbind_all(pf)
+```
+
+# View convergence
+
+```{r}
+ggplot(dat,aes(x=Draw,y=estimate,col=as.factor(Dispersion))) + geom_line() + facet_wrap(~par,ncol=2,scales="free")
+```
+
+# View Intercept and Slope Posteriors
+
+```{r, echo=FALSE}
+ggplot(dat[dat$par %in% c("intercept","gamma"),],aes(x=estimate,fill=factor(Dispersion))) + geom_histogram() + facet_wrap(~par,scales="free") + theme_bw() + labs(fill="NB Dispersion")
+```
+
+# Detection Probabilities
+
+```{r, echo=FALSE}
+ggplot(dat[dat$par %in% c("detect"),],aes(x=estimate,fill=factor(Dispersion))) + geom_histogram() + facet_wrap(~species,scales="free") + labs(fill="NB Dispersion")
+```
+
+As violin plots
+```{r}
+ggplot(dat[dat$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=factor(Dispersion))) + geom_violin() + labs(fill="NB Dispersion")
+```
+
+#

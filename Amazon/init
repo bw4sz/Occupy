@@ -23,23 +23,26 @@ PATH=/usr/lib/rstudio-server/bin/pandoc/:$PATH
 
 #Knit the .Rmd
 cd ..
-Rscript NegativeBinomial.R 10
+Rscript NegativeBinomial.R $1
 
 #creates a useless Rplots file
 rm Rplots.pdf
 
 #add changes
-git add --all
+git add Dispersion/*
 
 #commit changes
+git pull --no-edit
 git commit -m "ec2 run complete"
 
+git status
+
 #slightly tricky part, trying not to type this all in plain text.
-git pull --no-edit
+
 git push https://bw4sz:$pas@github.com/bw4sz/Occupy.git Amazon
 
-#Kill the instance, need to pass rstudio password
-echo 'rstudio' | sudo -S halt
+#Kill the instance
+sudo halt
 
 
 
