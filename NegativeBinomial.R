@@ -51,8 +51,7 @@ days<-3
 #set dispersion parameter, get from command line
 args <- commandArgs(TRUE)
 print(args)
-#dispersion<-as.numeric(args[1])
-dispersion=1
+dispersion<-as.numeric(args[1])
 
 #Bill sizes
 Bill<-rpois(h_species,10)
