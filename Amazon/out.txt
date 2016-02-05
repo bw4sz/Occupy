@@ -1,82 +1,138 @@
-Cloning into 'Occupy'...
-Checking out files:  13% (21/158)   Checking out files:  14% (23/158)   Checking out files:  15% (24/158)   Checking out files:  16% (26/158)   Checking out files:  17% (27/158)   Checking out files:  18% (29/158)   Checking out files:  19% (31/158)   Checking out files:  20% (32/158)   Checking out files:  21% (34/158)   Checking out files:  22% (35/158)   Checking out files:  23% (37/158)   Checking out files:  24% (38/158)   Checking out files:  25% (40/158)   Checking out files:  26% (42/158)   Checking out files:  27% (43/158)   Checking out files:  28% (45/158)   Checking out files:  29% (46/158)   Checking out files:  30% (48/158)   Checking out files:  31% (49/158)   Checking out files:  32% (51/158)   Checking out files:  33% (53/158)   Checking out files:  34% (54/158)   Checking out files:  35% (56/158)   Checking out files:  36% (57/158)   Checking out files:  37% (59/158)   Checking out files:  38% (61/158)   Checking out files:  39% (62/158)   Checking out files:  40% (64/158)   Checking out files:  41% (65/158)   Checking out files:  42% (67/158)   Checking out files:  43% (68/158)   Checking out files:  44% (70/158)   Checking out files:  45% (72/158)   Checking out files:  46% (73/158)   Checking out files:  47% (75/158)   Checking out files:  48% (76/158)   Checking out files:  49% (78/158)   Checking out files:  50% (79/158)   Checking out files:  51% (81/158)   Checking out files:  52% (83/158)   Checking out files:  53% (84/158)   Checking out files:  54% (86/158)   Checking out files:  55% (87/158)   Checking out files:  56% (89/158)   Checking out files:  57% (91/158)   Checking out files:  58% (92/158)   Checking out files:  59% (94/158)   Checking out files:  60% (95/158)   Checking out files:  61% (97/158)   Checking out files:  62% (98/158)   Checking out files:  63% (100/158)   Checking out files:  64% (102/158)   Checking out files:  65% (103/158)   Checking out files:  66% (105/158)   Checking out files:  67% (106/158)   Checking out files:  68% (108/158)   Checking out files:  69% (110/158)   Checking out files:  70% (111/158)   Checking out files:  71% (113/158)   Checking out files:  72% (114/158)   Checking out files:  73% (116/158)   Checking out files:  74% (117/158)   Checking out files:  75% (119/158)   Checking out files:  76% (121/158)   Checking out files:  77% (122/158)   Checking out files:  78% (124/158)   Checking out files:  79% (125/158)   Checking out files:  80% (127/158)   Checking out files:  81% (128/158)   Checking out files:  82% (130/158)   Checking out files:  83% (132/158)   Checking out files:  84% (133/158)   Checking out files:  85% (135/158)   Checking out files:  86% (136/158)   Checking out files:  87% (138/158)   Checking out files:  88% (140/158)   Checking out files:  89% (141/158)   Checking out files:  90% (143/158)   Checking out files:  91% (144/158)   Checking out files:  92% (146/158)   Checking out files:  93% (147/158)   Checking out files:  94% (149/158)   Checking out files:  95% (151/158)   Checking out files:  96% (152/158)   Checking out files:  97% (154/158)   Checking out files:  98% (155/158)   Checking out files:  99% (157/158)   Checking out files: 100% (158/158)   Checking out files: 100% (158/158), done.
-Installing packages into ‘/usr/local/lib/R/site-library’
-(as ‘lib’ is unspecified)
-trying URL 'https://cran.rstudio.com/src/contrib/foreach_1.4.3.tar.gz'
-Content type 'application/x-gzip' length 359787 bytes (351 KB)
-==================================================
-downloaded 351 KB
+gcc -std=gnu99 -I/usr/share/R/include -DNDEBUG      -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c chron_strs.c -o chron_strs.o
+gcc -std=gnu99 -I/usr/share/R/include -DNDEBUG      -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c init.c -o init.o
+gcc -std=gnu99 -I/usr/share/R/include -DNDEBUG      -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c unpaste.c -o unpaste.o
+gcc -std=gnu99 -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o chron.so chron_strs.o init.o unpaste.o -L/usr/lib/R/lib -lR
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c RcppExports.cpp -o RcppExports.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c address.cpp -o address.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c api.cpp -o api.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c arrange.cpp -o arrange.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c between.cpp -o between.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c bind.cpp -o bind.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c combine_variables.cpp -o combine_variables.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c distinct.cpp -o distinct.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c dplyr.cpp -o dplyr.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c filter.cpp -o filter.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c group_indices.cpp -o group_indices.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c init.cpp -o init.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c join.cpp -o join.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c select.cpp -o select.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c strings_addresses.cpp -o strings_addresses.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c summarise.cpp -o summarise.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c test.cpp -o test.o
+g++ -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR  -I"/usr/local/lib/R/site-library/Rcpp/include" -I"/usr/local/lib/R/site-library/BH/include"   -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c window.cpp -o window.o
+g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o dplyr.so RcppExports.o address.o api.o arrange.o between.o bind.o combine_variables.o distinct.o dplyr.o filter.o group_indices.o init.o join.o select.o strings_addresses.o summarise.o test.o window.o -L/usr/lib/R/lib -lR
+gcc -std=gnu99 -I/usr/share/R/include -DNDEBUG      -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c picante.c -o picante.o
+gcc -std=gnu99 -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o picante.so picante.o -L/usr/lib/R/lib -lR
+g++ -I/usr/share/R/include -DNDEBUG      -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c bmn5.cc -o bmn5.o
+g++ -I/usr/share/R/include -DNDEBUG      -fpic  -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2 -g  -c identifyModules.cc -o identifyModules.o
+g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o bipartite.so bmn5.o identifyModules.o -L/usr/lib/R/lib -lR
 
-trying URL 'https://cran.rstudio.com/src/contrib/doSNOW_1.0.14.tar.gz'
-Content type 'application/x-gzip' length 7933 bytes
-==================================================
-downloaded 7933 bytes
+The downloaded source packages are in
+	‘/tmp/RtmpKboke8/downloaded_packages’
+[1] "Run Completed at 2016-02-05 22:36:39"
+[1] "3"
+ [1]                                                                      
+ [2] sink("Bayesian/NmixturePoissonRagged.jags")                          
+ [3]                                                                      
+ [4] cat("                                                                
+ [5]     model {                                                          
+ [6]     #Compute intensity for each pair of birds and plants             
+ [7]     for (i in 1:Birds){                                              
+ [8]       for (j in 1:Plants){                                           
+ [9]                                                                      
+[10]     #Process Model                                                   
+[11]       log(lambda[i,j])<-alpha[i] + beta[i] * Traitmatch[i,j]         
+[12]       }                                                              
+[13]     }                                                                
+[14]                                                                      
+[15]     #For each camera - there is a latent count                       
+[16]     for(x in 1:Birds){                                               
+[17]       for (y in 1:Plants){                                           
+[18]         for (z in 1:Cameras){                                        
+[19]           # true latent count                                        
+[20]           N[x,y,z] ~ dpois(lambda[x,y])                              
+[21]         }                                                            
+[22]       }                                                              
+[23]     }                                                                
+[24]                                                                      
+[25]     #Observed counts for each day of sampling at that camera         
+[26]     for (x in 1:Nobs){                                               
+[27]                                                                      
+[28]     #Observation Process                                             
+[29]     Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])    
+[30]                                                                      
+[31]     #Assess Model Fit                                                
+[32]                                                                      
+[33]     #Fit discrepancy statistics                                      
+[34]     eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]           
+[35]     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)                     
+[36]                                                                      
+[37]     ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])      
+[38]     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)                 
+[39]                                                                      
+[40]     }                                                                
+[41]                                                                      
+[42]     for (i in 1:Birds){                                              
+[43]     logit(detect[i]) <- detect_logit[i]                              
+[44]     detect_logit[i] ~ dnorm(dprior,tau_detect)                       
+[45]     alpha[i] ~ dnorm(intercept,tau_alpha)                            
+[46]     beta[i] ~ dnorm(gamma,tau_beta)                                  
+[47]     }                                                                
+[48]                                                                      
+[49]     #Hyperpriors                                                     
+[50]     #Slope grouping                                                  
+[51]     gamma~dnorm(0,0.0001)                                            
+[52]                                                                      
+[53]     #Intercept grouping                                              
+[54]     intercept~dnorm(0,0.0001)                                        
+[55]                                                                      
+[56]   # Group intercept variance                                         
+[57]     tau_alpha ~ dgamma(0.0001,0.0001)                                
+[58]     sigma_int<-pow(1/tau_alpha,.5)                                   
+[59]                                                                      
+[60]     #Detect grouping                                                 
+[61]     dprior ~ dnorm(0,.5)                                             
+[62]                                                                      
+[63]   # Detect variance                                                  
+[64]     tau_detect ~ dunif(0,10)                                         
+[65]     sigma_detect<-pow(1/tau_detect,.5)                               
+[66]                                                                      
+[67]     #Derived Quantity                                                
+[68]                                                                      
+[69]     #Slope variance, turning precision to sd                         
+[70]     tau_beta ~ dgamma(0.0001,0.0001)                                 
+[71]     sigma_slope<-pow(1/tau_beta,0.5)                                 
+[72]                                                                      
+[73]     #derived posterior check                                         
+[74]     fit<-sum(E[]) #Discrepancy for the observed data                 
+[75]     fitnew<-sum(E.new[])                                             
+[76]                                                                      
+[77]     }                                                                
+[78]     ",fill=TRUE)                                                     
+[79]                                                                      
+[80] sink()                                                               
+   user  system elapsed 
+  8.086   0.074 488.972 
+Already up-to-date.
+[Amazon 2b2322c] ec2 run complete
+ Committer: bw4sz <ubuntu@ip-172-31-42-51.us-west-2.compute.internal>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
 
-trying URL 'https://cran.rstudio.com/src/contrib/chron_2.3-47.tar.gz'
-Content type 'application/x-gzip' length 36464 bytes (35 KB)
-==================================================
-downloaded 35 KB
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
 
-trying URL 'https://cran.rstudio.com/src/contrib/R2jags_0.5-7.tar.gz'
-Content type 'application/x-gzip' length 29697 bytes (29 KB)
-==================================================
-downloaded 29 KB
+After doing this, you may fix the identity used for this commit with:
 
-trying URL 'https://cran.rstudio.com/src/contrib/dplyr_0.4.3.tar.gz'
-Content type 'application/x-gzip' length 655997 bytes (640 KB)
-==================================================
-downloaded 640 KB
+    git commit --amend --reset-author
 
-trying URL 'https://cran.rstudio.com/src/contrib/picante_1.6-2.tar.gz'
-Content type 'application/x-gzip' length 220517 bytes (215 KB)
-==================================================
-downloaded 215 KB
+ 2 files changed, 734162 insertions(+)
+ create mode 100644 Dispersion/Allpars3.csv
+ create mode 100644 Dispersion/simdat3.csv
+On branch Amazon
+Your branch is ahead of 'origin/Amazon' by 1 commit.
+  (use "git push" to publish your local commits)
 
-trying URL 'https://cran.rstudio.com/src/contrib/GGally_1.0.1.tar.gz'
-Content type 'application/x-gzip' length 4327708 bytes (4.1 MB)
-==================================================
-downloaded 4.1 MB
-
-trying URL 'https://cran.rstudio.com/src/contrib/bipartite_2.05.tar.gz'
-Content type 'application/x-gzip' length 2822718 bytes (2.7 MB)
-==================================================
-downloaded 2.7 MB
-
-* installing *source* package ‘foreach’ ...
-** package ‘foreach’ successfully unpacked and MD5 sums checked
-** R
-** demo
-** inst
-** preparing package for lazy loading
-** help
-*** installing help indices
-** building package indices
-** installing vignettes
-** testing if installed package can be loaded
-* DONE (foreach)
-* installing *source* package ‘chron’ ...
-** package ‘chron’ successfully unpacked and MD5 sums checked
-** libs
-installing to /usr/local/lib/R/site-library/chron/libs
-** R
-** inst
-** preparing package for lazy loading
-** help
-*** installing help indices
-** building package indices
-** testing if installed package can be loaded
-* DONE (chron)
-* installing *source* package ‘R2jags’ ...
-** package ‘R2jags’ successfully unpacked and MD5 sums checked
-** R
-** inst
-** preparing package for lazy loading
-Creating a new generic function for ‘traceplot’ in package ‘R2jags’
-** help
-*** installing help indices
-** building package indices
-** testing if installed package can be loaded
-* DONE (R2jags)
-* installing *source* package ‘dplyr’ ...
-** package ‘dplyr’ successfully unpacked and MD5 sums checked
-** libs
+nothing to commit, working directory clean
+Run Complete

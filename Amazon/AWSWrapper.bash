@@ -17,10 +17,9 @@ for i in ${!disp[@]}; do
 	scp -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" init.bash ubuntu@${d[$i]}:~
 
 	#run the file, password needs to be changed
-	#ssh -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@${d[$i]} "bash init.bash ${disp[$i]}" > out.txt
-	ssh -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@${d[$i]} rm -rf Occupy
+	ssh -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@${d[$i]} "bash init.bash ${disp[$i]}" > "out$1.txt"
+	#ssh -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@${d[$i]} rm -rf Occupy
 
 	# Need to confirm host?
-	echo "Yes"
 done
 

@@ -9,6 +9,7 @@ library(ggplot2)
 library(stringr)
 library(dplyr)
 library(knitr)
+library(reshape2)
 opts_chunk$set(fig.width = 10,fig.height = 5,cache=F)
 ```
 
@@ -53,9 +54,24 @@ ggplot(dat[dat$par %in% c("intercept","gamma"),],aes(x=estimate,fill=factor(Disp
 ggplot(dat[dat$par %in% c("detect"),],aes(x=estimate,fill=factor(Dispersion))) + geom_histogram() + facet_wrap(~species,scales="free") + labs(fill="NB Dispersion")
 ```
 
-As violin plots
+#Tradeoff Between Alpha and Detect
+
 ```{r}
-ggplot(dat[dat$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=factor(Dispersion))) + geom_violin() + labs(fill="NB Dispersion")
+ad<-dat %>% filter(par %in% c("alpha","detect")) %>% select(-parameter)
+
+ad<-dcast(ad,...~par,value.var="estimate")
+ggplot(ad,aes(x=alpha,y=detect,col=Dispersion)) + geom_point()  
 ```
 
-#
+# Predicted Relationship
+
+```{r}
+predfiles<-list.files("Dispersion/",pattern = "simdat",full.names = T)
+preddata<-lapply(predfiles,read.csv,row.names=1)
+names(preddata)<-str_extract(predfiles,"\\d+")
+pdf<-melt(preddata,id.vars=colnames(preddata[[1]]))
+```
+
+```{r}
+ggplot(pdf,aes(x=True_State,y=Occupancy,col=L1)) + geom_point() + labs(col="Dispersion")
+```
