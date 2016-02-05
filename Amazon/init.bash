@@ -39,7 +39,7 @@ git status
 
 #slightly tricky part, trying not to type this all in plain text.
 
-git push https://bw4sz:$pas@github.com/bw4sz/Occupy.git Amazon
+git push https://bw4sz:0merlin0@github.com/bw4sz/Occupy.git Amazon
 
 #Kill the instance
 sudo halt

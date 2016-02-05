@@ -31,7 +31,7 @@ dat<-rbind_all(pf)
 # View convergence
 
 ```{r}
-ggplot(dat,aes(x=Draw,y=estimate,col=as.factor(Dispersion))) + geom_line() + facet_wrap(~par,ncol=2,scales="free")
+ggplot(dat,aes(x=Draw,y=estimate,col=as.factor(Dispersion))) + geom_point() + facet_wrap(~par,ncol=2,scales="free")
 ```
 
 # View Intercept and Slope Posteriors
