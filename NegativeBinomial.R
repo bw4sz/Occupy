@@ -195,7 +195,7 @@ if(paralleljags){
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 3   #thinning rate
-  nb <- runs*.9 # number to discard for burn-in
+  nb <- runs*.93 # number to discard for burn-in
   nc <- 2  # number of chains
   
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
@@ -252,6 +252,9 @@ filename<-paste("Dispersion/Allpars",dispersion,".csv",sep="")
 
 write.csv(pars,filename)
 
+#Define discrep function
+chisq<-function(o,e){(o-e)^2/(e+0.5)}
+
 #true number of observed interactions
 true_state<-obs.state %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
 
@@ -288,5 +291,5 @@ colnames(mocc)<-c("Bird","Plant","Occupancy","Iteration")
 simdat<-merge(mocc,mmat,by=c("Bird","Plant"),all.x=T)
 
 filename<-paste("Dispersion/simdat",dispersion,".csv",sep="")
-write.csv(simdat,filename)
+write.csv(simdat,file=filename)
 

@@ -6,9 +6,6 @@ git clone https://github.com/bw4sz/Occupy.git --branch Amazon
 #cd into directory
 cd Occupy
 
-#branch
-git checkout Amazon
-
 cd Amazon
 
 #set global 
@@ -17,9 +14,6 @@ git config --global user.name "bw4sz"
 
 #install packages
 sudo Rscript install.R
-
-#add pandoc to the path
-PATH=/usr/lib/rstudio-server/bin/pandoc/:$PATH
 
 #Knit the .Rmd
 cd ..
@@ -41,5 +35,6 @@ git status
 
 git push https://bw4sz:0merlin0@github.com/bw4sz/Occupy.git Amazon
 
+echo "Run Complete"
 #Kill the instance
-sudo halt
+#sudo halt
