@@ -43,6 +43,3 @@ git push https://bw4sz:$pas@github.com/bw4sz/Occupy.git Amazon
 
 #Kill the instance
 sudo halt
-
-
-

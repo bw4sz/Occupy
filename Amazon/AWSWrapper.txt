@@ -2,11 +2,24 @@
 
 dns=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
 
-echo $dns
+#convert to array
+d=($dns)
 
-for i in $dns; do
-	echo DNS: $i
-	./init 7 | ssh -t -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@$i 'pas=puffin;echo Password is $pas'
+echo $d
+
+#list of dispersions
+disp=(0.5 0.75)
+
+
+for i in ${!disp[@]}; do
+	echo DNS: ${d[$i]} $i Dispersion: ${disp[$i]}
+	
+	#upload the init file
+	scp -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" init.bash ubuntu@${d[$i]}:~
+
+	#run the file, password needs to be changed
+	#ssh -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@${d[$i]} 'pas=0merlin0;echo "Password is $pas";bash init.bash'
+	ssh -i "C:/Users/Ben/Dropbox/Amazon/ec2.pem" ubuntu@${d[$i]} rm -rf Occupy
 
 	# Need to confirm host?
 	echo "Yes"
