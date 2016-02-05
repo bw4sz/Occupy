@@ -1,6 +1,6 @@
 # Occupy
 
-Manuscript prepared for “Standard Article” section of Methods in Ecology and Evolution. 
+Manuscript prepared for “Standard Article” section of Journal of Animal Ecology.
 
 Title: Bringing hierarchical occupancy models to predicting species interaction networks
 
