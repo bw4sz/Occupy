@@ -1,0 +1,6 @@
+{
+  "name": "Occupy",
+  "tagline": "Bringing Hierarchical Models to Species Interaction Networks",
+  "body": "\r\n#A hierarchical model for estimating detection in species interaction networks \r\n\r\nManuscript prepared for “Standard Article” section of Journal of Animal Ecology.\r\n\r\n##Authors:\r\nBen G. Weinstein, corresponding author, email: benjamin.weinstein@stonybrook.edu\r\nDepartment of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA\r\n\r\nCatherine H. Graham, email: Catherine.Graham@stonybrook.edu\r\nDepartment of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA \r\n\r\n##File Structure\r\n\r\n* Abundance.md: Source code for Simulations.\r\n* Observed.md: Source code for Empirical Data\r\n* Bayesian/: Folder that contains jags models\r\n* * NmixturePossionRagged.R = N_mixture Model\r\n* * NoDetectNmxiturePoissonRagged = Poisson GLMM\r\n* InputData/: Holds csv files with species presences, elevation ranges and morphology.",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
