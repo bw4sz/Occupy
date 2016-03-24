@@ -1,2 +1,2 @@
 #Install needed packages
-install.packages(pkgs=c("reshape2","foreach","doSNOW","chron","ggplot2","knitr","R2jags","dplyr","stringr","gridExtra","boot","picante","GGally","bipartite","MASS"))
+install.packages(pkgs=c("foreach","doSNOW","chron","R2jags","dplyr","picante","GGally","bipartite"),quiet=T)

@@ -2,7 +2,7 @@
 
 Manuscript prepared for “Standard Article” section of Journal of Animal Ecology.
 
-Title: Bringing hierarchical occupancy models to predicting species interaction networks
+Title: A hierarchical model for estimating detection in species interaction networks 
 
 Running title: Detection in networks
 
@@ -23,6 +23,6 @@ Department of Ecology and Evolution, Stony Brook University, Stony Brook, New Yo
 * Abundance.md: Source code for Simulations.
 * Observed.md: Source code for Empirical Data
 * Bayesian/: Folder that contains jags models
-* * NmixturePossionRagged.R = Occupancy Model
+* * NmixturePossionRagged.R = N_mixture Model
 * * NoDetectNmxiturePoissonRagged = Poisson GLMM
 * InputData/: Holds csv files with species presences, elevation ranges and morphology.
