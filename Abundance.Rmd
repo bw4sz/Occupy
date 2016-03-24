@@ -1,5 +1,5 @@
 ---
-title: Hierarchical occupancy models for species interactions - Simulations
+title: Hierarchical N-mixture models for species interactions - Simulations
 author: "Ben Weinstein - Stony Brook University"
 output:
   html_document:
@@ -61,12 +61,12 @@ $$\beta = N(1,0.2)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-load("Abundance.RData")
+#load("Abundance.RData")
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=F}
+```{r,fig.height=5,fig.width=8,eval=T}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -95,7 +95,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=F}
+```{r,eval=T}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,cameras,days))
 lambda<-array(dim=c(h_species,plant_species))
@@ -142,7 +142,7 @@ traitmelt<-melt(traitmatch)
 colnames(traitmelt)<-c("Bird","Plant","traitmatch")
 
 mdat<-merge(mdat,traitmelt,c("Bird","Plant"))
-ggplot(mdat,aes(x=traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",family="poisson") + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
+ggplot(mdat,aes(x=traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson")) + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
 ```
 
 ##View Detection Rates
@@ -154,7 +154,7 @@ obs.state<-merge(mdat,obs.state,by=c("Bird","Plant","Camera"))
 ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Camera)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
 ```
 
-# Hierarcichal Occupancy Model
+# Hierarcichal N-mixture Model
 
 For hummingbird i visiting plant j recorded by camera k on day d:
 
@@ -337,6 +337,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 ```{r,eval=T}
 runs<-90000
+#runs<-1000
 
 #trigger parallel
 paralleljags<-T
@@ -436,7 +437,7 @@ sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 
 ```{r}
 pars<-extract_par(sim_detect,data=obs.state)
-pars$Model<-"Occupancy"
+pars$Model<-"N-mixture"
 ```
 
 ##Assess Convergence
@@ -507,14 +508,22 @@ psim2
 #ggsave("Figures/SimulationHBoth.jpg",dpi=300,height=4,width=10)
 ```
 
-##Correlation in posteriors for Occupancy Model
+##Strip plots
+Plot the posterior mean density
+```{r}
+hpars<-parsall %>% filter(par %in% c("gamma","intercept","sigma_int","sigma_slope")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw()
+ggsave("Figures/StripPlots.svg",height=5,width=10)
+```
+
+##Correlation in posteriors for N-mixture Model
 
 ```{r}
-castdf<- pars %>% filter(Model =="Occupancy") %>% group_by(Chain) %>% select(par,estimate,Draw) %>% filter(par %in% c("gamma","intercept")) %>% dcast(Chain+Draw~par,value.var="estimate")
+castdf<- pars %>% filter(Model =="N-mixture") %>% group_by(Chain) %>% select(par,estimate,Draw) %>% filter(par %in% c("gamma","intercept")) %>% dcast(Chain+Draw~par,value.var="estimate")
 head(castdf)
 ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
 
-castdf<- pars %>% filter(Model =="Occupancy") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
+castdf<- pars %>% filter(Model =="N-mixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
 head(castdf)
 ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
 ```
@@ -586,7 +595,7 @@ grid.arrange(psim3)
 dev.off()
 ```
 
-#Compare Occupancy Models to a Multinomial fit
+#Compare N-mixture Models to a Multinomial fit
 
 Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. Since traitmatching is a distance, take 1-probabilities to correct weight the multinomial
 
@@ -638,9 +647,9 @@ multi_disc<-sapply(mats,function(x) sum(x))
 qplot(multi_disc)+ xlab("Chi-squared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
 ```
 
-#Compare Bayesian Occupancy and Multinomial using true known interactions
+#Compare Bayesian N-mixture and Multinomial using true known interactions
 
-## No Detection Occupancy Model
+## No Detection N-mixture Model
 
 ```{r}
 N_niave<-pars_niave[ pars_niave$par %in% "ynew",]
@@ -700,12 +709,12 @@ colnames(mmat)<-c("Bird","Plant","True_State")
 
 #append to predicted matrices
 
-#occupancy with detection
+#N-mixture with detection
 mocc<-melt(occ_matrix)
-colnames(mocc)<-c("Bird","Plant","Occupancy","Iteration")
+colnames(mocc)<-c("Bird","Plant","N-mixture","Iteration")
 simdat<-merge(mocc,mmat,by=c("Bird","Plant"),all.x=T)
 
-#occupancy with nodetection
+#N-mixture with nodetection
 moccd<-melt(occ_nodetect_matrix)
 colnames(moccd)<-c("Bird","Plant","Poisson GLMM","Iteration")
 
@@ -717,7 +726,7 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLMM","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("N-mixture","Poisson GLMM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 
@@ -725,11 +734,11 @@ ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
 #difference in the middle
 simd<-dcast(simdat,...~variable)
-simd$Diff<-simd$Occupancy-simd$`Poisson GLMM`
-ggplot(simd,aes(x=True_State,y=Diff)) + geom_point() + ylab("Difference in Occupancy and Poisson GLMM")
+simd$Diff<-simd$N-mixture-simd$`Poisson GLMM`
+ggplot(simd,aes(x=True_State,y=Diff)) + geom_point() + ylab("Difference in N-mixture and Poisson GLMM")
 ```
 
-## View predicted trait-matching relationship with tl number of visits.
+## View predicted trait-matching relationship with the number of visits.
 ```{r}
 simdat<-merge(simdat,traitmelt,c("Bird","Plant"))
 mmat<-merge(mmat,traitmelt,by=c("Bird","Plant"))
@@ -764,10 +773,10 @@ ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") +
 #Multinomial
 multi_disc<-sapply(mats,function(x) median(x))
 
-#occupancy without detection
+#N-mixture without detection
 occno_disc<-sapply(occ_nodetect,function(x) median(x))
 
-#Occupancy with detection
+#N-mixture with detection
 occ_disc<-sapply(occ,function(x) median(x))
 
 #compared to bayesian
@@ -777,7 +786,7 @@ ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",al
 ##Comparison of summary statistics for all three approaches
 
 ```{r}
-d<-list(Occupancy=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
+d<-list(N-mixture=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
 d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 

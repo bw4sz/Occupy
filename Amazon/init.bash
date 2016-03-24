@@ -15,7 +15,7 @@ git config --global user.name "bw4sz"
 #install packages
 sudo Rscript install.R
 
-#Knit the .Rmd
+#Run main R script
 cd ..
 Rscript NegativeBinomial.R $1
 
