@@ -1,0 +1,17 @@
+{
+    "contents" : "# Occupy\n\nManuscript prepared for “Standard Article” section of Journal of Animal Ecology.\n\nTitle: A hierarchical model for estimating detection in species interaction networks \n\nRunning title: Detection in networks\n\nWord Count: 5700\n\nAuthors:\n\nBen G. Weinstein, corresponding author, email: benjamin.weinstein@stonybrook.edu\n\nDepartment of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA\n\nCatherine H. Graham, email: Catherine.Graham@stonybrook.edu\n\nDepartment of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA \n\n#File Structure\n\n* Abundance.md: Source code for Simulations.\n* Observed.md: Source code for Empirical Data\n* Bayesian/: Folder that contains jags models\n* * NmixturePossionRagged.R = N_mixture Model\n* * NoDetectNmxiturePoissonRagged = Poisson GLMM\n* InputData/: Holds csv files with species presences, elevation ranges and morphology.\n",
+    "created" : 1458858106945.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "685439327",
+    "id" : "325C0319",
+    "lastKnownWriteTime" : 1458858300,
+    "path" : "~/Occupy/README.md",
+    "project_path" : "README.md",
+    "properties" : {
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "type" : "markdown"
+}
