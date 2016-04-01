@@ -88,7 +88,7 @@ intercept<- 3
 sigma_slope<- 0.2
 sigma_intercept<- 0.2
 
-detection= runif(h_species,0,0.5)
+detection= runif(h_species,0.1,0.9)
 beta<-rnorm(h_species,gamma,sigma_slope)
 alpha<-rnorm(h_species,intercept,sigma_intercept)
 ```
@@ -158,32 +158,35 @@ ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Camera)) + geom_point() + theme_b
 
 For hummingbird i visiting plant j recorded by camera k on day d:
 
-$$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},detect_i)$$
+$$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
-$$detect_i \sim U(0,0.5)$$     
+
 
 **Priors**
 
-$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
-$$\beta_i \sim N(\gamma,\tau_{\beta})$$
+Please recall that jags parameterizes models using precision, not sd (precision = 1/sd^2)
+
+$$\omega_i \sim (\mu_{\omega},\tau_{\omega})$$  $$\mu_{\omega} \sim Normal(0,0.5)   
+$$\tau_{\omega} \sim Uniform(0,10)
+
+$$\alpha_i \sim Normal(\mu_{\alpha},\tau_{\alpha})$$
+$$\beta_i \sim Normal(\mu_{\beta},\tau_{\beta})$$
 
 **Hyperpriors**
-$$gamma \sim N(0,0.0001)$$
-$$intercept \sim N(0,0.0001)$$
+$$\mu_{\alpha} \sim Normal(0,0.0001)$$
+$$\mu_{\beta} \sim Normal(0,0.0001)$$
 
-$$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta \sim Gamma(0.0001,0.0001)$$
+$$\tau_{\alpha} \sim T(0.0001,0.0001)$$
+$$\tau_{\beta} = \sqrt[2]{\frac{1}{\sigma_\beta}}$$
 
-**Derived quantities**
-
-$$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
+$$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
+$$\sigma_{\beta} \sim T(0,1)$$
 
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-70000
+runs<-50000
 #runs<-1000
 
 #trigger parallel
@@ -213,7 +216,7 @@ if(paralleljags){
   Ninit<-rep(max(obs.state$Yobs)+1,Nobs)
   
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_int=0.1,sigma_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -221,7 +224,7 @@ if(paralleljags){
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 5   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nb <- runs*.97 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit")
@@ -245,7 +248,7 @@ if(paralleljags){
     Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
   
     #Inits
-  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,sigma_int=0.1,sigma_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
   ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -253,7 +256,7 @@ if(paralleljags){
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 5   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nb <- runs*.97 # number to discard for burn-in
   nc <- 2  # number of chains
   
   #Jags
@@ -336,8 +339,8 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-90000
-#runs<-1000
+#runs<-90000
+runs<-50000
 
 #trigger parallel
 paralleljags<-T
@@ -368,7 +371,7 @@ if(paralleljags){
   Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(obs.state$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,sigma_alpha=0.1,sigma_slope=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
   ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -429,10 +432,10 @@ if(paralleljags){
 
 ```{r,eval=F}
 #recompile if needed
-load.module("dic")
-runs<-10000
-recompile(sim_detect)
-sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+#load.module("dic")
+#runs<-100
+#recompile(sim_detect)
+#sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 ```
 
 ```{r}
@@ -512,7 +515,8 @@ psim2
 Plot the posterior mean density
 ```{r}
 hpars<-parsall %>% filter(par %in% c("gamma","intercept","sigma_int","sigma_slope")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
-ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw()
+
+ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Mean Estimate")
 ggsave("Figures/StripPlots.svg",height=5,width=10)
 ```
 
@@ -730,6 +734,11 @@ simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM","Multinomial"))
 ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
+
+ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
+
+ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
+
 
 #difference in the middle
 simd<-dcast(simdat,...~variable)

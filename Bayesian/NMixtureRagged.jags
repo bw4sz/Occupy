@@ -35,8 +35,8 @@
     
     tau_alpha ~ dgamma(0.0001,0.0001)
     sigma_int<-pow(1/tau_alpha,0.5) #Derived Quantity
-    tau_beta ~ dgamma(0.0001,0.0001)
-    sigma_slope<-pow(1/tau_beta,0.5)
+    tau_beta ~ pow(tau_beta,-2)
+    sigma_slope<-dt(0,1,1)I(0,)
 
     #derived posterior check
     fit<-sum(E[]) # sum Discrepancy for the observed data

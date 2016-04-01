@@ -54,8 +54,8 @@ cat("
     intercept~dnorm(0,0.0001)
 
   # Group intercept variance
-    tau_alpha ~ dgamma(0.0001,0.0001)
-    sigma_int<-pow(1/tau_alpha,.5) 
+    sigma_int ~ dt(0,1,1)I(0,)
+    tau_alpha <- pow(sigma_int,-2)
 
     #Detect grouping
     dprior ~ dnorm(0,.5)
@@ -65,11 +65,10 @@ cat("
     sigma_detect<-pow(1/tau_detect,.5) 
     
     #Derived Quantity
-    
     #Slope variance, turning precision to sd
-    tau_beta ~ dgamma(0.0001,0.0001)
-    sigma_slope<-pow(1/tau_beta,0.5)
-    
+    sigma_slope ~ dt(0,1,1)I(0,)
+    tau_beta <- pow(sigma_slope,-2)
+
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
