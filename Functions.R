@@ -3,8 +3,11 @@
 extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   #extract desired info from the models
   n<-dim(x$BUGSoutput$sims.array)[1]
-  parsO<-melt(x$BUGSoutput$sims.array[max(0,(n-1000)):n,,])
+  parsO<-melt(x$BUGSoutput$sims.array[max(0,(n-500)):n,,])
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
+  
+  #take out deviance
+  parsO<-parsO[!parsO$parameter=="deviance",]
   
   #label species and plants
   l<-levels(parsO$parameter)
@@ -28,12 +31,10 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   sp_pl[i,][,"plant"]<-
     data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Plant]
   
-  #merge levels
-  pars<-merge(parsO,sp_pl)
+  #merge levels, can be very large, do in pieces. 
+  parsO<-inner_join(parsO,sp_pl) %>% filter(!par == "deviance")
   
-  #take out deviance
-  pars<-pars[!pars$par %in% "deviance",]
-  return(pars)
+  return(parsO)
 }
 #fits a curve for given poisson function
 
