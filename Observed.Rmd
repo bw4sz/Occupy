@@ -27,8 +27,6 @@ library(bipartite)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=6,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
-setwd("C:/Users/Ben/Documents/Occupy/")
-
 set.seed(3)
 #source functions
 
@@ -334,36 +332,39 @@ jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),co
 write.csv(indat,"InputData/ObservedData.csv")
 ```
 
-# Hierarcichal Occupancy Model
+# Hierarcichal Nmixture Model
 
-Normal distributions are parameterized in precision (1/variance) in jags. N(0,0.0001) is a broad prior.
+For hummingbird i visiting plant j recorded by camera k on day d:
 
-$$ Y_{i,j,k} \sim Binom(N_{i,j,k},detect_i)$$
+$$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
-$$detect_i \sim U(0,0.75)$$  
+
 
 **Priors**
 
-$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
-$$\beta_i \sim N(\gamma,\tau_{detect})$$
+Please recall that jags parameterizes models using precision, not sd (precision = 1/sd^2)
+
+$$\omega_i \sim (\mu_{\omega},\tau_{\omega})$$  $$\mu_{\omega} \sim Normal(0,0.5)   
+$$\tau_{\omega} \sim Uniform(0,10)
+
+$$\alpha_i \sim Normal(\mu_{\alpha},\tau_{\alpha})$$
+$$\beta_i \sim Normal(\mu_{\beta},\tau_{\beta})$$
 
 **Hyperpriors**
-$$gamma \sim N(0,0.0001)$$
-$$intercept \sim N(0,0.0001)$$
+$$\mu_{\alpha} \sim Normal(0,0.0001)$$
+$$\mu_{\beta} \sim Normal(0,0.0001)$$
 
-$$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta \sim Gamma(0.0001,0.0001)$$
+$$\tau_{\alpha} \sim T(0.0001,0.0001)$$
+$$\tau_{\beta} = \sqrt[2]{\frac{1}{\sigma_\beta}}$$
 
-**Derived quantities**
-
-$$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
+$$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
+$$\sigma_{\beta} \sim T(0,1)$$
 
 # Poisson GLMM
 
 ```{r,eval=F}
-runs<-100000
+runs<-1000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -387,7 +388,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   Ninit<-rep(max(indat$Yobs)+1,Nobs)
   
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,dprior=0,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,dprior=0,gamma=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -405,10 +406,10 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-20000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
@@ -432,7 +433,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-200000
+runs<-1000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -458,7 +459,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
   ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -479,9 +480,9 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-20000
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=3)
 ```
 
 ```{r}
@@ -516,7 +517,7 @@ parsObs<-rbind(pars_detect,pars_dniave)
 
 ```{r,cache=FALSE,fig.width=11,fig.height=14}
 ###Posterior Distributions
-ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
+ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 ```
 
 ```{r,cache=FALSE,fig.width=10,fig.height=5}

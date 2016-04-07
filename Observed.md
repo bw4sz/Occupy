@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-01-14 14:55:36"
+## [1] "Run Completed at 2016-04-07 15:39:19"
 ```
 
 
@@ -166,8 +166,8 @@ indatraw[order(indatraw$Yobs,decreasing=T),]
 ```
 
 ```
-## Source: local data frame [699 x 7]
-## Groups: Bird, Plant, ID [590]
+## Source: local data frame [658 x 7]
+## Groups: Bird, Plant, ID [561]
 ## 
 ##     Bird Plant     ID      DateP  Yobs  Elev Transect_R
 ##    (int) (int)  (chr)     (fctr) (int) (dbl)      (lgl)
@@ -349,37 +349,40 @@ jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),co
 write.csv(indat,"InputData/ObservedData.csv")
 ```
 
-# Hierarcichal Occupancy Model
+# Hierarcichal Nmixture Model
 
-Normal distributions are parameterized in precision (1/variance) in jags. N(0,0.0001) is a broad prior.
+For hummingbird i visiting plant j recorded by camera k on day d:
 
-$$ Y_{i,j,k} \sim Binom(N_{i,j,k},detect_i)$$
+$$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
-$$detect_i \sim U(0,0.75)$$  
+
 
 **Priors**
 
-$$\alpha_i \sim N(intercept,\tau_{\alpha})$$
-$$\beta_i \sim N(\gamma,\tau_{detect})$$
+Please recall that jags parameterizes models using precision, not sd (precision = 1/sd^2)
+
+$$\omega_i \sim (\mu_{\omega},\tau_{\omega})$$  $$\mu_{\omega} \sim Normal(0,0.5)   
+$$\tau_{\omega} \sim Uniform(0,10)
+
+$$\alpha_i \sim Normal(\mu_{\alpha},\tau_{\alpha})$$
+$$\beta_i \sim Normal(\mu_{\beta},\tau_{\beta})$$
 
 **Hyperpriors**
-$$gamma \sim N(0,0.0001)$$
-$$intercept \sim N(0,0.0001)$$
+$$\mu_{\alpha} \sim Normal(0,0.0001)$$
+$$\mu_{\beta} \sim Normal(0,0.0001)$$
 
-$$\tau_{\alpha} \sim Gamma(0.0001,0.0001)$$
-$$\tau_\beta \sim Gamma(0.0001,0.0001)$$
+$$\tau_{\alpha} \sim T(0.0001,0.0001)$$
+$$\tau_{\beta} = \sqrt[2]{\frac{1}{\sigma_\beta}}$$
 
-**Derived quantities**
-
-$$\sigma_{intercept} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{slope} = \sqrt[2]{\frac{1}{\tau_\beta}}$$
+$$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
+$$\sigma_{\beta} \sim T(0,1)$$
 
 # Poisson GLMM
 
 
 ```r
-runs<-100000
+runs<-1000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -403,7 +406,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   Ninit<-rep(max(indat$Yobs)+1,Nobs)
   
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,dprior=0,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,dprior=0,gamma=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -424,8 +427,33 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```r
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-20000
 recompile(m2_niave)
+```
+
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 2479
+##    Unobserved stochastic nodes: 2506
+##    Total graph size: 61259
+## 
+## Initializing model
+## 
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 2479
+##    Unobserved stochastic nodes: 2506
+##    Total graph size: 61259
+## 
+## Initializing model
+```
+
+```r
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
 
@@ -456,7 +484,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 
 ```r
-runs<-200000
+runs<-1000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -482,7 +510,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,gamma=0)}
   
   #Parameters to track
   ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
@@ -503,7 +531,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```r
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-20000
 recompile(m2)
 ```
 
@@ -511,20 +539,26 @@ recompile(m2)
 ## Compiling model graph
 ##    Resolving undeclared variables
 ##    Allocating nodes
-##    Graph Size: 202497
+## Graph information:
+##    Observed stochastic nodes: 2479
+##    Unobserved stochastic nodes: 163976
+##    Total graph size: 243412
 ## 
 ## Initializing model
 ## 
 ## Compiling model graph
 ##    Resolving undeclared variables
 ##    Allocating nodes
-##    Graph Size: 202497
+## Graph information:
+##    Observed stochastic nodes: 2479
+##    Unobserved stochastic nodes: 163976
+##    Total graph size: 243412
 ## 
 ## Initializing model
 ```
 
 ```r
-m2<-update(m2,n.iter=runs,n.burnin=runs*.9,n.thin=3)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=3)
 ```
 
 
@@ -571,7 +605,7 @@ parsObs<-rbind(pars_detect,pars_dniave)
 
 ```r
 ###Posterior Distributions
-ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Detection Probability")
+ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 ```
 
 <img src="figureObserved/unnamed-chunk-27-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -709,17 +743,17 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                Hummingbird mean lower upper
-## 1       Booted Racket-tail 31.3  16.8  47.1
-## 2               Brown Inca 43.8  29.1  58.8
-## 3            Collared Inca 38.7  17.1  61.5
-## 4        Crowned Woodnymph 30.3  13.2  49.1
-## 5        Gorgeted Sunangel 68.9  48.6  87.4
-## 6  Green-fronted Lancebill 37.7  14.6  64.2
-## 7     Speckled Hummingbird 52.1  26.2  81.9
-## 8   Stripe-throated Hermit 39.0  24.4  53.4
-## 9     Tawny-bellied Hermit 35.5  21.9  48.5
-## 10     Violet-tailed Sylph 39.7  23.7  54.8
-## 11  White-whiskered Hermit 29.8  16.0  43.9
+## 1       Booted Racket-tail 34.2  18.4  50.3
+## 2               Brown Inca 44.2  29.0  60.2
+## 3            Collared Inca 42.2  20.3  66.1
+## 4        Crowned Woodnymph 31.8  13.7  51.7
+## 5        Gorgeted Sunangel 68.7  49.5  86.6
+## 6  Green-fronted Lancebill 39.5  15.8  65.2
+## 7     Speckled Hummingbird 50.7  25.8  79.1
+## 8   Stripe-throated Hermit 38.1  23.1  53.1
+## 9     Tawny-bellied Hermit 38.1  24.0  52.0
+## 10     Violet-tailed Sylph 42.8  27.7  57.4
+## 11  White-whiskered Hermit 28.5  15.6  42.6
 ```
 
 ```r
@@ -796,7 +830,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 5430.921
+## [1] 5196.79
 ```
 
 ```r
@@ -804,7 +838,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 14955.93
+## [1] 14179.71
 ```
 
 #Predicted versus Observed Data
@@ -823,7 +857,7 @@ dmultinom(true_state,prob=m,log=T)
 ```
 
 ```
-## [1] -2341.057
+## [1] -2265.762
 ```
 
 ```r
@@ -1006,9 +1040,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial     17.79    0.71  8025.02
-## 2   Occupancy      3.18    0.59  1433.81
-## 3 Poisson_GLM     10.44    1.36  4706.41
+## 1 Multinomial     16.71    0.67  7536.53
+## 2   Occupancy      3.10    0.57  1396.41
+## 3 Poisson_GLM     10.36    1.27  4672.25
 ```
 
 Merge with morphological data.
@@ -1040,8 +1074,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  12435305  664.2   20885653 1115.5  20885653 1115.5
-## Vcells 355126635 2709.5  751150559 5730.9 750897199 5728.9
+## Ncells   1787253   95.5    5489235  293.2   6861544  366.5
+## Vcells 178612071 1362.8  317712138 2424.0 317710330 2424.0
 ```
 
 ```r

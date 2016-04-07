@@ -14,7 +14,7 @@
    version="1.1"
    id="svg2"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="StripPlots.svg"
+   sodipodi:docname="StripPlots_editnames.svg"
    inkscape:export-filename="C:\Users\Ben\Documents\Occupy\Figures\StripPlots.png"
    inkscape:export-xdpi="400"
    inkscape:export-ydpi="400">
@@ -26,6 +26,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -531,6 +532,21 @@
        width="6"
        patternUnits="userSpaceOnUse"
        id="EMFhbasepattern-6" />
+    <clipPath
+       id="clipEmfPath1-5"
+       clipPathUnits="userSpaceOnUse">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5701"
+         d="m -287.526,0 584.646,0 0,35.0787 -584.646,0 z" />
+    </clipPath>
+    <pattern
+       y="0"
+       x="0"
+       height="6"
+       width="6"
+       patternUnits="userSpaceOnUse"
+       id="EMFhbasepattern-4" />
   </defs>
   <g
      id="surface6">
@@ -1344,12 +1360,12 @@
         <text
            sodipodi:linespacing="125%"
            id="text5598-1"
-           y="20.21888"
+           y="18.618879"
            x="472.83987"
            style="font-style:normal;font-variant:normal;font-weight:400;font-size:3.38666654px;line-height:125%;font-family:'Cambria Math';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
            xml:space="preserve"><tspan
              id="tspan5600-1"
-             y="20.21888"
+             y="18.618879"
              x="472.83987"
              sodipodi:role="line"
              style="font-size:16px"><tspan
@@ -1359,8 +1375,8 @@
                dx="0">𝜎<tspan
    style="font-size:8px;baseline-shift:super"
    id="tspan5654">2</tspan><tspan
-   style="font-size:8px;baseline-shift:sub"
-   id="tspan5658">b</tspan></tspan></tspan></text>
+   id="tspan5748"
+   style="font-size:51.99999809%;baseline-shift:sub">𝛽</tspan></tspan></tspan></text>
       </g>
       <g
          id="g523"
@@ -1886,11 +1902,11 @@
            id="tspan5519"
            style="font-style:normal;font-variant:normal;font-weight:400;font-size:16px;font-family:'Cambria Math';fill:#000000"
            dy="0"
-           dx="0">𝜇</tspan><tspan
+           dx="0">𝜇<tspan
+   style="font-size:51.99999809%;baseline-shift:sub"
+   id="tspan5744">𝛽</tspan></tspan><tspan
            id="tspan5521"
-           style="font-style:normal;font-variant:normal;font-weight:400;font-size:8px;font-family:'Cambria Math';baseline-shift:sub;fill:#000000"
-           dy="0.6769231"
-           dx="0.83958542">𝑏</tspan></tspan></text>
+           style="font-style:normal;font-variant:normal;font-weight:400;font-size:8px;font-family:'Cambria Math';baseline-shift:sub;fill:#000000" /></tspan></text>
     <g
        transform="matrix(0.22577778,0,0,0.22577778,34.031907,-55.420525)"
        id="g5525"
@@ -1980,8 +1996,8 @@
              id="tspan5688">𝜎</tspan><tspan
              id="tspan5684"
              style="font-size:8px;baseline-shift:super">2</tspan><tspan
-             style="font-size:8px;baseline-shift:sub"
-             id="tspan5686">a</tspan></tspan></tspan></text>
+             style="font-size:52%;baseline-shift:sub"
+             id="tspan5694">𝑎</tspan></tspan></tspan></text>
     <flowRoot
        xml:space="preserve"
        id="flowRoot5662"
@@ -1992,5 +2008,52 @@
            height="248.78769"
            x="82.291313"
            y="40.403515" /></flowRegion><flowPara
-         id="flowPara5668"></flowPara></flowRoot>  </g>
+         id="flowPara5668"></flowPara></flowRoot>    <text
+       sodipodi:linespacing="125%"
+       id="text5704"
+       y="19.684534"
+       x="355.66275"
+       style="font-style:normal;font-variant:normal;font-weight:400;font-size:3.38666654px;line-height:125%;font-family:'Cambria Math';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       xml:space="preserve"><tspan
+         id="tspan5706"
+         y="19.684534"
+         x="355.66275"
+         sodipodi:role="line" /></text>
+    <g
+       transform="matrix(0.22577778,0,0,0.22577778,355.66275,16.469149)"
+       id="g5712"
+       clip-path="url(#clipEmfPath1-5)">
+      <text
+         sodipodi:linespacing="125%"
+         id="text5714"
+         y="0"
+         x="0"
+         transform="translate(-317.50757,14.241369)"
+         style="font-style:normal;font-variant:normal;font-weight:400;font-size:15px;line-height:125%;font-family:'Times New Roman';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+         xml:space="preserve"><tspan
+           id="tspan5716"
+           y="0"
+           x="0"
+           sodipodi:role="line"><tspan
+             id="tspan5718"
+             style="font-style:normal;font-variant:normal;font-weight:400;font-size:15px;font-family:'Times New Roman';fill:#000000"
+             dy="0"
+             dx="0">1</tspan></tspan></text>
+    </g>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5720"
+       y="27.862244"
+       x="107.65305"
+       style="font-style:normal;font-variant:normal;font-weight:400;font-size:12px;line-height:125%;font-family:'Times New Roman';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       xml:space="preserve"><tspan
+         id="tspan5722"
+         y="16.469149"
+         x="355.66275"
+         sodipodi:role="line"><tspan
+           id="tspan5724"
+           style="font-style:normal;font-variant:normal;font-weight:400;font-size:12px;font-family:'Times New Roman';fill:#000000"
+           dy="0"
+           dx="0" /></tspan></text>
+  </g>
 </svg>
