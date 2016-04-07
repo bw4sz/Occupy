@@ -4,7 +4,7 @@ author: "Ben Weinstein - Stony Brook University"
 output:
   html_document:
     toc: true
-    number_sections: true
+    number_sectionsf: true
     theme: spacelab
     keep_md: true
   word_document: default
@@ -33,6 +33,7 @@ setwd("C:/Users/Ben/Documents/Occupy/")
 set.seed(3)
 #source functions
 source("Functions.R")
+
 ```
 
 ```{r,echo=F,cache=FALSE}
@@ -69,7 +70,7 @@ gc()
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=F}
+```{r,fig.height=5,fig.width=8,eval=T}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -98,7 +99,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=F}
+```{r,eval=T}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,cameras,days))
 lambda<-array(dim=c(h_species,plant_species))
@@ -272,16 +273,16 @@ if(paralleljags){
                    n.thin=nt,
                    n.iter=ni,
                    n.burnin=nb,
-                   DIC=T)
+                   DIC=F)
 }
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-30000
+runs<-5000
 recompile(sim_niave)
-sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.98)
+sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.96,DIC=F)
 gc()
 ```
 
@@ -342,9 +343,9 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 # Simulated data with detection
 
-```{r,eval=F}
+```{r,eval=T}
 #runs<-90000
-runs<-50000
+runs<-100000
 
 #trigger parallel
 paralleljags<-T
@@ -382,7 +383,7 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 8   #thinning rate
+  nt <- 10   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
@@ -430,16 +431,16 @@ if(paralleljags){
                    n.thin=nt,
                    n.iter=ni,
                    n.burnin=nb,
-                   DIC=T))
+                   DIC=F))
 }
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-40000
+runs<-5000
 recompile(sim_detect)
-sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.98,n.thin=5)
+system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.97,n.thin=5,DIC=F))
 ```
 
 ```{r}
@@ -740,7 +741,6 @@ ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + 
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
 ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
-
 ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
 
 
