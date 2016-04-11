@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-03-31 20:57:57"
+## [1] "Run Completed at 2016-04-08 12:08:53"
 ```
 
 #Simulation   
@@ -30,7 +30,18 @@ $$\beta = N(1,0.2)$$
 
 
 ```r
-#load("Abundance.RData")
+load("Abundance.RData")
+gc()
+```
+
+```
+##             used  (Mb) gc trigger   (Mb)  max used  (Mb)
+## Ncells   1660487  88.7    2637877  140.9   2164898 115.7
+## Vcells 105075893 801.7  151427102 1155.3 105089057 801.8
+```
+
+```r
+source("Functions.R")
 ```
 
 #Simulation Parameters
@@ -139,7 +150,6 @@ $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
 
-
 **Priors**
 
 Please recall that jags parameterizes models using precision, not sd (precision = 1/sd^2)
@@ -175,73 +185,7 @@ source("Bayesian/NoDetectNmixturePoissonRagged.R")
 
 #print model
 print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
-```
 
-```
-##  [1]                                                               
-##  [2] sink("Bayesian/NoDetectNmixturePoissonRagged.jags")           
-##  [3]                                                               
-##  [4] cat("                                                         
-##  [5]     model {                                                   
-##  [6]       #Compute intensity for each pair of birds and plants    
-##  [7]       for (i in 1:Birds){                                     
-##  [8]         for (j in 1:Plants){                                  
-##  [9]                                                               
-## [10]         #Process Model                                        
-## [11]         log(lambda[i,j])<-alpha[i] + beta[i] * Traitmatch[i,j]
-## [12]       }                                                       
-## [13]     }                                                         
-## [14]                                                               
-## [15]     for (x in 1:Nobs){                                        
-## [16]                                                               
-## [17]       # Covariates for true state                             
-## [18]       Yobs[x] ~ dpois(lambda[Bird[x],Plant[x]])               
-## [19]                                                               
-## [20]       #Assess Model Fit                                       
-## [21]                                                               
-## [22]       #Fit discrepancy statistics                             
-## [23]       eval[x]<-lambda[Bird[x],Plant[x]]                       
-## [24]       E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)            
-## [25]                                                               
-## [26]       ynew[x]~dpois(lambda[Bird[x],Plant[x]])                 
-## [27]       E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)        
-## [28]                                                               
-## [29]       }                                                       
-## [30]                                                               
-## [31]       for (i in 1:Birds){                                     
-## [32]       alpha[i] ~ dnorm(intercept,tau_alpha)                   
-## [33]       beta[i] ~ dnorm(gamma,tau_beta)                         
-## [34]       }                                                       
-## [35]                                                               
-## [36]       #Hyperpriors                                            
-## [37]       #Slope grouping                                         
-## [38]       gamma~dnorm(0,0.0001)                                   
-## [39]                                                               
-## [40]       #Intercept grouping                                     
-## [41]       intercept~dnorm(0,0.0001)                               
-## [42]       dprior~dnorm(0,0.5)                                     
-## [43]                                                               
-## [44]       # Group intercept variance                              
-## [45]       sigma_int ~ dt(0,1,1)I(0,)                              
-## [46]       tau_alpha <- pow(sigma_int,-2)                          
-## [47]                                                               
-## [48]       #Derived Quantity                                       
-## [49]                                                               
-## [50]       #Slope variance, turning precision to sd                
-## [51]       sigma_slope ~ dt(0,1,1)I(0,)                            
-## [52]       tau_beta <- pow(sigma_slope,-2)                         
-## [53]                                                               
-## [54]       #derived posterior check                                
-## [55]       fit<-sum(E[]) #Discrepancy for the observed data        
-## [56]       fitnew<-sum(E.new[])                                    
-## [57]                                                               
-## [58]     }                                                         
-## [59]     ",fill=TRUE)                                              
-## [60]                                                               
-## [61] sink()
-```
-
-```r
 if(paralleljags){
 
   #for parallel run
@@ -313,7 +257,7 @@ if(paralleljags){
                    n.thin=nt,
                    n.iter=ni,
                    n.burnin=nb,
-                   DIC=T)
+                   DIC=F)
 }
 ```
 
@@ -321,11 +265,21 @@ if(paralleljags){
 ```r
 #recompile if needed
 load.module("dic")
-runs<-30000
+runs<-5000
 recompile(sim_niave)
-sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.95)
+sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.96,DIC=F)
 ```
 
+
+```r
+gc()
+```
+
+```
+##             used  (Mb) gc trigger   (Mb)  max used  (Mb)
+## Ncells   1731916  92.5    2637877  140.9   2637877 140.9
+## Vcells 105148574 802.3  151427102 1155.3 110243806 841.1
+```
 
 ```r
 pars_niave<-extract_par(sim_niave,data=obs.state)
@@ -401,7 +355,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 ```r
 #runs<-90000
-runs<-50000
+runs<-100000
 
 #trigger parallel
 paralleljags<-T
@@ -411,91 +365,7 @@ source("Bayesian/NmixturePoissonRagged.R")
 
 #print model
 print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
-```
 
-```
-##  [1]                                                                      
-##  [2] sink("Bayesian/NmixturePoissonRagged.jags")                          
-##  [3]                                                                      
-##  [4] cat("                                                                
-##  [5]     model {                                                          
-##  [6]     #Compute intensity for each pair of birds and plants             
-##  [7]     for (i in 1:Birds){                                              
-##  [8]       for (j in 1:Plants){                                           
-##  [9]                                                                      
-## [10]     #Process Model                                                   
-## [11]       log(lambda[i,j])<-alpha[i] + beta[i] * Traitmatch[i,j]         
-## [12]       }                                                              
-## [13]     }                                                                
-## [14]                                                                      
-## [15]     #For each camera - there is a latent count                       
-## [16]     for(x in 1:Birds){                                               
-## [17]       for (y in 1:Plants){                                           
-## [18]         for (z in 1:Cameras){                                        
-## [19]           # true latent count                                        
-## [20]           N[x,y,z] ~ dpois(lambda[x,y])                              
-## [21]         }                                                            
-## [22]       }                                                              
-## [23]     }                                                                
-## [24]                                                                      
-## [25]     #Observed counts for each day of sampling at that camera         
-## [26]     for (x in 1:Nobs){                                               
-## [27]                                                                      
-## [28]     #Observation Process                                             
-## [29]     Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])    
-## [30]                                                                      
-## [31]     #Assess Model Fit                                                
-## [32]                                                                      
-## [33]     #Fit discrepancy statistics                                      
-## [34]     eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]           
-## [35]     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)                     
-## [36]                                                                      
-## [37]     ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])      
-## [38]     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)                 
-## [39]                                                                      
-## [40]     }                                                                
-## [41]                                                                      
-## [42]     for (i in 1:Birds){                                              
-## [43]     logit(detect[i]) <- detect_logit[i]                              
-## [44]     detect_logit[i] ~ dnorm(dprior,tau_detect)                       
-## [45]     alpha[i] ~ dnorm(intercept,tau_alpha)                            
-## [46]     beta[i] ~ dnorm(gamma,tau_beta)                                  
-## [47]     }                                                                
-## [48]                                                                      
-## [49]     #Hyperpriors                                                     
-## [50]     #Slope grouping                                                  
-## [51]     gamma~dnorm(0,0.0001)                                            
-## [52]                                                                      
-## [53]     #Intercept grouping                                              
-## [54]     intercept~dnorm(0,0.0001)                                        
-## [55]                                                                      
-## [56]   # Group intercept variance                                         
-## [57]     sigma_int ~ dt(0,1,1)I(0,)                                       
-## [58]     tau_alpha <- pow(sigma_int,-2)                                   
-## [59]                                                                      
-## [60]     #Detect grouping                                                 
-## [61]     dprior ~ dnorm(0,.5)                                             
-## [62]                                                                      
-## [63]   # Detect variance                                                  
-## [64]     tau_detect ~ dunif(0,10)                                         
-## [65]     sigma_detect<-pow(1/tau_detect,.5)                               
-## [66]                                                                      
-## [67]     #Derived Quantity                                                
-## [68]     #Slope variance, turning precision to sd                         
-## [69]     sigma_slope ~ dt(0,1,1)I(0,)                                     
-## [70]     tau_beta <- pow(sigma_slope,-2)                                  
-## [71]                                                                      
-## [72]     #derived posterior check                                         
-## [73]     fit<-sum(E[]) #Discrepancy for the observed data                 
-## [74]     fitnew<-sum(E.new[])                                             
-## [75]                                                                      
-## [76]     }                                                                
-## [77]     ",fill=TRUE)                                                     
-## [78]                                                                      
-## [79] sink()
-```
-
-```r
 if(paralleljags){
 
   #for parallel run
@@ -523,7 +393,7 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 8   #thinning rate
+  nt <- 10   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
@@ -571,22 +441,17 @@ if(paralleljags){
                    n.thin=nt,
                    n.iter=ni,
                    n.burnin=nb,
-                   DIC=T))
+                   DIC=F))
 }
-```
-
-```
-##     user   system  elapsed 
-##    19.36     3.60 15002.33
 ```
 
 
 ```r
 #recompile if needed
-#load.module("dic")
-#runs<-100
-#recompile(sim_detect)
-#sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+load.module("dic")
+runs<-5000
+recompile(sim_detect)
+system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.97,n.thin=5,DIC=F))
 ```
 
 
@@ -687,15 +552,27 @@ psim2
 Plot the posterior mean density
 
 ```r
-hpars<-parsall %>% filter(par %in% c("gamma","intercept","sigma_int","sigma_slope")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+spars<-parsall %>% filter(par %in% c("alpha","beta","detect")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 
-ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Mean Estimate")
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
+colnames(tr)<-c("species","par","value")
+
+ggplot(spars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_grid(par~species,scales="free") + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
 ```
 
 <img src="figure/unnamed-chunk-25-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
-ggsave("Figures/StripPlots.svg",height=5,width=10)
+#Hierarchical posteriors
+hpars<-parsall %>% filter(par %in% c("gamma","intercept","sigma_int","sigma_slope")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+
+ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
+```
+
+<img src="figure/unnamed-chunk-25-2.png" title="" alt="" style="display: block; margin: auto;" />
+
+```r
+ggsave("Figures/StripPlots.svg",height=4,width=9)
 ```
 
 ##Correlation in posteriors for Nmixture Model
@@ -856,10 +733,10 @@ r<-mgen(m,sum(true_state),keep.species = F)
 }
 
 #same number of draws as bayesian
-cl<-makeCluster(20,"SOCK")
-registerDoSNOW(cl)
-mult_matrix<-foreach(x=1:length(pars[pars$par %in% "fit","estimate"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
-stopCluster(cl)
+#cl<-makeCluster(20,"SOCK")
+#registerDoSNOW(cl)
+mult_matrix<-foreach(x=1:length(pars[pars$par %in% "fit","estimate"]),.packages=c("bipartite","reshape2")) %do% nullm()
+#stopCluster(cl)
 
 mats<-lapply(mult_matrix,function(r){
 rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
@@ -892,6 +769,18 @@ N_niave<-pars_niave[ pars_niave$par %in% "ynew",]
 
 bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
 
+#Don't need giant matrix sitting around
+rm(N_niave)
+gc()
+```
+
+```
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   1763588   94.2    3205452  171.2   3205452  171.2
+## Vcells 300883781 2295.6  547666643 4178.4 433962624 3310.9
+```
+
+```r
 occ_nodetect_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
 })
@@ -916,8 +805,21 @@ names(occ_nodetect_matrix)<-1:length(occ_nodetect_matrix)
 
 
 ```r
-Ndetect<-pars[pars$par %in% "ynew",]
+Ndetect<-pars %>% filter(par== "ynew")
 bydraw<-split(Ndetect,list(Ndetect$Chain,Ndetect$Draw))
+
+#Don't need giant matrix around
+rm(Ndetect)
+gc()
+```
+
+```
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   1762201   94.2    3205452  171.2   3205452  171.2
+## Vcells 271730642 2073.2  657279971 5014.7 433962624 3310.9
+```
+
+```r
 occ_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
   })
@@ -973,7 +875,7 @@ ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + 
 ```r
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
-ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
+ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
 ```
 
 <img src="figure/unnamed-chunk-34-2.png" title="" alt="" style="display: block; margin: auto;" />
@@ -1064,9 +966,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd  mean_sum
 ##         (chr)     (dbl)   (dbl)     (dbl)
-## 1 Multinomial    675.90    2.02 135180.19
+## 1 Multinomial    676.04    1.87 135208.54
 ## 2    Nmixture      1.09    0.12    218.15
-## 3 Poisson_GLM      3.08    0.24    616.20
+## 3 Poisson_GLM      3.07    0.24    614.40
 ```
 
 #DIC
@@ -1077,7 +979,7 @@ sim_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 51122.25
+## [1] 51121.68
 ```
 
 ```r

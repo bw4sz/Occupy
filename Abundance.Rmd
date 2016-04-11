@@ -32,7 +32,6 @@ setwd("C:/Users/Ben/Documents/Occupy/")
 
 set.seed(3)
 #source functions
-source("Functions.R")
 
 ```
 
@@ -62,15 +61,13 @@ $$\beta = N(1,0.2)$$
 
 ```{r}
 load("Abundance.RData")
-
-#delete large memory objects
-rm(bydraw,pars,Ndetect,pars_niave,N_niave)
 gc()
+source("Functions.R")
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=T}
+```{r,fig.height=5,fig.width=8,eval=F}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -99,7 +96,7 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 
 #Compute true interaction matrices
 
-```{r,eval=T}
+```{r,eval=F}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,cameras,days))
 lambda<-array(dim=c(h_species,plant_species))
@@ -165,7 +162,6 @@ For hummingbird i visiting plant j recorded by camera k on day d:
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
-
 
 **Priors**
 
@@ -283,10 +279,10 @@ load.module("dic")
 runs<-5000
 recompile(sim_niave)
 sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.96,DIC=F)
-gc()
 ```
 
 ```{r}
+gc()
 pars_niave<-extract_par(sim_niave,data=obs.state)
 pars_niave$Model<-c("Poisson GLMM")
 ```
@@ -343,7 +339,7 @@ orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,si
 
 # Simulated data with detection
 
-```{r,eval=T}
+```{r,eval=F}
 #runs<-90000
 runs<-100000
 
@@ -640,10 +636,10 @@ r<-mgen(m,sum(true_state),keep.species = F)
 }
 
 #same number of draws as bayesian
-cl<-makeCluster(20,"SOCK")
-registerDoSNOW(cl)
-mult_matrix<-foreach(x=1:length(pars[pars$par %in% "fit","estimate"]),.packages=c("bipartite","reshape2")) %dopar% nullm()
-stopCluster(cl)
+#cl<-makeCluster(20,"SOCK")
+#registerDoSNOW(cl)
+mult_matrix<-foreach(x=1:length(pars[pars$par %in% "fit","estimate"]),.packages=c("bipartite","reshape2")) %do% nullm()
+#stopCluster(cl)
 
 mats<-lapply(mult_matrix,function(r){
 rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
@@ -673,6 +669,10 @@ N_niave<-pars_niave[ pars_niave$par %in% "ynew",]
 
 bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
 
+#Don't need giant matrix sitting around
+rm(N_niave)
+gc()
+
 occ_nodetect_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
 })
@@ -696,8 +696,13 @@ names(occ_nodetect_matrix)<-1:length(occ_nodetect_matrix)
 ##With Detection
 
 ```{r}
-Ndetect<-pars[pars$par %in% "ynew",]
+Ndetect<-pars %>% filter(par== "ynew")
 bydraw<-split(Ndetect,list(Ndetect$Chain,Ndetect$Draw))
+
+#Don't need giant matrix around
+rm(Ndetect)
+gc()
+
 occ_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
   })
@@ -748,7 +753,7 @@ ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + 
 
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
-ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
+ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
 ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
 
 

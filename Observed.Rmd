@@ -47,21 +47,21 @@ load("Observed.Rdata")
 ```{r}
 #read in flower morphology data, comes from Nectar.R
 droppath<-"C:/Users/Ben/Dropbox/"
-fl.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerMorphology.csv",sep=""))
+fl.morph<-read.csv("InputData/FlowerMorphology.csv")
 
 #First row is empty
 fl.morph<-fl.morph[-1,]
 
 #Bring in Hummingbird Morphology Dataset, comes from
-hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",sep=""))
-
+hum.morph<-read.csv("InputData/HummingbirdMorphology.csv")
+  
 #taxonomy change, we are calling them Crowned Woodnymph's now.
 hum.morph$English<-as.character(hum.morph$English)
 
 hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Woodnymph"
 
 #Bring in Interaction Matrix
-int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
+int<-read.csv("InputData/HummingbirdInteractions.csv")
 
 #just use camera data
 int<-int[is.na(int$TransectID),]
@@ -409,7 +409,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-1000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
@@ -480,7 +480,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-1000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=3)
 ```
@@ -676,7 +676,12 @@ ggsave("Figures/DetectionDays.jpeg",height=5,width=10,dpi=300)
 
 The number of days it would take to have 50% confidence you have sampled enough to capture known interactions is the x axis value where the dotted line hits the curve.
 
-Number of samples per species
+```{r}
+sampling<-indatraw %>% group_by(Hummingbird) %>% summarize(Obs=length(Hummingbird))
+
+tabD<-merge(tab,sampling,by="Hummingbird")
+ggplot(tabD,aes(x=Obs,ymin=lower,ymax=upper,y=mean)) + geom_pointrange() + labs(y="Detectability",x="Detections") + geom_text(aes(label=Hummingbird),vjust=2) + theme_bw() + xlim(0,175)
+```
 
 ##DIC Table
 
