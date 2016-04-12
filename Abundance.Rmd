@@ -41,21 +41,22 @@ paste("Run Completed at",Sys.time())
 
 #Simulation   
 
-### Parameters
+## Parameters
 
 * 10 hummingbird species
+* 20 plant species
 * Range of hummingbird bill sizes (in mm) ~ Pois(10)/10
-* Twenty plants
 * Range of corolla sizes (in mm) ~ Pois(15)/10
 * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
 * Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
 $$log(\lambda)<-\alpha_i + \beta_i *traitmatch$$
 $$\alpha=N(3,0.2)$$
-$$\beta = N(1,0.2)$$
+$$\beta = N(-1,0.2)$$
 
 * Imperfect detection 
-* $$ p_i = U(0,0.5) $$ 
-* 36 camera replicates
+* $$ p_i = U(0.1,0.9) $$ 
+* 20 camera
+* 3 days per camera
 
 **View simulated strength and form of trait matching **
 
@@ -670,7 +671,7 @@ N_niave<-pars_niave[ pars_niave$par %in% "ynew",]
 bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
 
 #Don't need giant matrix sitting around
-rm(N_niave)
+rm(pars_niave,N_niave)
 gc()
 
 occ_nodetect_matrix<-lapply(bydraw,function(x){

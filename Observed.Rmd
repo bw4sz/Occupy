@@ -306,10 +306,8 @@ for (x in 1:nrow(indat)){
 indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 ```
 
-Which species to evaluate? We need atleast some replicates to estimate detection rates. Remove the extremely rare species (less than 5 presences.)
-
 ```{r}
-keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>10) %>% .$Hummingbird
+keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>2) %>% .$Hummingbird
 indat<-indat[indat$Hummingbird %in% keep,]
 ```
 
@@ -364,7 +362,7 @@ $$\sigma_{\beta} \sim T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=F}
-runs<-1000
+runs<-30000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -409,7 +407,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-1000
+runs<-30000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
@@ -433,7 +431,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-1000
+runs<-30000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -480,7 +478,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-1000
+runs<-30000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=3)
 ```
@@ -645,10 +643,10 @@ dp<-function(n,p){
 
 ts<-split(tab,tab$Hummingbird,drop=T)
 detectd<-lapply(ts,function(x){
-  meanD<-dp(n=1:10,p=x$mean/100)
-  lowerD<-dp(n=1:10,p=x$lower/100)
-  upperD<- dp(n=1:10,p=x$upper/100)
-  data.frame(Days=1:10,mean=meanD,lower=lowerD,upper=upperD)
+  meanD<-dp(n=1:12,p=x$mean/100)
+  lowerD<-dp(n=1:12,p=x$lower/100)
+  upperD<- dp(n=1:12,p=x$upper/100)
+  data.frame(Days=1:12,mean=meanD,lower=lowerD,upper=upperD)
 })
 
 md<-melt(detectd,id.var="Days")
@@ -670,8 +668,8 @@ for (x in 1:nrow(tab)){
 }
 daydf<-rbind_all(daydf)
 
-ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=2,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
-ggsave("Figures/DetectionDays.jpeg",height=5,width=10,dpi=300) 
+ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,12,2),limits=c(0,12))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
+ggsave("Figures/DetectionDays.jpeg",height=7,width=9,dpi=300) 
 ```
 
 The number of days it would take to have 50% confidence you have sampled enough to capture known interactions is the x axis value where the dotted line hits the curve.
@@ -757,6 +755,10 @@ N_niave<-pars_dniave[ pars_dniave$par %in% "ynew",]
 
 bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
 
+#remove large N matrix
+rm(pars_dniave,N_niave)
+gc()
+
 occ_nodetect_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
 })
@@ -784,6 +786,11 @@ names(occ_nodetect_matrix)<-1:length(occ_nodetect_matrix)
 ```{r}
 N<-pars_detect[pars_detect$par %in% "ynew",]
 bydraw<-split(N,list(N$Chain,N$Draw))
+
+#remove large N matrix
+rm(N)
+gc()
+
 occ_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
   })
