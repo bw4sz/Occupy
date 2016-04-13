@@ -404,7 +404,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-30000
@@ -475,7 +475,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-30000
@@ -643,10 +643,10 @@ dp<-function(n,p){
 
 ts<-split(tab,tab$Hummingbird,drop=T)
 detectd<-lapply(ts,function(x){
-  meanD<-dp(n=1:12,p=x$mean/100)
-  lowerD<-dp(n=1:12,p=x$lower/100)
-  upperD<- dp(n=1:12,p=x$upper/100)
-  data.frame(Days=1:12,mean=meanD,lower=lowerD,upper=upperD)
+  meanD<-dp(n=1:10,p=x$mean/100)
+  lowerD<-dp(n=1:10,p=x$lower/100)
+  upperD<- dp(n=1:10,p=x$upper/100)
+  data.frame(Days=1:10,mean=meanD,lower=lowerD,upper=upperD)
 })
 
 md<-melt(detectd,id.var="Days")
@@ -668,7 +668,7 @@ for (x in 1:nrow(tab)){
 }
 daydf<-rbind_all(daydf)
 
-ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,12,2),limits=c(0,12))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
+ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
 ggsave("Figures/DetectionDays.jpeg",height=7,width=9,dpi=300) 
 ```
 
