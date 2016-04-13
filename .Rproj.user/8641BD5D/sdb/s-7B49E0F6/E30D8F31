@@ -1,0 +1,17 @@
+{
+    "contents" : "##Time Series Analysis of Hummingbird Presences\nrequire(stringr)\nrequire(maptools)\nrequire(ggplot2)\nrequire(scales)\nlibrary(dplyr)\nlibrary(chron)\n\n# ############Bring in temperature\n tdata<-read.csv(\"C:/Users/Ben/Dropbox/Thesis//Maquipucuna_SantaLucia/Results/Ibuttons/TempData.csv\")\n# \n# \n# \n# #########Doesn't quite work yet.\n# #Flowers per month\n# fltotal<-read.csv(\"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/FlowerAvailability.csv\",row.names=1)\n# fltotal$Month.n<-month.name[fltotal$Month]\n# \n# monthtemp<-aggregate(tdata$Temp,list(tdata$elevation,tdata$Month,tdata$Year),mean)\n# colnames(monthtemp)<-c(\"Elevation\",\"Month\",\"Year\",\"Temp\")\n# \n# #Overlay temperature and flowers\n# fltemp<-merge(monthtemp,fltotal,by.x=c(\"Month\",\"Year\"),by.y=c(\"Month.n\",\"Year\"))\n# \n# #Standardize to max\n# fltemp$TempD<-fltemp$Temp/max(fltemp$Temp,na.rm=TRUE)\n# fltemp$Flower<-fltemp$TotalFlowers/max(fltemp$TotalFlowers,na.rm=TRUE)\n# \n# #Get 2 week running average of temperature before transect\n# \n# head(fltemp)\n",
+    "created" : 1460559875081.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3440883676",
+    "id" : "E30D8F31",
+    "lastKnownWriteTime" : 1451794466,
+    "path" : "~/Maquipicuna/TimeSeries.R",
+    "project_path" : null,
+    "properties" : {
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
