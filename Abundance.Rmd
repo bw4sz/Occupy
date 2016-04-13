@@ -162,7 +162,8 @@ For hummingbird i visiting plant j recorded by camera k on day d:
 
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_i * |Bill_i - Corolla_j| $$
+
 
 **Priors**
 
@@ -178,11 +179,12 @@ $$\beta_i \sim Normal(\mu_{\beta},\tau_{\beta})$$
 $$\mu_{\alpha} \sim Normal(0,0.0001)$$
 $$\mu_{\beta} \sim Normal(0,0.0001)$$
 
-$$\tau_{\alpha} \sim T(0.0001,0.0001)$$
+$$\tau_{\alpha} \sim Half-T(0.0001,0.0001)$$
 $$\tau_{\beta} = \sqrt[2]{\frac{1}{\sigma_\beta}}$$
 
 $$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{\beta} \sim T(0,1)$$
+$$\sigma_{\beta} \sim Half-T(0,1)$$
+
 
 #Simulated data without detection
 
@@ -515,7 +517,7 @@ psim2
 
 ##Strip plots
 Plot the posterior mean density
-```{r}
+```{r,fig.width=10}
 spars<-parsall %>% filter(par %in% c("alpha","beta","detect")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 
 tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')

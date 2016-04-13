@@ -1,5 +1,5 @@
 ---
-title: "Hierarchical occupancy Models for species interactions: Empirical Data"
+title: "Hierarchical Nmixture Models for species interactions: Empirical Data"
 author: "Ben Weinstein - Stony Brook University"
 output:
   html_document:
@@ -74,7 +74,7 @@ int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teusc
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
 #Some reasonable level of presences, 3 points
-keep<-names(which(table(int$Hummingbird) > 3))
+keep<-names(which(table(int$Hummingbird)>1))
 
 int<-int[int$Hummingbird %in% keep,]
 
@@ -135,12 +135,16 @@ We have to figure out which plants were sampled in which periods, and if it was 
 ```{r}
 elevH<-read.csv("InputData/HummingbirdElevation.csv",row.names=1)
 head(elevH)
-colnames(elevH)[5]<-"Elevation"
+
+#Gorgetted Sunangels wanders 
+#rename columns
+colnames(elevH)<-c("Hummingbird","Low","Mean","High","Elevation")
 elevH$Bird<-1:nrow(elevH)
 
 #high elevation or low elevation
 elevP<-read.csv("InputData/PlantElevation.csv",row.names=1)
-colnames(elevP)[5]<-"Elevation"
+colnames(elevP)<-c("Iplant_Double","Low","m","High","Elevation")
+
 elevP$Plant<-1:nrow(elevP)
 elevP$Iplant_Double<-as.character(elevP$Iplant_Double)
 
@@ -309,6 +313,9 @@ indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 ```{r}
 keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>2) %>% .$Hummingbird
 indat<-indat[indat$Hummingbird %in% keep,]
+
+#take our sparkling violetear, does not occur year round
+indat<-indat[!indat$Hummingbird %in% "Sparkling Violetear",]
 ```
 
 Reformat index for jags.
@@ -336,7 +343,7 @@ For hummingbird i visiting plant j recorded by camera k on day d:
 
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_i * |Bill_i - Corolla_j| $$
 
 
 **Priors**
@@ -353,16 +360,16 @@ $$\beta_i \sim Normal(\mu_{\beta},\tau_{\beta})$$
 $$\mu_{\alpha} \sim Normal(0,0.0001)$$
 $$\mu_{\beta} \sim Normal(0,0.0001)$$
 
-$$\tau_{\alpha} \sim T(0.0001,0.0001)$$
+$$\tau_{\alpha} \sim Half-T(0.0001,0.0001)$$
 $$\tau_{\beta} = \sqrt[2]{\frac{1}{\sigma_\beta}}$$
 
 $$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{\beta} \sim T(0,1)$$
+$$\sigma_{\beta} \sim Half-T(0,1)$$
 
 # Poisson GLMM
 
 ```{r,eval=F}
-runs<-30000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -404,7 +411,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
 runs<-30000
@@ -431,7 +438,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-30000
+runs<-70000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -475,7 +482,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
 runs<-30000
@@ -488,7 +495,7 @@ m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=3)
 pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
 
 #name
-pars_detect$Model<-"Occupancy"
+pars_detect$Model<-"Nmixture"
 ```
 
 ##Assess Convergence
@@ -746,7 +753,7 @@ multi_disc<-sapply(mats,function(x) sum(x))
 qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
 ```
 
-#Compare Bayesian Occupancy and Multinomial using true known interactions
+#Compare Bayesian Nmixture and Multinomial using true known interactions
 
 ## Poisson GLMM
 
@@ -822,12 +829,12 @@ colnames(mmat)<-c("Bird","Plant","True_State")
 
 #append to predicted matrices
 
-#occupancy with detection
+#Nmixture with detection
 mocc<-melt(occ_matrix)
-colnames(mocc)<-c("Bird","Plant","Occupancy","Iteration")
+colnames(mocc)<-c("Bird","Plant","Nmixture","Iteration")
 simdat<-merge(mocc,mmat,by=c("Bird","Plant"))
 
-#occupancy with nodetection
+#Nmixture with nodetection
 moccd<-melt(occ_nodetect_matrix)
 colnames(moccd)<-c("Bird","Plant","Poisson GLMM","Iteration")
 
@@ -839,7 +846,7 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLMM","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 
@@ -851,10 +858,10 @@ ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abli
 #Multinomial
 multi_disc<-sapply(mats,function(x) mean(x))
 
-#occupancy without detection
+#Nmixture without detection
 occno_disc<-sapply(occ_nodetect,function(x) mean(x))
 
-#Occupancy with detection
+#Nmixture with detection
 occ_disc<-sapply(occ,function(x) mean(x))
 
 #compared to bayesian
@@ -864,7 +871,7 @@ ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",al
 ##Comparison of summary statistics for all three approaches
 
 ```{r}
-d<-list(Occupancy=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
+d<-list(Nmixture=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
 d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 

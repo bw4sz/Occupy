@@ -1,11 +1,11 @@
-# Hierarchical occupancy Models for species interactions: Empirical Data
+# Hierarchical Nmixture Models for species interactions: Empirical Data
 Ben Weinstein - Stony Brook University  
 
 
 
 
 ```
-## [1] "Run Completed at 2016-04-12 14:54:41"
+## [1] "Run Completed at 2016-04-13 11:12:07"
 ```
 
 
@@ -47,7 +47,7 @@ int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teusc
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
 #Some reasonable level of presences, 3 points
-keep<-names(which(table(int$Hummingbird) > 3))
+keep<-names(which(table(int$Hummingbird)>1))
 
 int<-int[int$Hummingbird %in% keep,]
 
@@ -114,22 +114,25 @@ head(elevH)
 ```
 
 ```
-##                 Hummingbird  Low        m   High Index
-## 1            Andean Emerald 1378 1378.632 1380.0     1
-## 2    White-whiskered Hermit 1340 1437.024 1614.2     1
-## 3    Stripe-throated Hermit 1360 1455.084 1527.4     1
-## 4         Crowned Woodnymph 1360 1523.420 2049.0     1
-## 5 Rufous-tailed Hummingbird 1370 1531.929 1862.0     3
-## 6  Wedge-billed Hummingbird 1331 1624.850 2003.0     3
+##                 Hummingbird  Low        m High Index
+## 1            Andean Emerald 1378 1378.632 1380     1
+## 2         Crowned Woodnymph 1367 1383.190 1380     1
+## 3    White-whiskered Hermit 1360 1399.436 1400     1
+## 4    Stripe-throated Hermit 1370 1408.319 1400     1
+## 5 Rufous-tailed Hummingbird 1370 1435.700 1380     1
+## 6  Wedge-billed Hummingbird 1331 1658.059 1950     3
 ```
 
 ```r
-colnames(elevH)[5]<-"Elevation"
+#Gorgetted Sunangels wanders 
+#rename columns
+colnames(elevH)<-c("Hummingbird","Low","Mean","High","Elevation")
 elevH$Bird<-1:nrow(elevH)
 
 #high elevation or low elevation
 elevP<-read.csv("InputData/PlantElevation.csv",row.names=1)
-colnames(elevP)[5]<-"Elevation"
+colnames(elevP)<-c("Iplant_Double","Low","m","High","Elevation")
+
 elevP$Plant<-1:nrow(elevP)
 elevP$Iplant_Double<-as.character(elevP$Iplant_Double)
 
@@ -171,16 +174,16 @@ indatraw[order(indatraw$Yobs,decreasing=T),]
 ## 
 ##     Bird Plant     ID      DateP  Yobs  Elev Transect_R
 ##    (int) (int)  (chr)     (fctr) (int) (dbl)      (lgl)
-## 1     11   101  FH709 2014-02-27    21  1990         NA
+## 1     13   101  FH709 2014-02-27    21  1990         NA
 ## 2     14   101  FH709 2014-02-27    17  1990         NA
 ## 3     20   109  FH616 2014-05-07    17  2450         NA
 ## 4     14   101  FH414 2014-04-22    13  1990         NA
-## 5     18   123  FL083 2013-07-29    13  2350         NA
-## 6     11    28  FH303 2013-11-19    12  1940         NA
-## 7     11   101 FH1213 2015-02-11    11  1990         NA
-## 8     18   123  FL083 2013-07-28    11  2350         NA
+## 5     19   123  FL083 2013-07-29    13  2350         NA
+## 6     13    28  FH303 2013-11-19    12  1940         NA
+## 7     13   101 FH1213 2015-02-11    11  1990         NA
+## 8     19   123  FL083 2013-07-28    11  2350         NA
 ## 9      8   108  NF084 2014-05-24    10  1513         NA
-## 10    10    81  NF011 2013-11-30    10  1421         NA
+## 10    11    81  NF011 2013-11-30    10  1421         NA
 ## ..   ...   ...    ...        ...   ...   ...        ...
 ```
 
@@ -325,6 +328,9 @@ indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 ```r
 keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>2) %>% .$Hummingbird
 indat<-indat[indat$Hummingbird %in% keep,]
+
+#take our sparkling violetear, does not occur year round
+indat<-indat[!indat$Hummingbird %in% "Sparkling Violetear",]
 ```
 
 Reformat index for jags.
@@ -353,7 +359,7 @@ For hummingbird i visiting plant j recorded by camera k on day d:
 
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_i * |Bill_i - Corolla_j| $$
 
 
 **Priors**
@@ -370,17 +376,17 @@ $$\beta_i \sim Normal(\mu_{\beta},\tau_{\beta})$$
 $$\mu_{\alpha} \sim Normal(0,0.0001)$$
 $$\mu_{\beta} \sim Normal(0,0.0001)$$
 
-$$\tau_{\alpha} \sim T(0.0001,0.0001)$$
+$$\tau_{\alpha} \sim Half-T(0.0001,0.0001)$$
 $$\tau_{\beta} = \sqrt[2]{\frac{1}{\sigma_\beta}}$$
 
 $$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{\beta} \sim T(0,1)$$
+$$\sigma_{\beta} \sim Half-T(0,1)$$
 
 # Poisson GLMM
 
 
 ```r
-runs<-30000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -434,9 +440,9 @@ recompile(m2_niave)
 ##    Resolving undeclared variables
 ##    Allocating nodes
 ## Graph information:
-##    Observed stochastic nodes: 4086
-##    Unobserved stochastic nodes: 4129
-##    Total graph size: 100606
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 1942
+##    Total graph size: 49328
 ## 
 ## Initializing model
 ## 
@@ -444,9 +450,9 @@ recompile(m2_niave)
 ##    Resolving undeclared variables
 ##    Allocating nodes
 ## Graph information:
-##    Observed stochastic nodes: 4086
-##    Unobserved stochastic nodes: 4129
-##    Total graph size: 100606
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 1942
+##    Total graph size: 49328
 ## 
 ## Initializing model
 ```
@@ -482,7 +488,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","int
 
 
 ```r
-runs<-30000
+runs<-70000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -538,9 +544,9 @@ recompile(m2)
 ##    Resolving undeclared variables
 ##    Allocating nodes
 ## Graph information:
-##    Observed stochastic nodes: 4086
-##    Unobserved stochastic nodes: 283031
-##    Total graph size: 413842
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 266165
+##    Total graph size: 328649
 ## 
 ## Initializing model
 ## 
@@ -548,9 +554,9 @@ recompile(m2)
 ##    Resolving undeclared variables
 ##    Allocating nodes
 ## Graph information:
-##    Observed stochastic nodes: 4086
-##    Unobserved stochastic nodes: 283031
-##    Total graph size: 413842
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 266165
+##    Total graph size: 328649
 ## 
 ## Initializing model
 ```
@@ -565,7 +571,7 @@ m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=3)
 pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
 
 #name
-pars_detect$Model<-"Occupancy"
+pars_detect$Model<-"Nmixture"
 ```
 
 ##Assess Convergence
@@ -741,25 +747,24 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                 Hummingbird mean lower upper
-## 1            Andean Emerald 41.1  17.1  68.8
-## 2        Booted Racket-tail 33.0  15.7  50.6
-## 3                Brown Inca 45.1  29.7  61.2
-## 4       Buff-tailed Coronet 44.0  13.7  76.9
-## 5             Collared Inca 47.2  24.0  69.6
-## 6         Crowned Woodnymph 33.7  15.2  52.1
-## 7   Fawn-breasted Brilliant 33.8  10.3  59.6
-## 8         Gorgeted Sunangel 71.1  52.0  87.8
-## 9   Green-crowned Brilliant 35.3  11.1  62.0
-## 10  Green-fronted Lancebill 43.3  15.3  69.4
-## 11            Hoary Puffleg 36.4  13.5  62.8
-## 12   Purple-bibbed Whitetip 42.2  14.3  73.0
-## 13      Sparkling Violetear 41.6  12.0  75.6
-## 14     Speckled Hummingbird 50.5  24.1  79.1
-## 15   Stripe-throated Hermit 36.3  20.7  51.6
-## 16     Tawny-bellied Hermit 36.9  21.0  51.7
-## 17      Violet-tailed Sylph 41.9  27.6  56.1
-## 18 Wedge-billed Hummingbird 38.3  12.0  69.3
-## 19   White-whiskered Hermit 26.7  13.0  41.3
+## 1            Andean Emerald 32.8  13.2  61.3
+## 2        Booted Racket-tail 28.3  11.8  47.1
+## 3                Brown Inca 32.1  16.1  49.9
+## 4       Buff-tailed Coronet 31.8   9.2  62.8
+## 5             Collared Inca 31.0  12.2  54.6
+## 6         Crowned Woodnymph 26.7  10.7  47.6
+## 7   Fawn-breasted Brilliant 26.4   7.4  49.9
+## 8         Gorgeted Sunangel 55.4  27.6  83.7
+## 9   Green-crowned Brilliant 24.0   5.7  50.0
+## 10  Green-fronted Lancebill 36.1  14.7  65.6
+## 11            Hoary Puffleg 28.8  10.2  54.2
+## 12   Purple-bibbed Whitetip 30.7   9.8  58.2
+## 13     Speckled Hummingbird 40.4  18.2  73.3
+## 14   Stripe-throated Hermit 27.1  12.9  42.8
+## 15     Tawny-bellied Hermit 31.7  17.6  48.3
+## 16      Violet-tailed Sylph 36.5  21.9  52.5
+## 17 Wedge-billed Hummingbird 27.3   5.6  57.3
+## 18   White-whiskered Hermit 21.6   8.5  35.9
 ```
 
 ```r
@@ -790,10 +795,10 @@ dp<-function(n,p){
 
 ts<-split(tab,tab$Hummingbird,drop=T)
 detectd<-lapply(ts,function(x){
-  meanD<-dp(n=1:12,p=x$mean/100)
-  lowerD<-dp(n=1:12,p=x$lower/100)
-  upperD<- dp(n=1:12,p=x$upper/100)
-  data.frame(Days=1:12,mean=meanD,lower=lowerD,upper=upperD)
+  meanD<-dp(n=1:10,p=x$mean/100)
+  lowerD<-dp(n=1:10,p=x$lower/100)
+  upperD<- dp(n=1:10,p=x$upper/100)
+  data.frame(Days=1:10,mean=meanD,lower=lowerD,upper=upperD)
 })
 
 md<-melt(detectd,id.var="Days")
@@ -815,7 +820,7 @@ for (x in 1:nrow(tab)){
 }
 daydf<-rbind_all(daydf)
 
-ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,12,2),limits=c(0,12))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
+ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
 ```
 
 <img src="figureObserved/unnamed-chunk-34-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -844,7 +849,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 5869.54
+## [1] 4291.25
 ```
 
 ```r
@@ -852,7 +857,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 18237.26
+## [1] 12070.06
 ```
 
 #Predicted versus Observed Data
@@ -871,7 +876,7 @@ dmultinom(true_state,prob=m,log=T)
 ```
 
 ```
-## [1] -3050.261
+## [1] -2964.902
 ```
 
 ```r
@@ -879,7 +884,7 @@ paste("Correlation coefficient is:", round(cor(c(true_state),c(m),method="spearm
 ```
 
 ```
-## [1] "Correlation coefficient is: 0.09"
+## [1] "Correlation coefficient is: 0.1"
 ```
 
 ###Test Statistic
@@ -926,7 +931,7 @@ qplot(multi_disc)+ xlab("Chisquared Discrepancy for Multimonial Liklihood") + ge
 
 <img src="figureObserved/unnamed-chunk-38-1.png" title="" alt="" style="display: block; margin: auto;" />
 
-#Compare Bayesian Occupancy and Multinomial using true known interactions
+#Compare Bayesian Nmixture and Multinomial using true known interactions
 
 ## Poisson GLMM
 
@@ -942,9 +947,9 @@ gc()
 ```
 
 ```
-##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1791104   95.7    6145200  328.2  10137172  541.4
-## Vcells 196991209 1503.0  492067734 3754.2 407131172 3106.2
+##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   1794797  95.9    5489235  293.2   6861544  366.5
+## Vcells 104028032 793.7  228575476 1743.9 228575476 1743.9
 ```
 
 ```r
@@ -983,9 +988,9 @@ gc()
 ```
 
 ```
-##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1794227   95.9    6145200  328.2  10137172  541.4
-## Vcells 199046424 1518.7  492067734 3754.2 407131172 3106.2
+##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   1797902  96.1    5489235  293.2   6861544  366.5
+## Vcells 104989032 801.1  228575476 1743.9 228575476 1743.9
 ```
 
 ```r
@@ -1020,12 +1025,12 @@ colnames(mmat)<-c("Bird","Plant","True_State")
 
 #append to predicted matrices
 
-#occupancy with detection
+#Nmixture with detection
 mocc<-melt(occ_matrix)
-colnames(mocc)<-c("Bird","Plant","Occupancy","Iteration")
+colnames(mocc)<-c("Bird","Plant","Nmixture","Iteration")
 simdat<-merge(mocc,mmat,by=c("Bird","Plant"))
 
-#occupancy with nodetection
+#Nmixture with nodetection
 moccd<-melt(occ_nodetect_matrix)
 colnames(moccd)<-c("Bird","Plant","Poisson GLMM","Iteration")
 
@@ -1037,7 +1042,7 @@ colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
 simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
 
 
-simdat<-melt(simdat,measure.vars = c("Occupancy","Poisson GLMM","Multinomial"))
+simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM","Multinomial"))
 
 ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 ```
@@ -1051,10 +1056,10 @@ ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abli
 #Multinomial
 multi_disc<-sapply(mats,function(x) mean(x))
 
-#occupancy without detection
+#Nmixture without detection
 occno_disc<-sapply(occ_nodetect,function(x) mean(x))
 
-#Occupancy with detection
+#Nmixture with detection
 occ_disc<-sapply(occ,function(x) mean(x))
 
 #compared to bayesian
@@ -1067,7 +1072,7 @@ ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",al
 
 
 ```r
-d<-list(Occupancy=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
+d<-list(Nmixture=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
 d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 
@@ -1079,9 +1084,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1 Multinomial      9.34    0.28  7273.11
-## 2   Occupancy      1.99    0.37  1552.09
-## 3 Poisson_GLM      6.30    0.76  4905.50
+## 1 Multinomial      9.92    0.31  7323.89
+## 2    Nmixture      1.79    0.33  1317.75
+## 3 Poisson_GLM      3.85    0.47  2842.98
 ```
 
 Merge with morphological data.
@@ -1112,9 +1117,9 @@ gc()
 ```
 
 ```
-##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1794763   95.9    6145200  328.2  10137172  541.4
-## Vcells 208412412 1590.1  492067734 3754.2 407131172 3106.2
+##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   1798436  96.1    5489235  293.2   6861544  366.5
+## Vcells 113862043 868.7  228575476 1743.9 228575476 1743.9
 ```
 
 ```r
