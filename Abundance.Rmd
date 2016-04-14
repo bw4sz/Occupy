@@ -214,7 +214,7 @@ $$\sigma_{\beta_1} \sim Half-T(0,1)$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-1000
+runs<-100
 
 #trigger parallel
 paralleljags<-F
@@ -239,23 +239,20 @@ if(paralleljags){
   Birds=max(obs.state$Bird)
   Nobs=length(obs.state$Yobs)
   resources=resources
-  
-  #A blank Y matrix - all present
-  Ninit<-rep(max(obs.state$Yobs)+1,Nobs)
-  
+
   #Inits
-  InitStage <- function(){list(beta1=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,sigma_int=0.1,sigma_beta1=0.1,sigma_beta2=0.1,N=Ninit,gamma1=0,gamma2=0)}
+  InitStage <- function(){list(beta1=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),intercept=0,sigma_int=0.1,sigma_beta1=0.1,sigma_beta2=0.1,gamma1=0,gamma2=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta1","beta2","intercept","sigma_int","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- runs*.97 # number to discard for burn-in
-  nc <- 2  # number of chains
+  nt <- 1   #thinning rate
+  nb <- 0 # number to discard for burn-in
+  nc <- 1  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Cameras","Camera","resources")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Cameras","Camera","resources")
 
     sim_niave<-do.call(jags.parallel,list(data=Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
@@ -273,20 +270,16 @@ if(paralleljags){
     Nobs=length(obs.state$Yobs),
     resources=resources)
 
-    #A blank Y matrix - all present
-    Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
-
-  
     #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Dat$Birds),beta2=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,sigma_int=0.1,sigma_beta1=0.1,sigma_beta2=0.1,N=Ninit,gamma1=0,gamma2=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Dat$Birds),beta2=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),intercept=0,sigma_int=0.1,sigma_beta1=0.1,sigma_beta2=0.1,gamma1=0,gamma2=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta1","beta2","intercept","sigma_int","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- runs*.97 # number to discard for burn-in
+  nt <- 1   #thinning rate
+  nb <- 0 # number to discard for burn-in
   nc <- 2  # number of chains
   
   #Jags
@@ -400,10 +393,10 @@ if(paralleljags){
   Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(obs.state$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,sigma_alpha=0.1,sigma_slope=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Birds),beta2=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,N=Ninit,gamma1=0,gamma2=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_int","sigma_beta1","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -422,8 +415,6 @@ if(paralleljags){
     Plant=obs.state$Plant,
     Camera=obs.state$Camera,
     Cameras=max(obs.state$Camera),
-    Day<-obs.state$Day,
-    Days<-max(obs.state$Day),
     Traitmatch=traitmatch,
     resources=resources,
     Birds=max(obs.state$Bird),
@@ -433,8 +424,8 @@ if(paralleljags){
     #A blank Y matrix - all present
   Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(obs.state$Yobs)+1)
   
-    #Inits
-  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  #Inits
+  InitStage <- function() {list(beta1=rep(0.5,Birds),beta2=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,N=Ninit,gamma1=0,gamma2=0)}
   
   #Parameters to track
   ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")

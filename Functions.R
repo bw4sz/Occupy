@@ -5,7 +5,7 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   n<-dim(x$BUGSoutput$sims.array)[1]
   parsO<-melt(x$BUGSoutput$sims.array[max(0,(n-500)):n,,])
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
-  gc()
+  
   #label species and plants
   l<-levels(parsO$parameter)
   
