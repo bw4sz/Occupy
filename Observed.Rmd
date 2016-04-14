@@ -39,7 +39,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-load("Observed.Rdata")
+#load("Observed.Rdata")
 ```
 
 #Observed dataset
@@ -326,7 +326,7 @@ full.fl<-read.csv("InputData/FlowerTransectClean.csv")[,-1]
 colnames(full.fl)[colnames(full.fl) %in% "month"]<-"Month"
 
 #group by month and replicate, remove date errors by making a max of 10 flowers, couple times where the gps places it in wrong transect by 1 to 2 meters. 
-flower.month<-group_by(full.fl,Iplant_Double,Month,Year,Transect_R,Date_F) %>% dplyr::summarise(Flowers=sum(Total_Flowers,na.rm=TRUE))  %>% filter(Flowers>20)
+flower.month<-group_by(full.fl,Iplant_Double,Month,Year,Date_F) %>% dplyr::summarise(Flowers=sum(Total_Flowers,na.rm=TRUE))  %>% group_by(Iplant_Double,Month,Year) %>% dplyr::summarise(Flowers=mean(Flowers,na.rm=TRUE)) 
 
 #Make month abbreviation column, with the right order
 flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
@@ -334,7 +334,10 @@ flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
 #Make year factor column
 flower.month$Year<-as.factor(flower.month$Year)
 
-indatf<-merge(indat,flower.month,all.x=True,by=c("Iplant_Double","Month","Year","Transect_R"))
+indat<-merge(indat,flower.month,all.x=T,by=c("Iplant_Double","Month","Year"))
+
+#how many Na's, turn to na for the moment
+indat[is.na(indat$Flowers),"Flowers"]<-0
 
 ```
 
