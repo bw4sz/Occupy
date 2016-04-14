@@ -5,26 +5,22 @@ cat("
     model {
     #Compute intensity for each pair of birds and plants
     for (i in 1:Birds){
-      for (j in 1:Plants){
+    for (j in 1:Plants){
+    for (k in 1:Cameras){
     
     #Process Model
-      log(lambda[i,j])<-alpha[i] + beta[i] * Traitmatch[i,j]
-      }
-    }
-
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
+    
     #For each camera - there is a latent count
-    for(x in 1:Birds){
-      for (y in 1:Plants){
-        for (z in 1:Cameras){
-          # true latent count
-          N[x,y,z] ~ dpois(lambda[x,y])
-        }
-      }
+    N[i,j,k] ~ dpois(lambda[i,j,k])
     }
-
+    }
+    }
+    
+    
     #Observed counts for each day of sampling at that camera
     for (x in 1:Nobs){
-
+    
     #Observation Process
     Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])    
     
@@ -43,12 +39,11 @@ cat("
     logit(detect[i]) <- detect_logit[i]
     detect_logit[i] ~ dnorm(dprior,tau_detect)
     alpha[i] ~ dnorm(intercept,tau_alpha)
-    beta[i] ~ dnorm(gamma,tau_beta)    
+    beta1[i] ~ dnorm(gamma1,tau_beta1)  
+    beta2[i] ~ dnorm(gamma2,tau_beta1)    
     }
     
     #Hyperpriors
-    #Slope grouping
-    gamma~dnorm(0,0.0001)
     
     #Intercept grouping
     intercept~dnorm(0,0.0001)
@@ -64,10 +59,22 @@ cat("
     tau_detect ~ dunif(0,10)
     sigma_detect<-pow(1/tau_detect,.5) 
     
-    #Derived Quantity
-    #Slope variance, turning precision to sd
-    sigma_slope ~ dt(0,1,1)I(0,)
-    tau_beta <- pow(sigma_slope,-2)
+    #Trait Slope
+
+    #Mean
+    gamma1~dnorm(0,0.0001)
+
+    #Variance
+    sigma_beta1 ~ dt(0,1,1)I(0,)
+    tau_beta1 <- pow(sigma_beta1,-2)
+
+    #Abundance slope
+
+    #Mean
+    gamma2~dnorm(0,0.0001)
+    
+    sigma_beta2 ~ dt(0,1,1)I(0,)
+    tau_beta2 <- pow(sigma_beta2,-2)
 
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data
