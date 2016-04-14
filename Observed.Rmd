@@ -475,10 +475,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Plant=indat$jPlant
   Camera=indat$Camera
   Cameras=max(indat$Camera)
-  Day<-indat$Day
-  Days<-max(indat$Day)
   Traitmatch=jTraitmatch
-  #number of birds to iterate
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
   Nobs=length(indat$Yobs)
