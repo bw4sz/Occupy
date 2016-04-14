@@ -42,8 +42,8 @@ cat("
     intercept~dnorm(0,0.0001)
     
     # Group intercept variance
-    sigma_int ~ dt(0,1,1)I(0,)
-    tau_alpha <- pow(sigma_int,-2)
+    sigma_alpha ~ dt(0,1,1)I(0,)
+    tau_alpha <- pow(sigma_alpha,-2)
     
     #Detect grouping
     dprior ~ dnorm(0,.5)

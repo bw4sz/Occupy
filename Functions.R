@@ -33,26 +33,28 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   return(parsO)
 }
 #fits a curve for given poisson function
-
-trajF<-function(alpha,beta,x){
-  fdat<-data.frame(alpha=alpha,beta=beta)
+#sample trajectory for a given posterior using quantile or hdi interval
+trajF<-function(alpha,beta1,beta2,x,resources,type='quantile'){
+  indat<-data.frame(alpha,beta1,beta2)
   
   #fit regression for each input estimate
   sampletraj<-list()
-  for (s in 1:nrow(fdat)){
-    a<-fdat$alpha[s]
-    b<-fdat$beta[s]
-    b2<-fdat$beta2[s]
-    yp=exp(a + (b*x))
+  
+  for (y in 1:nrow(indat)){
+    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources) 
     
-    #compute pred value
-    sampletraj[[s]]<-data.frame(x=x,y=yp)
+    sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
   }
   
   sample_all<-rbind_all(sampletraj)
   
   #Compute CI intervals
-  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
+  if(type=='quantile'){
+    predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
+  }
+  if(type=='hdi'){
+    predy<-group_by(sample_all,x) %>% summarise(lower=hdi(y)[[1]],upper=hdi(y)[[2]],mean=mean(y,na.rm=T))
+  }
   return(predy)
 }
 
