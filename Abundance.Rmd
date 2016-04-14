@@ -87,9 +87,9 @@ traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
   
 #regression slopes
 #traits
-gamma1<- -0.5
+gamma1<- -1
 #abundance
-gamma2<- 0.5
+gamma2<- 0.2
 
 #species variance in slopes
 sigma_beta1<- 0.2
@@ -102,7 +102,7 @@ sigma_alpha<- 0.2
 detection= runif(h_species,0.1,0.9)
 beta1<-rnorm(h_species,gamma1,sigma_beta1)
 beta2<-rnorm(h_species,gamma2,sigma_beta2)
-alpha<-rnorm(h_species,intercept,sigma_alphaercept)
+alpha<-rnorm(h_species,intercept,sigma_alpha)
 ```
 
 #Compute resource abundance
@@ -214,10 +214,10 @@ $$\sigma_{\beta_1} \sim Half-T(0,1)$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-100
+runs<-1000
 
 #trigger parallel
-paralleljags<-F
+paralleljags<-T
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -234,27 +234,26 @@ if(paralleljags){
   Plants=max(obs.state$Plant)
   Cameras=max(obs.state$Camera)
   Camera=obs.state$Camera
-  Day=obs.state$Day
-  Traitmatch<-traitmatch
+  Traitmatch=traitmatch
   Birds=max(obs.state$Bird)
   Nobs=length(obs.state$Yobs)
   resources=resources
 
   #Inits
-  InitStage <- function(){list(beta1=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,gamma1=0,gamma2=0)}
+  InitStage <- function(){list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,gamma1=0,gamma2=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- 0 # number to discard for burn-in
+  nt <- 5   #thinning rate
+  nb <- runs*.9 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Cameras","Camera","resources")
 
-    sim_niave<-do.call(jags.parallel,list(data=Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+    sim_niave<-do.call(jags.parallel,list(data=Dat,inits=InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
   } else {
  #Input Data
@@ -278,8 +277,8 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- 0 # number to discard for burn-in
+  nt <- 5   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
   
   #Jags
@@ -355,18 +354,21 @@ castdf<-group_by(pars_niave,Chain) %>% select(par,estimate) %>% filter(par %in% 
 castdf<-dcast(pars_niave[pars_niave$par %in% c("gamma1","gamma2","intercept"),], Chain + Draw~par,value.var="estimate")
 
 #calculated predicted y
-predyniave<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$gamma2,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
+predyniave_trait<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=0,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
 
-orig<-trajF(alpha=rnorm(2000,intercept,sigma_alphaercept),beta1=rnorm(2000,gamma1,sigma_beta1),beta2=rnorm(2000,gamma2,sigma_beta2),x=as.numeric(traitmatch),resources = as.numeric(resources[,1,]))
+predyniave_abundance<-trajA(alpha=castdf$intercept,beta1=0,beta2=castdf$gamma2,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
+
+
+predyniave_both<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$gamma2,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
 ```
 
 # Simulated data with detection
 
 ```{r,eval=F}
-runs<-100
+runs<-1000
 
 #trigger parallel
-paralleljags<-F
+paralleljags<-T
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -566,42 +568,47 @@ ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
 
 ```{r,fig.height=4,fig.width=4}
 
-castdf<-dcast(pars[pars$par %in% c("gamma1","gamma2","gamma3","intercept"),], Chain + Draw~par,value.var="estimate")
-
-trajF<-function(alpha,beta1,beta2,x,resources){
-  indat<-data.frame(alpha,beta1,beta2)
-  
-  #fit regression for each input estimate
-  sampletraj<-list()
-  
-  for (y in 1:nrow(indat)){
-    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources)
-    
-    sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
-  }
-  
-  sample_all<-rbind_all(sampletraj)
-  
-  #Compute CI intervals
-  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
-}
+castdf<-dcast(pars[pars$par %in% c("gamma1","gamma2","intercept"),], Chain + Draw~par,value.var="estimate")
 ```
 
 ## Calculated predicted visitation rates
 
-```{r}
+### Traits
 
+```{r}
+predy_trait<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitmatch),resources=as.numeric(resources),beta2=0)
+orig<-trajF(alpha=rnorm(2000,intercept,sigma_alpha),beta1=rnorm(2000,gamma1,sigma_beta1),beta2=0,x=as.numeric(traitmatch),resources=as.numeric(resources))
+
+pm<-melt(list(Nmixture=predy_trait,'Poisson GLMM'=predyniave_trait,'True'=orig),id.vars=colnames(predy_trait))
+
+tplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.1)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits")
+```
+
+###Abundance
+
+```{r}
+predy_abundance<-trajA(alpha=castdf$intercept,beta1=0,x=as.numeric(traitmatch),resources=as.numeric(resources),beta2=castdf$gamma2)
+
+orig<-trajA(alpha=rnorm(2000,intercept,sigma_alpha),beta1=0,beta2=rnorm(2000,gamma2,sigma_beta1),x=as.numeric(traitmatch),resources=as.numeric(resources))
+
+pm<-melt(list(Nmixture=predy_abundance,'Poisson GLMM'=predyniave_abundance,'True'=orig),id.vars=colnames(predy_abundance))
+
+aplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.1)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flower Abundance") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model") + ggtitle("Abundance")
+```
+
+```{r}
 predy<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitmatch),resources=as.numeric(resources),beta2=castdf$gamma2)
 
 orig<-trajF(alpha=rnorm(2000,intercept,sigma_alpha),beta1=rnorm(2000,gamma1,sigma_beta1),beta2=rnorm(2000,gamma2,sigma_beta2),x=as.numeric(traitmatch),resources=as.numeric(resources))
 
-#plot and compare to original data
-psim3<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1,fill="red")  + geom_line(aes(y=mean),size=.8,col="red",linetype="dashed") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='black',size=1)+ xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions))
+pm<-melt(list(Nmixture=predy,'Poisson GLMM'=predy,'True'=orig),id.vars=colnames(predy))
 
-psim3
-#ggsave("Figures/SimulationResults.jpg",height=5,width=6,dpi=300)
+fplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.1)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
 ```
 
+```{r}
+grid.arrange(tplot,aplot,fplot, layout_matrix = cbind(c(1,1,1), c(2,3)))
+```
 
 Black line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The blue line is the same model, but assuming perfect detection rates.
 
@@ -718,7 +725,6 @@ moccd<-melt(occ_nodetect_matrix)
 colnames(moccd)<-c("Bird","Plant","Poisson GLMM","Iteration")
 
 simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
-
 
 simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM"))
 

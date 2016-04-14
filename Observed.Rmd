@@ -320,7 +320,7 @@ indat<-indat[!indat$Hummingbird %in% "Sparkling Violetear",]
 
 ```{r}
 #Get flower transect data
-full.fl<-read.csv("FlowerTransectClean.csv")[,-1]
+full.fl<-read.csv("InputData/FlowerTransectClean.csv")[,-1]
 
  #month should be capital 
 colnames(full.fl)[colnames(full.fl) %in% "month"]<-"Month"
@@ -386,17 +386,20 @@ $$\omega_i \sim (\mu_{\omega},\tau_{\omega})$$  $$\mu_{\omega} \sim Normal(0,0.5
 $$\tau_{\omega} \sim Uniform(0,10)
 
 $$\alpha_i \sim Normal(\mu_{\alpha},\tau_{\alpha})$$
-$$\beta_i \sim Normal(\mu_{\beta},\tau_{\beta})$$
+$$\beta_{1,i} \sim Normal(\mu_{\beta_1},\tau_{\beta_1})$$
+$$\beta_{2,i} \sim Normal(\mu_{\beta_2},\tau_{\beta_2})$$
 
 **Hyperpriors**
 $$\mu_{\alpha} \sim Normal(0,0.0001)$$
-$$\mu_{\beta} \sim Normal(0,0.0001)$$
+$$\mu_{\beta_1} \sim Normal(0,0.0001)$$
 
 $$\tau_{\alpha} \sim Half-T(0.0001,0.0001)$$
-$$\tau_{\beta} = \sqrt[2]{\frac{1}{\sigma_\beta}}$$
+$$\tau_{\beta_1} = \sqrt[2]{\frac{1}{\sigma_\beta_1}}$$
+$$\tau_{\beta_2} = \sqrt[2]{\frac{1}{\sigma_\beta_2}}$$
 
 $$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{\beta} \sim Half-T(0,1)$$
+$$\sigma_{\beta_1} \sim Half-T(0,1)$$
+$$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 # Poisson GLMM
 
