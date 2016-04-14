@@ -214,7 +214,7 @@ $$\sigma_{\beta_1} \sim Half-T(0,1)$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-1000
+runs<-10000
 
 #trigger parallel
 paralleljags<-T
@@ -248,7 +248,7 @@ if(paralleljags){
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 5   #thinning rate
-  nb <- runs*.9 # number to discard for burn-in
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Cameras","Camera","resources")
@@ -337,7 +337,7 @@ ggsave("Figures/SimulationPosteriorsNoDetect.jpg",dpi=300,height=8,width=8)
 p<-ggplot(pars_niave[pars_niave$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw()
 
 #Add true values
-tr<-melt(list(gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_alpha=sigma_alphaercept,sigma_beta1=sigma_beta1,sigma_beta2=sigma_beta2))
+tr<-melt(list(gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_alpha=sigma_alpha,sigma_beta1=sigma_beta1,sigma_beta2=sigma_beta2))
 
 colnames(tr)<-c("value","par")
 
@@ -365,7 +365,7 @@ predyniave_both<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$g
 # Simulated data with detection
 
 ```{r,eval=F}
-runs<-1000
+runs<-5000
 
 #trigger parallel
 paralleljags<-T
@@ -401,8 +401,8 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- 0 # number to discard for burn-in
+  nt <- 5   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","resources","Birds","Nobs","Ninit","Camera","Cameras")
@@ -433,8 +433,8 @@ if(paralleljags){
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- 0 # number to discard for burn-in
+  nt <- 5   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
   
   #Jags

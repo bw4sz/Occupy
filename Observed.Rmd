@@ -326,7 +326,7 @@ full.fl<-read.csv("InputData/FlowerTransectClean.csv")[,-1]
 colnames(full.fl)[colnames(full.fl) %in% "month"]<-"Month"
 
 #group by month and replicate, remove date errors by making a max of 10 flowers, couple times where the gps places it in wrong transect by 1 to 2 meters. 
-flower.month<-group_by(full.fl,Month,Year,Transect_R,Date_F) %>% dplyr::summarise(Flowers=sum(Total_Flowers,na.rm=TRUE))  %>% filter(Flowers>20)
+flower.month<-group_by(full.fl,Iplant_Double,Month,Year,Transect_R,Date_F) %>% dplyr::summarise(Flowers=sum(Total_Flowers,na.rm=TRUE))  %>% filter(Flowers>20)
 
 #Make month abbreviation column, with the right order
 flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
@@ -334,19 +334,8 @@ flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
 #Make year factor column
 flower.month$Year<-as.factor(flower.month$Year)
 
-#get quantile for each transect
-thresh<-melt(group_by(flower.month,Transect_R) %>% summarize(Threshold=quantile(log(Flowers),0.5)) )
-flower.month<-merge(flower.month,thresh)
-flower.month$High<-log(flower.month$Flowers)>flower.month$value
+indatf<-merge(indat,flower.month,all.x=True,by=c("Iplant_Double","Month","Year","Transect_R"))
 
-#fix the levels
-levels(flower.month$Transect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 1900m","1900m - 2100m","2100m - 2300m","2300m - 2500m")
-#plot
-ggplot(flower.month,aes(x=Month.a,log(Flowers),col=High,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~Transect_R,scales="free_y") + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","High"),values=c("black","red")) + labs(col="Resource Availability")
-
-#turn min and max elvation into seperate columns for the range
-flower.month$minElev<-as.numeric(str_extract(flower.month$Transect_R,"(\\d+)"))
-flower.month$maxElev<-as.numeric(str_match(flower.month$Transect_R,"(\\d+)_(\\d+)")[,3])
 ```
 
 Reformat index for jags.
@@ -375,8 +364,7 @@ For hummingbird i visiting plant j recorded by camera k on day d:
 
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_i * |Bill_i - Corolla_j| $$
-
+$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} *Resource_{j,k} $$
 
 **Priors**
 
@@ -403,8 +391,8 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 # Poisson GLMM
 
-```{r,eval=F}
-runs<-50000
+```{r,eval=T}
+runs<-500
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -413,40 +401,40 @@ source("Bayesian/NoDetectNmixturePoissonRagged.R")
 print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 
-  #for parallel run
+  #Data objects for parallel run
   Yobs=indat$Yobs
   Bird=indat$jBird
+  Birds=max(indat$jBird)
   Plant=indat$jPlant
   Plants=max(indat$jPlant)
-  Time=indat$Camera
+  Camera=indat$Camera
+  Cameras=max(indat$Camera)
   Traitmatch=jTraitmatch
-  #number of birds to iterate
-  Birds=max(indat$jBird)
   Nobs=length(indat$Yobs)
 
   #A blank Y matrix - all present
   Ninit<-rep(max(indat$Yobs)+1,Nobs)
   
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,dprior=0,gamma=0)}
+  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,dprior=0,gamma1=0,gamma2=0)}
   
   #Parameters to track
-  ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
+  nt <- 5   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Time","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Nobs","Ninit")
 
     m2_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-30000
@@ -463,17 +451,17 @@ pars_dniave$Model<-"Poisson GLMM"
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_dniave[pars_dniave$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_dniave[pars_dniave$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_dniave[pars_dniave$par %in% c("gamma","sigma_int","sigma_slope","intercept"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma_beta1","sigma_beta2","intercept"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 # Observed Data With Detection
 
 ```{r,eval=F}
-runs<-70000
+runs<-500
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -499,10 +487,10 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta2=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -537,13 +525,13 @@ pars_detect$Model<-"Nmixture"
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect[pars_detect$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
 ```
@@ -557,7 +545,7 @@ parsObs<-rbind(pars_detect,pars_dniave)
 
 ```{r,cache=FALSE,fig.width=11,fig.height=14}
 ###Posterior Distributions
-ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
+ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1","beta2"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 ```
 
 ```{r,cache=FALSE,fig.width=10,fig.height=5}
@@ -571,13 +559,13 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
 ```{r,cache=FALSE,fig.height=5,fig.width=13}
-ggplot(parsObs[parsObs$par %in% c("gamma","intercept","sigma_int","sigma_slope","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+ggplot(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
 ##Species Predictions
 
 ```{r,fig.height=10,fig.width=11}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -593,7 +581,7 @@ for(d in 1:length(species.split)){
   
   #range of trait distances
   tsp<-indat %>% filter(Hummingbird==index) %>% distinct(Traitmatch) %>% .$Traitmatch
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta=x$beta,x=tsp)
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,x=tsp)
   }
 
 names(species.traj)<-names(species.split)
@@ -619,13 +607,13 @@ Does accounting for non-independence and detection change our estimate of trait 
 
 ```{r,fig.height=6,fig.width=10}
 
-castdf<-dcast(parsObs[parsObs$par %in% c("gamma","intercept"),], Model+Chain + Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept"),], Model+Chain + Draw~par,value.var="estimate")
 
 castdf<-split(castdf,castdf$Model)
 #calculated predicted y
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta=i$gamma,x=indat$Traitmatch)  
+  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=i$gamma2,x=indat$Traitmatch,Resources=indat$resources)  
   pr$Model<-unique(i$Model)
   return(pr)
   }))
