@@ -592,9 +592,7 @@ predy_trait<-rbind_all(lapply(castdf,function(i){
   }))
 
 
-tplot<-ggplot(data=predy_trait,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length")
-
-#+ geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits") + theme(legend.position='none')
+tplot<-ggplot(data=predy_trait,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits") + theme(legend.position='none')
 ```
 
 ###Abundance
