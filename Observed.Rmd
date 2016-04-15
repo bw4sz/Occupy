@@ -357,6 +357,9 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 #Similiarly, the trait matrix needs to reflect this indexing.
 jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),colnames(traitmatchT) %in% unique(indat$Iplant_Double)]
 
+#And resources
+resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0)
+
 write.csv(indat,"InputData/ObservedData.csv")
 ```
 
@@ -395,7 +398,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-500
+runs<-1000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -414,6 +417,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   Cameras=max(indat$Camera)
   Traitmatch=jTraitmatch
   Nobs=length(indat$Yobs)
+  resources=resourcemat
 
   #A blank Y matrix - all present
   Ninit<-rep(max(indat$Yobs)+1,Nobs)
@@ -430,7 +434,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Nobs","Ninit","resources")
 
     m2_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
@@ -463,8 +467,8 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 
 # Observed Data With Detection
 
-```{r,eval=F}
-runs<-500
+```{r,eval=T}
+runs<-1000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -482,6 +486,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
   Nobs=length(indat$Yobs)
+  resources=resourcemat
 
   #A blank Y matrix - all present
   Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
@@ -498,14 +503,14 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   nb <- runs*.90 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources")
 
     system.time(m2<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-30000
@@ -525,7 +530,7 @@ pars_detect$Model<-"Nmixture"
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ###Hierarcichal Posteriors
@@ -562,9 +567,77 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ggplot(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
+###Overall predicted relationship 
+
+Does accounting for non-independence and detection change our estimate of trait matching?
+
+```{r,fig.height=6,fig.width=10}
+
+castdf<-dcast(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept"),], Model+Chain + Draw~par,value.var="estimate")
+
+castdf<-split(castdf,castdf$Model)
+
+```
+
+## Calculated predicted visitation rates
+
+### Traits
+
+```{r}
+predy_trait<-rbind_all(lapply(castdf,function(i){
+  #calculate trajectory and append model
+  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)  
+  pr$Model<-unique(i$Model)
+  return(pr)
+  }))
+
+
+tplot<-ggplot(data=predy_trait,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length")
+
+#+ geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits") + theme(legend.position='none')
+```
+
+###Abundance
+
+```{r}
+predy_abundance<-rbind_all(lapply(castdf,function(i){
+  #calculate trajectory and append model
+  pr<-trajF(alpha=i$intercept,beta1=0,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)  
+  pr$Model<-unique(i$Model)
+  return(pr)
+  }))
+
+aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flower Abundance") 
+#geom_point(data=mdat,aes(x=Abundance,y=Interactions),size=.5,alpha=.5) + labs(fill="Model") + ggtitle("Abundance") + theme(legend.position='none')
+```
+
+## Trait+Abundance
+```{r}
+
+predy<-rbind_all(lapply(castdf,function(i){
+  #calculate trajectory and append model
+  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)  
+  pr$Model<-unique(i$Model)
+  return(pr)
+  }))
+
+fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") 
+
+#+ geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
+
+```
+
+```{r}
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+
+jpeg("Figures/SimPredictBoth.jpg",height=6,width=7,units="in",res=300)
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+dev.off()
+```
+
 ##Species Predictions
 
-```{r,fig.height=10,fig.width=11}
+```{r,fig.height=10,fig.width=11,eval=F}
 castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 #Turn to species level
@@ -599,28 +672,6 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model")  + ylab("Interactions per day")
 
 ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
-```
-
-###Overall predicted relationship 
-
-Does accounting for non-independence and detection change our estimate of trait matching?
-
-```{r,fig.height=6,fig.width=10}
-
-castdf<-dcast(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept"),], Model+Chain + Draw~par,value.var="estimate")
-
-castdf<-split(castdf,castdf$Model)
-#calculated predicted y
-predy<-rbind_all(lapply(castdf,function(i){
-  #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=i$gamma2,x=indat$Traitmatch,Resources=indat$resources)  
-  pr$Model<-unique(i$Model)
-  return(pr)
-  }))
-
-#plot and compare to original data
-ggplot(data=predy,aes(x=x,col=Model,fill=Model)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),col="black",fill="black",size=2) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.6)  + geom_line(aes(y=mean),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + ylab("Interactions per day") + ylim(0,17)
-ggsave("Figures/ObsResults.jpg",dpi=300,height=5,width=7)
 ```
 
 ##Discrepancy 
