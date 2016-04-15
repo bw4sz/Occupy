@@ -358,7 +358,7 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),colnames(traitmatchT) %in% unique(indat$Iplant_Double)]
 
 #And resources
-resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0) %>% scale()
+resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% mutate(m=scale(m)) %>% acast(jBird~jPlant~Camera,fill=0) 
 
 write.csv(indat,"InputData/ObservedData.csv")
 ```
@@ -397,8 +397,8 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 # Poisson GLMM
 
-```{r,eval=F}
-runs<-1000
+```{r,eval=T}
+runs<-5000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -441,7 +441,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-1000
@@ -467,8 +467,8 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 
 # Observed Data With Detection
 
-```{r,eval=F}
-runs<-1000
+```{r,eval=T}
+runs<-5000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -510,7 +510,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-1000
@@ -634,7 +634,7 @@ dev.off()
 
 ##Species Predictions
 
-```{r,fig.height=10,fig.width=11,eval=F}
+```{r,fig.height=10,fig.width=11,eval=T}
 castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 #Turn to species level
@@ -650,9 +650,13 @@ for(d in 1:length(species.split)){
   index<-jagsIndexBird[unique(x$species),"Hummingbird"]
   
   #range of trait distances
-  tsp<-indat %>% filter(Hummingbird==index) %>% distinct(Traitmatch) %>% .$Traitmatch
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,x=tsp)
-  }
+  tsp<-indat %>% filter(Hummingbird==index) %>% .$Traitmatch
+  
+  #Range of abundances
+    fsp<-indat %>% filter(Hummingbird==index) %>% .$Flowers
+    
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,x=tsp,resources=fsp)
+}
 
 names(species.traj)<-names(species.split)
 
@@ -784,6 +788,10 @@ Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 t
 ## Poisson GLMM
 
 ```{r}
+
+#Discrepancy function
+chisq<-function(o,e){(o-e)^2/(e+0.5)}
+
 N_niave<-pars_dniave[ pars_dniave$par %in% "ynew",]
 
 bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
