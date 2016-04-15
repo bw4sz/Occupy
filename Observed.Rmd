@@ -339,6 +339,7 @@ indat<-merge(indat,flower.month,all.x=T,by=c("Iplant_Double","Month","Year"))
 #how many Na's, turn to na for the moment
 indat[is.na(indat$Flowers),"Flowers"]<-0
 
+indat$Flowers<-scale(indat$Flowers)
 ```
 
 Reformat index for jags.
@@ -358,7 +359,7 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),colnames(traitmatchT) %in% unique(indat$Iplant_Double)]
 
 #And resources
-resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% mutate(m=scale(m)) %>% acast(jBird~jPlant~Camera,fill=0) 
+resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0) 
 
 write.csv(indat,"InputData/ObservedData.csv")
 ```
@@ -398,7 +399,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-5000
+runs<-10000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -468,7 +469,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 # Observed Data With Detection
 
 ```{r,eval=T}
-runs<-5000
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -592,7 +593,7 @@ predy_trait<-rbind_all(lapply(castdf,function(i){
   }))
 
 
-tplot<-ggplot(data=predy_trait,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits") + theme(legend.position='none')
+tplot<-ggplot(data=predy_trait,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits") + theme(legend.position='none')
 ```
 
 ###Abundance
@@ -600,12 +601,12 @@ tplot<-ggplot(data=predy_trait,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper
 ```{r}
 predy_abundance<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajA(alpha=i$intercept,beta1=0,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)  
+  pr<-trajA(alpha=i$intercept,beta1=0,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)
   pr$Model<-unique(i$Model)
   return(pr)
   }))
 
-aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flower Abundance") + geom_point(data=indat,aes(x=Flowers,y=Yobs),size=.5,alpha=.5) + labs(fill="Model") + ggtitle("Abundance") + theme(legend.position='none')
+aplot<-ggplot(data=predy_abundance,aes(x=x))+geom_ribbon(aes(y=mean,ymin=lower,ymax=upper,fill=Model),alpha=0.3) + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flower Abundance") + geom_point(data=indat,aes(x=Flowers,y=Yobs),size=.5,alpha=.5) + labs(fill="Model") + ggtitle("Abundance") + theme(legend.position='none')
 ```
 
 ## Trait+Abundance
@@ -613,7 +614,7 @@ aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=u
 
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)  
+  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)
   pr$Model<-unique(i$Model)
   return(pr)
   }))
@@ -623,10 +624,10 @@ fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=
 ```
 
 ```{r}
-grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1)))
 
 jpeg("Figures/SimPredictBoth.jpg",height=6,width=7,units="in",res=300)
-grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1)))
 dev.off()
 ```
 

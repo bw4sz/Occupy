@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-04-15 17:10:29"
+## [1] "Run Completed at 2016-04-15 20:49:57"
 ```
 
 #Simulation   
@@ -38,8 +38,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    577980   30.9     940480   50.3    750400   40.1
-## Vcells 227240265 1733.8  303112234 2312.6 227253394 1733.9
+## Ncells    577864   30.9     940480   50.3    750400   40.1
+## Vcells 227207580 1733.5  303141794 2312.8 227220709 1733.6
 ```
 
 ```r
@@ -309,8 +309,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    650726   34.8    1168576   62.5   1168576   62.5
-## Vcells 227319416 1734.4  363814680 2775.7 230895665 1761.6
+## Ncells    650614   34.8    1168576   62.5   1168576   62.5
+## Vcells 227286734 1734.1  363850152 2776.0 230863026 1761.4
 ```
 
 ```r
@@ -444,7 +444,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [40]     dtrans[i] ~ dnorm(dprior,tau_detect)                                                   
 ## [41]     alpha[i] ~ dnorm(intercept,tau_alpha)                                                  
 ## [42]     beta1[i] ~ dnorm(gamma1,tau_beta1)                                                     
-## [43]     beta2[i] ~ dnorm(gamma2,tau_beta1)                                                     
+## [43]     beta2[i] ~ dnorm(gamma2,tau_beta2)                                                     
 ## [44]     }                                                                                      
 ## [45]                                                                                            
 ## [46]     #Hyperpriors                                                                           
@@ -568,7 +568,7 @@ if(paralleljags){
 
 ```
 ##     user   system  elapsed 
-##    8.358    0.233 2360.329
+##    8.339    0.213 2385.606
 ```
 
 
@@ -713,13 +713,13 @@ head(castdf)
 ```
 
 ```
-##   Chain Draw     gamma1     gamma2 intercept
-## 1     1    1 -1.0281945 0.16860486  2.926271
-## 2     1    2 -1.0596344 0.24674911  2.933246
-## 3     1    3 -1.0326384 0.26378993  3.008331
-## 4     1    4 -0.8312712 0.07758804  2.826995
-## 5     1    5 -1.0646051 0.28507007  2.939053
-## 6     1    6 -0.9606707 0.10462442  2.921152
+##   Chain Draw    gamma1    gamma2 intercept
+## 1     1    1 -1.082698 0.1179784  2.900737
+## 2     1    2 -1.109282 0.2093740  2.960308
+## 3     1    3 -1.059452 0.1050442  2.949381
+## 4     1    4 -1.027504 0.1393587  2.905196
+## 5     1    5 -1.093592 0.2843785  3.046439
+## 6     1    6 -1.192156 0.1689379  2.929441
 ```
 
 ```r
@@ -735,12 +735,12 @@ head(castdf)
 
 ```
 ##   species Chain Draw    alpha      beta1     beta2    detect
-## 1       1     1    1 3.165945 -0.6572463 0.2866964 0.4828661
-## 2       1     1    2 3.223040 -0.7427663 0.2909523 0.4819616
-## 3       1     1    3 3.188969 -0.7374423 0.2619684 0.5027240
-## 4       1     1    4 3.159420 -0.7359623 0.2783793 0.5075957
-## 5       1     1    5 3.167249 -0.7681727 0.2750908 0.5220025
-## 6       1     1    6 3.054294 -0.6389529 0.2440057 0.5174429
+## 1       1     1    1 3.072077 -0.7331014 0.2554930 0.5484021
+## 2       1     1    2 2.971427 -0.6208422 0.2351874 0.5598068
+## 3       1     1    3 2.969243 -0.5921240 0.2658228 0.5545616
+## 4       1     1    4 2.975435 -0.6004338 0.2669123 0.5439620
+## 5       1     1    5 3.050552 -0.6719299 0.3063874 0.5375562
+## 6       1     1    6 3.075281 -0.7078808 0.2558181 0.5451858
 ```
 
 ```r
@@ -802,8 +802,8 @@ grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
 <img src="figure/unnamed-chunk-32-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
-jpeg("Figures/SimPredictBoth.jpg",height=6,width=7,units="in",res=300)
-grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+jpeg("Figures/SimPredictBoth.jpg",height=6,width=10,units="in",res=300)
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
 dev.off()
 ```
 
@@ -868,8 +868,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    714610   38.2    1442291   77.1   1442291   77.1
-## Vcells 239857006 1830.0  436657616 3331.5 436655578 3331.5
+## Ncells    714617   38.2    1442291   77.1   1442291   77.1
+## Vcells 239857021 1830.0  436700182 3331.8 436693415 3331.8
 ```
 
 ```r
@@ -883,8 +883,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    699816   37.4    1442291   77.1   1442291   77.1
-## Vcells 161847049 1234.8  436657616 3331.5 436655578 3331.5
+## Ncells    699823   37.4    1442291   77.1   1442291   77.1
+## Vcells 161847064 1234.8  436700182 3331.8 436693415 3331.8
 ```
 
 ```r
@@ -918,8 +918,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    705175   37.7    1442291   77.1   1442291   77.1
-## Vcells 193052364 1472.9  436657616 3331.5 436655578 3331.5
+## Ncells    705182   37.7    1442291   77.1   1442291   77.1
+## Vcells 193052379 1472.9  436700182 3331.8 436695365 3331.8
 ```
 
 ```r
@@ -933,8 +933,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    694999   37.2    1442291   77.1   1442291   77.1
-## Vcells 161703803 1233.8  436657616 3331.5 436655578 3331.5
+## Ncells    695006   37.2    1442291   77.1   1442291   77.1
+## Vcells 161703818 1233.8  436700182 3331.8 436695365 3331.8
 ```
 
 ```r
@@ -988,7 +988,7 @@ ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=1) + geom_point() + g
 ```r
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
-ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable)) + geom_point(alpha=.5) + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
+ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable)) + geom_point(alpha=.3) + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
 ```
 
 <img src="figure/unnamed-chunk-37-2.png" title="" alt="" style="display: block; margin: auto;" />
@@ -1076,7 +1076,7 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.03    0.11   205.75
+## 1    Nmixture      1.03    0.12   206.47
 ## 2 Poisson_GLM      2.89    0.22   578.48
 ```
 
@@ -1096,7 +1096,7 @@ sim_detect$BUGSoutput$DIC
 ```
 
 ```
-## [1] 49041.15
+## [1] 48551.65
 ```
 
 
