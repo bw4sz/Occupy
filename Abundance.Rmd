@@ -28,8 +28,6 @@ library(bipartite)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figure/")
 
-setwd("C:/Users/Ben/Documents/Occupy/")
-
 set.seed(3)
 #source functions
 
@@ -69,7 +67,7 @@ source("Functions.R")
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=F}
+```{r,fig.height=5,fig.width=8,eval=T}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -107,7 +105,7 @@ alpha<-rnorm(h_species,intercept,sigma_alpha)
 
 #Compute resource abundance
 
-```{r,eval=F}
+```{r,eval=T}
 resources<-array(NA,dim=c(h_species,plant_species,cameras))
 
 #fill for each month
@@ -305,7 +303,7 @@ if(paralleljags){
 load.module("dic")
 runs<-5000
 recompile(sim_niave)
-sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.96,DIC=F)
+sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```
 
 ```{r}
@@ -461,7 +459,7 @@ if(paralleljags){
 load.module("dic")
 runs<-10000
 recompile(sim_detect)
-system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=5))
+system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10))
 ```
 
 ```{r}
@@ -654,12 +652,15 @@ dev.off()
 ## No Detection Nmixture Model
 
 ```{r}
+rm(pars_niave)
+gc()
+
 N_niave<-pars_niave[ pars_niave$par %in% "ynew",]
 
 bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
 
 #Don't need giant matrix sitting around
-rm(pars_niave,N_niave)
+rm(N_niave)
 gc()
 
 occ_nodetect_matrix<-lapply(bydraw,function(x){
