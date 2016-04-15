@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-04-15 16:26:27"
+## [1] "Run Completed at 2016-04-15 17:10:29"
 ```
 
 #Simulation   
@@ -37,9 +37,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   562280  30.1     940480  50.3   750400  40.1
-## Vcells 58687658 447.8   83462327 636.8 58700797 447.9
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells    577980   30.9     940480   50.3    750400   40.1
+## Vcells 227240265 1733.8  303112234 2312.6 227253394 1733.9
 ```
 
 ```r
@@ -201,7 +201,7 @@ $$\mu_{\beta_2} \sim Normal(0,0.0001)$$
 $$\tau_{\alpha} \sim Half-T(0.0001,0.0001)$$
 $$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
 
-$$\tau_{\beta_1} \sim \sqrt[2]{\frac{1}{\sigma_\{beta_1}}}$$
+$$\tau_{\beta_1} \sim \sqrt[2]{\frac{1}{\sigma_{\beta_1}}}$$
 $$\sigma_{\beta_1} \sim Half-T(0,1)$$
 
 $$\tau_{\beta_2} \sim \sqrt[2]{\frac{1}{\sigma_{\beta_2}}}$$
@@ -299,25 +299,6 @@ if(paralleljags){
 load.module("dic")
 runs<-5000
 recompile(sim_niave)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 117601
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 117601
-## 
-## Initializing model
-```
-
-```r
 sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```
 
@@ -327,9 +308,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   651254  34.8    1168576   62.5   1168576   62.5
-## Vcells 87679164 669.0  173496920 1323.7 156839617 1196.6
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells    650726   34.8    1168576   62.5   1168576   62.5
+## Vcells 227319416 1734.4  363814680 2775.7 230895665 1761.6
 ```
 
 ```r
@@ -408,7 +389,7 @@ predyniave_both<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$g
 
 
 ```r
-runs<-15000
+runs<-20000
 
 #trigger parallel
 paralleljags<-T
@@ -418,7 +399,98 @@ source("Bayesian/NmixturePoissonRagged.R")
 
 #print model
 print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
+```
 
+```
+##  [1]                                                                                            
+##  [2] sink("Bayesian/NmixturePoissonRagged.jags")                                                
+##  [3]                                                                                            
+##  [4] cat("                                                                                      
+##  [5]     model {                                                                                
+##  [6]     #Compute intensity for each pair of birds and plants                                   
+##  [7]     for (i in 1:Birds){                                                                    
+##  [8]     for (j in 1:Plants){                                                                   
+##  [9]     for (k in 1:Cameras){                                                                  
+## [10]                                                                                            
+## [11]     #Process Model                                                                         
+## [12]     log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
+## [13]                                                                                            
+## [14]     #For each camera - there is a latent count                                             
+## [15]     N[i,j,k] ~ dpois(lambda[i,j,k])                                                        
+## [16]     }                                                                                      
+## [17]     }                                                                                      
+## [18]     }                                                                                      
+## [19]                                                                                            
+## [20]                                                                                            
+## [21]     #Observed counts for each day of sampling at that camera                               
+## [22]     for (x in 1:Nobs){                                                                     
+## [23]                                                                                            
+## [24]     #Observation Process                                                                   
+## [25]     Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])                          
+## [26]                                                                                            
+## [27]     #Assess Model Fit                                                                      
+## [28]                                                                                            
+## [29]     #Fit discrepancy statistics                                                            
+## [30]     eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]                                 
+## [31]     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)                                           
+## [32]                                                                                            
+## [33]     ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])                            
+## [34]     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)                                       
+## [35]                                                                                            
+## [36]     }                                                                                      
+## [37]                                                                                            
+## [38]     for (i in 1:Birds){                                                                    
+## [39]     logit(detect[i]) <- dtrans[i]                                                          
+## [40]     dtrans[i] ~ dnorm(dprior,tau_detect)                                                   
+## [41]     alpha[i] ~ dnorm(intercept,tau_alpha)                                                  
+## [42]     beta1[i] ~ dnorm(gamma1,tau_beta1)                                                     
+## [43]     beta2[i] ~ dnorm(gamma2,tau_beta1)                                                     
+## [44]     }                                                                                      
+## [45]                                                                                            
+## [46]     #Hyperpriors                                                                           
+## [47]                                                                                            
+## [48]     #Intercept grouping                                                                    
+## [49]     intercept~dnorm(0,0.0001)                                                              
+## [50]                                                                                            
+## [51]   # Group intercept variance                                                               
+## [52]     sigma_alpha ~ dt(0,1,1)I(0,)                                                           
+## [53]     tau_alpha <- pow(sigma_alpha,-2)                                                       
+## [54]                                                                                            
+## [55]     #Detect grouping                                                                       
+## [56]     dprior ~ dnorm(0,.5)                                                                   
+## [57]                                                                                            
+## [58]   # Detect variance                                                                        
+## [59]     tau_detect ~ dunif(0,10)                                                               
+## [60]     sigma_detect<-pow(1/tau_detect,.5)                                                     
+## [61]                                                                                            
+## [62]     #Trait Slope                                                                           
+## [63]                                                                                            
+## [64]     #Mean                                                                                  
+## [65]     gamma1~dnorm(0,0.0001)                                                                 
+## [66]                                                                                            
+## [67]     #Variance                                                                              
+## [68]     sigma_beta1 ~ dt(0,1,1)I(0,)                                                           
+## [69]     tau_beta1 <- pow(sigma_beta1,-2)                                                       
+## [70]                                                                                            
+## [71]     #Abundance slope                                                                       
+## [72]                                                                                            
+## [73]     #Mean                                                                                  
+## [74]     gamma2~dnorm(0,0.0001)                                                                 
+## [75]                                                                                            
+## [76]     sigma_beta2 ~ dt(0,1,1)I(0,)                                                           
+## [77]     tau_beta2 <- pow(sigma_beta2,-2)                                                       
+## [78]                                                                                            
+## [79]     #derived posterior check                                                               
+## [80]     fit<-sum(E[]) #Discrepancy for the observed data                                       
+## [81]     fitnew<-sum(E.new[])                                                                   
+## [82]                                                                                            
+## [83]     }                                                                                      
+## [84]     ",fill=TRUE)                                                                           
+## [85]                                                                                            
+## [86] sink()
+```
+
+```r
 if(paralleljags){
 
   #for parallel run
@@ -494,38 +566,18 @@ if(paralleljags){
 }
 ```
 
+```
+##     user   system  elapsed 
+##    8.358    0.233 2360.329
+```
+
 
 ```r
 #recompile if needed
 load.module("dic")
 runs<-5000
 recompile(sim_detect)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 143389
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-##    Graph Size: 143389
-## 
-## Initializing model
-```
-
-```r
-  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta2","sigma_beta1","ynew","gamma1","gamma2","fit","fitnew")
 system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10,parameters.to.save=ParsStage))
-```
-
-```
-##    user  system elapsed 
-## 876.196  80.753 870.715
 ```
 
 
@@ -661,13 +713,13 @@ head(castdf)
 ```
 
 ```
-##   Chain Draw     gamma1      gamma2 intercept
-## 1     1    1 -0.9413635 -0.01729438  3.012204
-## 2     1    2 -1.1062892  0.16665583  2.831196
-## 3     1    3 -1.0678374  0.06154857  2.967698
-## 4     1    4 -1.2039975  0.16993761  2.934343
-## 5     1    5 -1.0144020  0.10076162  3.112009
-## 6     1    6 -1.0529783  0.16211198  3.000502
+##   Chain Draw     gamma1     gamma2 intercept
+## 1     1    1 -1.0281945 0.16860486  2.926271
+## 2     1    2 -1.0596344 0.24674911  2.933246
+## 3     1    3 -1.0326384 0.26378993  3.008331
+## 4     1    4 -0.8312712 0.07758804  2.826995
+## 5     1    5 -1.0646051 0.28507007  2.939053
+## 6     1    6 -0.9606707 0.10462442  2.921152
 ```
 
 ```r
@@ -683,12 +735,12 @@ head(castdf)
 
 ```
 ##   species Chain Draw    alpha      beta1     beta2    detect
-## 1       1     1    1 3.142077 -0.7086160 0.2782037 0.5099075
-## 2       1     1    2 3.151607 -0.7292582 0.2993238 0.5105661
-## 3       1     1    3 3.124956 -0.6753985 0.2572929 0.5108333
-## 4       1     1    4 3.117961 -0.6964519 0.2648271 0.5327701
-## 5       1     1    5 3.087680 -0.6540706 0.2718246 0.5239472
-## 6       1     1    6 3.091368 -0.6579279 0.2905445 0.5102669
+## 1       1     1    1 3.165945 -0.6572463 0.2866964 0.4828661
+## 2       1     1    2 3.223040 -0.7427663 0.2909523 0.4819616
+## 3       1     1    3 3.188969 -0.7374423 0.2619684 0.5027240
+## 4       1     1    4 3.159420 -0.7359623 0.2783793 0.5075957
+## 5       1     1    5 3.167249 -0.7681727 0.2750908 0.5220025
+## 6       1     1    6 3.054294 -0.6389529 0.2440057 0.5174429
 ```
 
 ```r
@@ -816,8 +868,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    703368   37.6    1770749   94.6   1770749   94.6
-## Vcells 300058664 2289.3  532944965 4066.1 444053190 3387.9
+## Ncells    714610   38.2    1442291   77.1   1442291   77.1
+## Vcells 239857006 1830.0  436657616 3331.5 436655578 3331.5
 ```
 
 ```r
@@ -831,8 +883,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    694180   37.1    1770749   94.6   1770749   94.6
-## Vcells 222241517 1695.6  532944965 4066.1 444053190 3387.9
+## Ncells    699816   37.4    1442291   77.1   1442291   77.1
+## Vcells 161847049 1234.8  436657616 3331.5 436655578 3331.5
 ```
 
 ```r
@@ -866,8 +918,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    712236   38.1    1770749   94.6   1770749   94.6
-## Vcells 300416529 2292.0  532944965 4066.1 532941228 4066.1
+## Ncells    705175   37.7    1442291   77.1   1442291   77.1
+## Vcells 193052364 1472.9  436657616 3331.5 436655578 3331.5
 ```
 
 ```r
@@ -881,8 +933,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    702160   37.5    1770749   94.6   1770749   94.6
-## Vcells 222575268 1698.2  532944965 4066.1 532941228 4066.1
+## Ncells    694999   37.2    1442291   77.1   1442291   77.1
+## Vcells 161703803 1233.8  436657616 3331.5 436655578 3331.5
 ```
 
 ```r
@@ -1024,7 +1076,7 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.02    0.11   203.72
+## 1    Nmixture      1.03    0.11   205.75
 ## 2 Poisson_GLM      2.89    0.22   578.48
 ```
 
@@ -1044,7 +1096,7 @@ sim_detect$BUGSoutput$DIC
 ```
 
 ```
-## [1] 48896.36
+## [1] 49041.15
 ```
 
 

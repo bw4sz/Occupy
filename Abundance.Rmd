@@ -296,7 +296,7 @@ if(paralleljags){
 }
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
 runs<-5000
@@ -366,7 +366,7 @@ predyniave_both<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$g
 # Simulated data with detection
 
 ```{r,eval=F}
-runs<-15000
+runs<-20000
 
 #trigger parallel
 paralleljags<-T
@@ -455,9 +455,8 @@ if(paralleljags){
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-5000
+runs<-10000
 recompile(sim_detect)
-  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta2","sigma_beta1","ynew","gamma1","gamma2","fit","fitnew")
 system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10,parameters.to.save=ParsStage))
 ```
 
@@ -536,7 +535,7 @@ psim2
 
 ##Strip plots
 Plot the posterior mean density
-```{r,fig.width=10}
+```{r,fig.width=12}
 spars<-parsall %>% filter(par %in% c("alpha","beta1","beta2","detect")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 
 tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,beta2=beta2),id.var='species')
@@ -611,8 +610,8 @@ fplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1)
 ```{r,fig.width=10,fig.height=6}
 grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
 
-jpeg("Figures/SimPredictBoth.jpg",height=6,width=7,units="in",res=300)
-grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+jpeg("Figures/SimPredictBoth.jpg",height=6,width=10,units="in",res=300)
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
 dev.off()
 ```
 
@@ -750,7 +749,7 @@ ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=1) + geom_point() + g
 
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
-ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable)) + geom_point(alpha=.5) + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
+ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable)) + geom_point(alpha=.3) + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
 ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
 
 
