@@ -820,6 +820,7 @@ sim_detect$BUGSoutput$DIC
 
 
 ```{r}
+save.image("Abundance.RData")
 save("sim_niave",file="sim_niave.RData")
 save("sim_detect",file="Sim_detect.RData")
 ```
