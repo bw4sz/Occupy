@@ -40,7 +40,7 @@ cat("
     dtrans[i] ~ dnorm(dprior,tau_detect)
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta1[i] ~ dnorm(gamma1,tau_beta1)  
-    beta2[i] ~ dnorm(gamma2,tau_beta1)    
+    beta2[i] ~ dnorm(gamma2,tau_beta2)    
     }
     
     #Hyperpriors
