@@ -13,7 +13,6 @@ output:
 ```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
 library(reshape2)
 library(foreach)
-library(doSNOW)
 library(chron)
 library(ggplot2)
 library(knitr)
@@ -21,10 +20,7 @@ library(R2jags)
 library(dplyr)
 library(stringr)
 library(gridExtra)
-library(boot)
-library(picante)
 library(GGally)
-library(bipartite)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figure/")
 
@@ -67,7 +63,7 @@ source("Functions.R")
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=T}
+```{r,fig.height=5,fig.width=8,eval=F}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -105,7 +101,7 @@ alpha<-rnorm(h_species,intercept,sigma_alpha)
 
 #Compute resource abundance
 
-```{r,eval=T}
+```{r,eval=F}
 resources<-array(NA,dim=c(h_species,plant_species,cameras))
 
 #fill for each month
@@ -207,17 +203,19 @@ $$\mu_{\beta_1} \sim Normal(0,0.0001)$$
 $$\mu_{\beta_2} \sim Normal(0,0.0001)$$
 
 $$\tau_{\alpha} \sim Half-T(0.0001,0.0001)$$
-$$\tau_{\beta_1} = \sqrt[2]{\frac{1}{\sigma_\beta_1}}$$
-$$\tau_{\beta_2} = \sqrt[2]{\frac{1}{\sigma_\beta_2}}$$
-
 $$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
+
+$$\tau_{\beta_1} \sim \sqrt[2]{\frac{1}{\sigma_{\beta_1}}}$$
 $$\sigma_{\beta_1} \sim Half-T(0,1)$$
+
+$$\tau_{\beta_2} \sim \sqrt[2]{\frac{1}{\sigma_{\beta_2}}}$$
+$$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 #Simulated data without detection
 
 ```{r,eval=F}
-runs<-15000
+runs<-10000
 
 #trigger parallel
 paralleljags<-T
@@ -368,7 +366,7 @@ predyniave_both<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$g
 # Simulated data with detection
 
 ```{r,eval=F}
-runs<-20000
+runs<-15000
 
 #trigger parallel
 paralleljags<-T
@@ -400,7 +398,7 @@ if(paralleljags){
   InitStage <- function() {list(beta1=rep(0.5,Birds),beta2=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,N=Ninit,gamma1=0,gamma2=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","ynew","gamma1","gamma2","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -457,9 +455,10 @@ if(paralleljags){
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-10000
+runs<-5000
 recompile(sim_detect)
-system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10))
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta2","sigma_beta1","ynew","gamma1","gamma2","fit","fitnew")
+system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10,parameters.to.save=ParsStage))
 ```
 
 ```{r}
@@ -481,7 +480,7 @@ ggplot(pars[pars$par %in% c("gamma1","sigma_alpha","sigma_beta1","gamma2","sigma
 
 ```{r,cache=FALSE,fig.width=7,fig.height=5}
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect","alpha","beta1","beta2","sigma_beta2","sigma_beta1"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars[pars$par %in% c("detect","alpha","beta1","beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
 tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,beta2=beta2),id.var='species')
@@ -491,10 +490,10 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 ```
 
 ```{r,cache=FALSE,fig.height=3,fig.width=10}
-p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_alpha","sigma_beta1","sigma_beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+p<-ggplot(pars[pars$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_alpha=sigma_alpha,sigma_beta1=sigma_beta1,sigma_beta=sigma_beta2))
+tr<-melt(list(gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_alpha=sigma_alpha,sigma_beta1=sigma_beta1,sigma_beta2=sigma_beta2))
 
 colnames(tr)<-c("value","par")
 
@@ -552,7 +551,7 @@ tr<-melt(data.frame(species=1:length(detection),gamma1=gamma1,gamma2=gamma2,inte
 colnames(tr)<-c("species","par","value")
 
 ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
-ggsave("Figures/StripPlots.svg",height=4,width=9)
+#ggsave("Figures/StripPlots.svg",height=4,width=9)
 ```
 
 ##Correlation in posteriors for Nmixture Model
@@ -609,8 +608,12 @@ pm<-melt(list(Nmixture=predy,'Poisson GLMM'=predyniave_both),id.vars=colnames(pr
 fplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.3)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")+ geom_line(data=orig,aes(y=mean),col='black',size=.8)
 ```
 
-```{r}
+```{r,fig.width=10,fig.height=6}
 grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+
+jpeg("Figures/SimPredictBoth.jpg",height=6,width=7,units="in",res=300)
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+dev.off()
 ```
 
 Black line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The blue line is the same model, but assuming perfect detection rates.
@@ -641,9 +644,6 @@ jpeg("Figures/SimulationPosteriorsBoth.jpg",height=12,width=12,units="in",res=30
 grid.arrange(psim,psim2,ncol=1,heights=c(3/4,1/4))
 dev.off()
 
-jpeg("Figures/SimPredictBoth.jpg",height=6,width=7,units="in",res=300)
-grid.arrange(psim3)
-dev.off()
 ```
 
 
@@ -652,8 +652,10 @@ dev.off()
 ## No Detection Nmixture Model
 
 ```{r}
-rm(pars_niave)
-gc()
+
+#Discrepancy function
+#define discrep function
+chisq<-function(o,e){(o-e)^2/(e+0.5)}
 
 N_niave<-pars_niave[ pars_niave$par %in% "ynew",]
 
@@ -666,6 +668,9 @@ gc()
 occ_nodetect_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
 })
+
+rm(bydraw)
+gc()
 
 #calculate discrep on those deviates
 occ_nodetect<-lapply(occ_nodetect_matrix,function(r){
@@ -697,6 +702,9 @@ occ_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
   })
 
+rm(bydraw)
+gc()
+
 #calculate discrep for those aggregated matrices
 occ<-lapply(occ_matrix,function(r){
     #for each position what is the chisq
@@ -716,6 +724,10 @@ names(occ_matrix)<-1:length(occ_matrix)
 ##Compare to observed data
 
 ```{r,fig.width=11}
+#true number of observed interactions
+true_state<-obs.state %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
+
+
 mmat<-melt(true_state)
 colnames(mmat)<-c("Bird","Plant","True_State")
 
@@ -734,11 +746,11 @@ simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
 
 simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM"))
 
-ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
+ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=1) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
-ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
+ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable)) + geom_point(alpha=.5) + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
 ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
 
 
