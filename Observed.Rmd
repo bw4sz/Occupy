@@ -358,7 +358,7 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),colnames(traitmatchT) %in% unique(indat$Iplant_Double)]
 
 #And resources
-resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0)
+resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0) %>% scale()
 
 write.csv(indat,"InputData/ObservedData.csv")
 ```
@@ -397,7 +397,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 # Poisson GLMM
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-1000
 
 #Source model
@@ -441,10 +441,10 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-30000
+runs<-1000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
@@ -467,7 +467,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 
 # Observed Data With Detection
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-1000
 
 #Source model
@@ -510,10 +510,10 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-30000
+runs<-1000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=3)
 ```
@@ -602,13 +602,12 @@ tplot<-ggplot(data=predy_trait,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper
 ```{r}
 predy_abundance<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta1=0,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)  
+  pr<-trajA(alpha=i$intercept,beta1=0,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)  
   pr$Model<-unique(i$Model)
   return(pr)
   }))
 
-aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flower Abundance") 
-#geom_point(data=mdat,aes(x=Abundance,y=Interactions),size=.5,alpha=.5) + labs(fill="Model") + ggtitle("Abundance") + theme(legend.position='none')
+aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flower Abundance") + geom_point(data=indat,aes(x=Flowers,y=Yobs),size=.5,alpha=.5) + labs(fill="Model") + ggtitle("Abundance") + theme(legend.position='none')
 ```
 
 ## Trait+Abundance
@@ -616,14 +615,12 @@ aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=u
 
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)  
+  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)  
   pr$Model<-unique(i$Model)
   return(pr)
   }))
 
-fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") 
-
-#+ geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
+fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
 
 ```
 
@@ -749,7 +746,7 @@ for (x in 1:nrow(tab)){
 }
 daydf<-rbind_all(daydf)
 
-ggplot(md,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_ribbon(alpha=.5) + geom_line() + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
+ggplot(md) + geom_ribbon(alpha=.5,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_line(aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
 ggsave("Figures/DetectionDays.jpeg",height=7,width=9,dpi=300) 
 ```
 
