@@ -550,7 +550,7 @@ tr<-melt(data.frame(species=1:length(detection),gamma1=gamma1,gamma2=gamma2,inte
 colnames(tr)<-c("species","par","value")
 
 ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
-#ggsave("Figures/StripPlots.svg",height=4,width=9)
+ggsave("Figures/StripPlots.svg",height=4,width=9)
 ```
 
 ##Correlation in posteriors for Nmixture Model
@@ -820,6 +820,7 @@ sim_detect$BUGSoutput$DIC
 
 
 ```{r}
-save.image("Abundance.RData")
+save("sim_niave",file="sim_niave.RData")
+save("sim_detect",file="Sim_detect.RData")
 ```
 
