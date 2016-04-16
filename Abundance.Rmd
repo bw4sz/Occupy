@@ -610,7 +610,7 @@ fplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1)
 ```{r,fig.width=10,fig.height=6}
 grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
 
-jpeg("Figures/SimPredictBoth.jpg",height=6,width=10,units="in",res=300)
+jpeg("Figures/SimPredictBoth.jpg",height=6,width=8,units="in",res=300)
 grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
 dev.off()
 ```
