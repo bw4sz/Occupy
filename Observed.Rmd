@@ -338,8 +338,6 @@ indat<-merge(indat,flower.month,all.x=T,by=c("Iplant_Double","Month","Year"))
 
 #how many Na's, turn to na for the moment
 indat[is.na(indat$Flowers),"Flowers"]<-0
-
-indat$Flowers<-scale(indat$Flowers)
 ```
 
 Reformat index for jags.
@@ -359,8 +357,10 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),colnames(traitmatchT) %in% unique(indat$Iplant_Double)]
 
 #And resources
+
 resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0) 
 
+#and data for predictions
 write.csv(indat,"InputData/ObservedData.csv")
 ```
 
@@ -399,7 +399,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-10000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -469,7 +469,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 # Observed Data With Detection
 
 ```{r,eval=T}
-runs<-10000
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
