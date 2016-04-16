@@ -820,8 +820,8 @@ sim_detect$BUGSoutput$DIC
 
 
 ```{r}
-save.image("Abundance.RData")
+save.image("AbundanceSimulation.RData",safe=T)
 save("sim_niave",file="sim_niave.RData")
-save("sim_detect",file="Sim_detect.RData")
+save("sim_detect",file="sim_detect.RData")
 ```
 
