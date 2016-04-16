@@ -39,7 +39,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-#load("Observed.Rdata")
+load("Observed.Rdata")
 ```
 
 #Observed dataset
@@ -398,7 +398,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 # Poisson GLMM
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-50000
 
 #Source model
@@ -445,7 +445,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-1000
+runs<-5000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
 ```
@@ -459,7 +459,7 @@ pars_dniave$Model<-"Poisson GLMM"
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_dniave[pars_dniave$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
@@ -468,7 +468,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 
 # Observed Data With Detection
 
-```{r,eval=T}
+```{r,eval=F}
 runs<-50000
 
 #Source model
@@ -511,12 +511,12 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-1000
+runs<-10000
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=3)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 ```
 
 ```{r}
