@@ -42,7 +42,7 @@ cat("
     intercept~dnorm(0,0.0001)
     
     # Group intercept variance
-    sigma_alpha ~ dt(0,1,1)I(0,)
+    sigma_alpha ~ dt(0,10,1)I(0,)
     tau_alpha <- pow(sigma_alpha,-2)
     
     #Detect grouping
@@ -58,7 +58,7 @@ cat("
     gamma1~dnorm(0,0.0001)
     
     #Variance
-    sigma_beta1 ~ dt(0,1,1)I(0,)
+    sigma_beta1 ~ dt(0,10,1)I(0,)
     tau_beta1 <- pow(sigma_beta1,-2)
     
     #Abundance slope
@@ -66,7 +66,7 @@ cat("
     #Mean
     gamma2~dnorm(0,0.0001)
     
-    sigma_beta2 ~ dt(0,1,1)I(0,)
+    sigma_beta2 ~ dt(0,10,1)I(0,)
     tau_beta2 <- pow(sigma_beta2,-2)
     
     #derived posterior check

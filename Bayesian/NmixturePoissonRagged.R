@@ -48,16 +48,16 @@ cat("
     #Intercept grouping
     intercept~dnorm(0,0.0001)
 
-  # Group intercept variance
-    sigma_alpha ~ dt(0,1,1)I(0,)
+    #Group intercept variance
+    sigma_alpha ~ dt(0,10,1)I(0,)
     tau_alpha <- pow(sigma_alpha,-2)
 
     #Detect grouping
-    dprior ~ dnorm(0,.5)
+    dprior ~ dnorm(0,0.5)
 
   # Detect variance
     tau_detect ~ dunif(0,10)
-    sigma_detect<-pow(1/tau_detect,.5) 
+    sigma_detect<-pow(1/tau_detect,0.5) 
     
     #Trait Slope
 
@@ -65,7 +65,7 @@ cat("
     gamma1~dnorm(0,0.0001)
 
     #Variance
-    sigma_beta1 ~ dt(0,1,1)I(0,)
+    sigma_beta1 ~ dt(0,10,1)I(0,)
     tau_beta1 <- pow(sigma_beta1,-2)
 
     #Abundance slope
@@ -73,10 +73,11 @@ cat("
     #Mean
     gamma2~dnorm(0,0.0001)
     
-    sigma_beta2 ~ dt(0,1,1)I(0,)
+    sigma_beta2 ~ dt(0,10,1)I(0,)
     tau_beta2 <- pow(sigma_beta2,-2)
 
     #derived posterior check
+
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
     
