@@ -56,14 +56,14 @@ $$\beta2 = N(0.5,0.2)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-load("Abundance.RData")
+#load("Abundance.RData")
 gc()
 source("Functions.R")
 ```
 
 #Simulation Parameters
 
-```{r,fig.height=5,fig.width=8,eval=F}
+```{r,fig.height=5,fig.width=8,eval=T}
 #Number of hummingbird species
 h_species=10
 plant_species=20
@@ -101,7 +101,7 @@ alpha<-rnorm(h_species,intercept,sigma_alpha)
 
 #Compute resource abundance
 
-```{r,eval=F}
+```{r,eval=T}
 resources<-array(NA,dim=c(h_species,plant_species,cameras))
 
 #fill for each month
@@ -113,7 +113,7 @@ resources<-array(data=scale(resources),dim=c(h_species,plant_species,cameras))
 
 #Compute true interaction matrices
 
-```{r,eval=F}
+```{r,eval=T}
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,cameras,days))
 lambda<-array(dim=c(h_species,plant_species,cameras))
@@ -214,8 +214,8 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 #Simulated data without detection
 
-```{r,eval=F}
-runs<-10000
+```{r,eval=T}
+runs<-1000
 
 #trigger parallel
 paralleljags<-T
@@ -359,14 +359,13 @@ predyniave_trait<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=0,x=as.
 
 predyniave_abundance<-trajA(alpha=castdf$intercept,beta1=0,beta2=castdf$gamma2,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
 
-
 predyniave_both<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$gamma2,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
 ```
 
 # Simulated data with detection
 
-```{r,eval=F}
-runs<-20000
+```{r,eval=T}
+runs<-1000
 
 #trigger parallel
 paralleljags<-T
@@ -645,12 +644,20 @@ dev.off()
 
 ```
 
+#By species
+
+```{r}
+
+```
+
 
 #Compare using true known interactions
 
 ## No Detection Nmixture Model
 
 ```{r}
+true_state<-obs.state %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
+
 N_niave<-pars_niave %>% filter(par== "ynew")
 
 #Discrepancy function
@@ -723,8 +730,6 @@ names(occ_matrix)<-1:length(occ_matrix)
 
 ```{r,fig.width=11}
 #true number of observed interactions
-true_state<-obs.state %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
-
 
 mmat<-melt(true_state)
 colnames(mmat)<-c("Bird","Plant","True_State")

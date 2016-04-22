@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-04-16 06:52:05"
+## [1] "Run Completed at 2016-04-16 17:03:09"
 ```
 
 
@@ -802,24 +802,24 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                 Hummingbird mean lower upper
-## 1            Andean Emerald 32.0   9.3  64.5
-## 2        Booted Racket-tail 27.4  11.3  44.9
-## 3                Brown Inca 33.9  16.5  53.4
-## 4       Buff-tailed Coronet 24.3   3.5  67.3
-## 5             Collared Inca 25.8   9.1  52.5
-## 6         Crowned Woodnymph 24.8   7.6  45.4
-## 7   Fawn-breasted Brilliant 15.9   2.8  45.0
-## 8         Gorgeted Sunangel 66.6  31.5  90.1
-## 9   Green-crowned Brilliant 10.7   0.9  42.6
-## 10  Green-fronted Lancebill 36.2  11.0  71.3
-## 11            Hoary Puffleg 21.2   4.5  49.2
-## 12   Purple-bibbed Whitetip 16.2   1.8  54.0
-## 13     Speckled Hummingbird 45.4  12.3  84.7
-## 14   Stripe-throated Hermit 22.9   5.6  42.6
-## 15     Tawny-bellied Hermit 29.7  16.8  45.9
-## 16      Violet-tailed Sylph 36.2  18.6  53.2
-## 17 Wedge-billed Hummingbird 10.8   0.3  49.3
-## 18   White-whiskered Hermit 19.6   6.9  34.8
+## 1            Andean Emerald 37.6  11.2  69.7
+## 2        Booted Racket-tail 26.1  11.3  41.5
+## 3                Brown Inca 35.1   7.5  53.1
+## 4       Buff-tailed Coronet 14.4   3.6  42.7
+## 5             Collared Inca 19.0   5.8  47.0
+## 6         Crowned Woodnymph 27.2   9.0  47.6
+## 7   Fawn-breasted Brilliant  7.4   2.2  20.4
+## 8         Gorgeted Sunangel 62.2  27.0  87.7
+## 9   Green-crowned Brilliant  2.1   0.3   7.0
+## 10  Green-fronted Lancebill 32.8  12.0  64.1
+## 11            Hoary Puffleg 13.8   3.4  33.2
+## 12   Purple-bibbed Whitetip  4.0   0.7  14.0
+## 13     Speckled Hummingbird 53.1  16.8  87.3
+## 14   Stripe-throated Hermit 26.4  13.7  42.4
+## 15     Tawny-bellied Hermit 26.6  14.9  39.5
+## 16      Violet-tailed Sylph 34.0  13.9  51.0
+## 17 Wedge-billed Hummingbird  0.8   0.1   3.7
+## 18   White-whiskered Hermit 23.7   8.0  38.0
 ```
 
 ```r
@@ -912,7 +912,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 14318.62
+## [1] 12463.9
 ```
 
 #Predicted versus Observed Data
@@ -949,8 +949,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1768848  94.5    5489235  293.2   6861544  366.5
-## Vcells 101956513 777.9  228441221 1742.9 215005293 1640.4
+## Ncells   1768878  94.5    5489235  293.2   6861544  366.5
+## Vcells 101956563 777.9  228441221 1742.9 215004437 1640.4
 ```
 
 ```r
@@ -991,7 +991,7 @@ gc()
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
 ## Ncells   1771929  94.7    5489235  293.2   6861544  366.5
-## Vcells 102919454 785.3  228441221 1742.9 215005293 1640.4
+## Vcells 102919454 785.3  228441221 1742.9 215004437 1640.4
 ```
 
 ```r
@@ -1076,7 +1076,7 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.70    0.30  1257.84
+## 1    Nmixture      1.85    0.35  1366.73
 ## 2 Poisson_GLM      3.52    0.45  2598.11
 ```
 
@@ -1110,7 +1110,7 @@ gc()
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
 ## Ncells   1772342  94.7    5489235  293.2   6861544  366.5
-## Vcells 108833752 830.4  228441221 1742.9 228386135 1742.5
+## Vcells 108833752 830.4  228441221 1742.9 228268169 1741.6
 ```
 
 ```r
