@@ -513,10 +513,10 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-20000
 recompile(traits)
 m2_<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 ```
@@ -541,82 +541,6 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"
 ```{r,fig.height=5,fig.width=11}
 ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
-
-
-## Abundance
-
-```{r,eval=F}
-runs<-10000
-
-#Source model
-source("Bayesian/NmixturePoissonRagged_Abundance.R")
-
-#print model
-print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
-
-  #for parallel run
-  Yobs=indat$Yobs
-  Bird=indat$jBird
-  Plant=indat$jPlant
-  Camera=indat$Camera
-  Cameras=max(indat$Camera)
-  Birds=max(indat$jBird)
-  Plants=max(indat$jPlant)
-  Nobs=length(indat$Yobs)
-  Resources=resourcemat
-
-  #A blank Y matrix - all present
-  Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
-
-  #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
-  
-  #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1","fit","fitnew")
-  
-  #MCMC options
-  ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- 0 # number to discard for burn-in
-  nc <- 2  # number of chains
-
-  Dat<-list("Yobs","Bird","Plant","Plants","Birds","Nobs","Ninit","Camera","Cameras","Resources")
-
-  # parallel
-  
-    system.time(Abundance<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_Abundance.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
-  
-```
-
-```{r,eval=F}
-#recompile if needed
-load.module("dic")
-runs<-100
-recompile(Abundance)
-m2<-update(Abundance,n.iter=runs,n.burnin=runs*.95,n.thin=5)
-```
-
-```{r}
-#extract par to data.frame
-pars_detect_Abundance<-extract_par(Abundance,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
-
-#name
-pars_detect_Abundance$Model<-"Nmixture"
-```
-
-###Assess Convergence
-
-```{r,cache=FALSE,fig.width=13,fig.height=5}
-###Chains
-ggplot(pars_detect_Abundance[pars_detect_Abundance$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-```
-
-###Hierarcichal Posteriors
-
-```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect_Abundance[pars_detect_Abundance$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
-```
-
 
 ## Traits + Abundance
 
@@ -662,10 +586,10 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-100000
+runs<-20000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 ```
@@ -761,23 +685,25 @@ tplot<-ggplot(data=predy_traits,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=uppe
 tplot
 ```
 
-## Abundance only
+## Abundance estimate
+
+As part of the full model.
 
 ```{r}
-castdf<-dcast(pars_detect_Abundance[pars_detect_Abundance$par %in% c("gamma1","intercept"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars_detect[pars_detect$par %in% c("gamma1","gamma2","intercept"),], Chain + Draw~par,value.var="estimate")
 
-predy_abundance<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)
+predy_abundance<-trajA(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$gamma2,x=indat$Traitmatch,resources=indat$Flowers)
 
 aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Available Resources") + geom_point(data=indat,aes(x=Flowers,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Abundance")
 aplot
 ```
 
 ```{r}
-allpred<-list('Traits+Abundance'=predy[predy$Model=="Nmixture",!colnames(predy) %in% "Model"],Traits=predy_traits,Abundance=predy_abundance)
+allpred<-list('Traits+Abundance'=predy[predy$Model=="Nmixture",!colnames(predy) %in% "Model"],Traits=predy_traits)
 
 allpred<-melt(allpred,id.vars=colnames(predy_traits))
 
-allplot<-ggplot(data=allpred,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.3)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Model Comparison")
+allplot<-ggplot(data=allpred,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.4)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.7) + labs(fill="Model",col="Model") + ggtitle("Nmixture Model Comparison") + scale_fill_manual(values=c("black","red")) + scale_color_manual(values=c("black","red"))
 allplot
 ```
 
