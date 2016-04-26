@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-04-16 17:03:09"
+## [1] "Run Completed at 2016-04-26 10:06:23"
 ```
 
 
@@ -47,7 +47,7 @@ int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teusc
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
 #Some reasonable level of presences, 3 points
-keep<-names(which(table(int$Hummingbird)>1))
+keep<-names(which(table(int$Hummingbird)>4))
 
 int<-int[int$Hummingbird %in% keep,]
 
@@ -342,7 +342,7 @@ full.fl<-read.csv("InputData/FlowerTransectClean.csv")[,-1]
 colnames(full.fl)[colnames(full.fl) %in% "month"]<-"Month"
 
 #group by month and replicate, remove date errors by making a max of 10 flowers, couple times where the gps places it in wrong transect by 1 to 2 meters. 
-flower.month<-group_by(full.fl,Iplant_Double,Month,Year,Date_F) %>% dplyr::summarise(Flowers=sum(Total_Flowers,na.rm=TRUE))  %>% group_by(Iplant_Double,Month,Year) %>% dplyr::summarise(Flowers=mean(Flowers,na.rm=TRUE)) 
+flower.month<-group_by(full.fl,Iplant_Double,Month,Year,Transect_R,Date_F) %>% dplyr::summarise(Flowers=sum(Total_Flowers,na.rm=TRUE))  %>% group_by(Iplant_Double,Transect_R,Month,Year) %>% dplyr::summarise(Flowers=mean(Flowers,na.rm=TRUE)) 
 
 #Make month abbreviation column, with the right order
 flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
@@ -350,10 +350,13 @@ flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
 #Make year factor column
 flower.month$Year<-as.factor(flower.month$Year)
 
-indat<-merge(indat,flower.month,all.x=T,by=c("Iplant_Double","Month","Year"))
+indat<-merge(indat,flower.month,all.x=T,by=c("Iplant_Double","Month","Year","Transect_R"))
 
 #how many Na's, turn to na for the moment
 indat[is.na(indat$Flowers),"Flowers"]<-0
+
+#scale to 0-1
+indat$Flowers<-indat$Flowers/max(indat$Flowers)
 ```
 
 Reformat index for jags.
@@ -380,7 +383,6 @@ resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flo
 #and data for predictions
 write.csv(indat,"InputData/ObservedData.csv")
 ```
-
 
 # Hierarcichal Nmixture Model
 
@@ -417,7 +419,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-50000
+runs<-10000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -493,9 +495,175 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 
 # Observed Data With Detection
 
+## Traits
+
 
 ```r
-runs<-50000
+runs<-10000
+
+#Source model
+source("Bayesian/NmixturePoissonRagged_traits.R")
+
+#print model
+print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
+
+  #for parallel run
+  Yobs=indat$Yobs
+  Bird=indat$jBird
+  Plant=indat$jPlant
+  Camera=indat$Camera
+  Cameras=max(indat$Camera)
+  Traitmatch=jTraitmatch
+  Birds=max(indat$jBird)
+  Plants=max(indat$jPlant)
+  Nobs=length(indat$Yobs)
+
+  #A blank Y matrix - all present
+  Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
+
+  #Inits
+  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
+  
+  #Parameters to track
+  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1","fit","fitnew")
+  
+  #MCMC options
+  ni <- runs  # number of draws from the posterior
+  nt <- 4   #thinning rate
+  nb <- runs*.90 # number to discard for burn-in
+  nc <- 2  # number of chains
+
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras")
+
+    system.time(traits<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+```
+
+
+```r
+#recompile if needed
+load.module("dic")
+runs<-100000
+recompile(traits)
+m2_<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+```
+
+
+```r
+#extract par to data.frame
+pars_detect_traits<-extract_par(traits,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
+
+#name
+pars_detect_traits$Model<-"Nmixture"
+```
+
+###Assess Convergence
+
+
+```r
+###Chains
+ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+```
+
+<img src="figureObserved/unnamed-chunk-25-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+###Hierarcichal Posteriors
+
+
+```r
+ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+```
+
+<img src="figureObserved/unnamed-chunk-26-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+
+## Abundance
+
+
+```r
+runs<-10000
+
+#Source model
+source("Bayesian/NmixturePoissonRagged_Abundance.R")
+
+#print model
+print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
+
+  #for parallel run
+  Yobs=indat$Yobs
+  Bird=indat$jBird
+  Plant=indat$jPlant
+  Camera=indat$Camera
+  Cameras=max(indat$Camera)
+  Birds=max(indat$jBird)
+  Plants=max(indat$jPlant)
+  Nobs=length(indat$Yobs)
+  Resources=resourcemat
+
+  #A blank Y matrix - all present
+  Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
+
+  #Inits
+  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
+  
+  #Parameters to track
+  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1","fit","fitnew")
+  
+  #MCMC options
+  ni <- runs  # number of draws from the posterior
+  nt <- 1   #thinning rate
+  nb <- 0 # number to discard for burn-in
+  nc <- 2  # number of chains
+
+  Dat<-list("Yobs","Bird","Plant","Plants","Birds","Nobs","Ninit","Camera","Cameras","Resources")
+
+  # parallel
+  
+    system.time(Abundance<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_Abundance.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+```
+
+
+```r
+#recompile if needed
+load.module("dic")
+runs<-100
+recompile(Abundance)
+m2<-update(Abundance,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+```
+
+
+```r
+#extract par to data.frame
+pars_detect_Abundance<-extract_par(Abundance,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
+
+#name
+pars_detect_Abundance$Model<-"Nmixture"
+```
+
+###Assess Convergence
+
+
+```r
+###Chains
+ggplot(pars_detect_Abundance[pars_detect_Abundance$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+```
+
+<img src="figureObserved/unnamed-chunk-30-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+###Hierarcichal Posteriors
+
+
+```r
+ggplot(pars_detect_Abundance[pars_detect_Abundance$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+```
+
+<img src="figureObserved/unnamed-chunk-31-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+
+## Traits + Abundance
+
+
+```r
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -522,7 +690,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta2=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","gamma1","gamma2","fit","fitnew","ynew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -536,37 +704,11 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 
-
 ```r
 #recompile if needed
 load.module("dic")
-runs<-10000
+runs<-100000
 recompile(m2)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266185
-##    Total graph size: 595954
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266185
-##    Total graph size: 595954
-## 
-## Initializing model
-```
-
-```r
 m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 ```
 
@@ -579,7 +721,7 @@ pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
 pars_detect$Model<-"Nmixture"
 ```
 
-##Assess Convergence
+###Assess Convergence
 
 
 ```r
@@ -587,7 +729,7 @@ pars_detect$Model<-"Nmixture"
 ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-<img src="figureObserved/unnamed-chunk-25-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-35-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ###Hierarcichal Posteriors
 
@@ -596,7 +738,7 @@ ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],ae
 ggplot(pars_detect[pars_detect$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-<img src="figureObserved/unnamed-chunk-26-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/BothObs.svg",height=5,width=7)
@@ -617,7 +759,7 @@ parsObs<-rbind(pars_detect,pars_dniave)
 ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1","beta2"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 ```
 
-<img src="figureObserved/unnamed-chunk-28-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-38-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 
 ```r
@@ -625,7 +767,7 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1","beta2"),],aes(x=esti
 ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
 ```
 
-<img src="figureObserved/unnamed-chunk-29-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-39-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
@@ -633,7 +775,7 @@ pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird",all.x=T
 ggplot(pars_detect[pars_detect$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
 ```
 
-<img src="figureObserved/unnamed-chunk-29-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-39-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
@@ -644,9 +786,11 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ggplot(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
-<img src="figureObserved/unnamed-chunk-30-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-40-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ###Overall predicted relationship 
+
+Calculated predicted visitation rates
 
 Does accounting for non-independence and detection change our estimate of trait matching?
 
@@ -657,38 +801,8 @@ castdf<-dcast(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept"),], Model
 castdf<-split(castdf,castdf$Model)
 ```
 
-## Calculated predicted visitation rates
-
-### Traits
-
-
-```r
-predy_trait<-rbind_all(lapply(castdf,function(i){
-  #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)  
-  pr$Model<-unique(i$Model)
-  return(pr)
-  }))
-
-
-tplot<-ggplot(data=predy_trait,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits") + theme(legend.position='none')
-```
-
-###Abundance
-
-
-```r
-predy_abundance<-rbind_all(lapply(castdf,function(i){
-  #calculate trajectory and append model
-  pr<-trajA(alpha=i$intercept,beta1=0,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)
-  pr$Model<-unique(i$Model)
-  return(pr)
-  }))
-
-aplot<-ggplot(data=predy_abundance,aes(x=x))+geom_ribbon(aes(y=mean,ymin=lower,ymax=upper,fill=Model),alpha=0.3) + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flower Abundance") + geom_point(data=indat,aes(x=Flowers,y=Yobs),size=.5,alpha=.5) + labs(fill="Model") + ggtitle("Abundance") + theme(legend.position='none')
-```
-
 ## Trait+Abundance
+
 
 ```r
 predy<-rbind_all(lapply(castdf,function(i){
@@ -699,25 +813,54 @@ predy<-rbind_all(lapply(castdf,function(i){
   }))
 
 fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
+fplot
 ```
+
+<img src="figureObserved/unnamed-chunk-42-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+# Does including abundance change the biological inference?
+
+We are only interested in the inference for the observed detection model data.
+
+## Trait only
 
 
 ```r
-grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1)))
+castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept"),], Chain + Draw~par,value.var="estimate")
+
+predy_traits<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)
+
+tplot<-ggplot(data=predy_traits,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits")
+tplot
 ```
 
-<img src="figureObserved/unnamed-chunk-35-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-43-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+## Abundance only
+
 
 ```r
-jpeg("Figures/SimPredictBoth.jpg",height=6,width=7,units="in",res=300)
-grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1)))
-dev.off()
+castdf<-dcast(pars_detect_Abundance[pars_detect_Abundance$par %in% c("gamma1","intercept"),], Chain + Draw~par,value.var="estimate")
+
+predy_abundance<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)
+
+aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Available Resources") + geom_point(data=indat,aes(x=Flowers,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Abundance")
+aplot
 ```
 
+<img src="figureObserved/unnamed-chunk-44-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+
+```r
+allpred<-list('Traits+Abundance'=predy[predy$Model=="Nmixture",!colnames(predy) %in% "Model"],Traits=predy_traits,Abundance=predy_abundance)
+
+allpred<-melt(allpred,id.vars=colnames(predy_traits))
+
+allplot<-ggplot(data=allpred,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.3)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Model Comparison")
+allplot
 ```
-## png 
-##   2
-```
+
+<img src="figureObserved/unnamed-chunk-45-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Species Predictions
 
@@ -761,7 +904,7 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model")  + ylab("Interactions per day")
 ```
 
-<img src="figureObserved/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-46-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
@@ -784,7 +927,7 @@ disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + the
 disc_obs
 ```
 
-<img src="figureObserved/unnamed-chunk-37-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-47-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
@@ -802,24 +945,24 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                 Hummingbird mean lower upper
-## 1            Andean Emerald 37.6  11.2  69.7
-## 2        Booted Racket-tail 26.1  11.3  41.5
-## 3                Brown Inca 35.1   7.5  53.1
-## 4       Buff-tailed Coronet 14.4   3.6  42.7
-## 5             Collared Inca 19.0   5.8  47.0
-## 6         Crowned Woodnymph 27.2   9.0  47.6
-## 7   Fawn-breasted Brilliant  7.4   2.2  20.4
-## 8         Gorgeted Sunangel 62.2  27.0  87.7
-## 9   Green-crowned Brilliant  2.1   0.3   7.0
-## 10  Green-fronted Lancebill 32.8  12.0  64.1
-## 11            Hoary Puffleg 13.8   3.4  33.2
-## 12   Purple-bibbed Whitetip  4.0   0.7  14.0
-## 13     Speckled Hummingbird 53.1  16.8  87.3
-## 14   Stripe-throated Hermit 26.4  13.7  42.4
-## 15     Tawny-bellied Hermit 26.6  14.9  39.5
-## 16      Violet-tailed Sylph 34.0  13.9  51.0
-## 17 Wedge-billed Hummingbird  0.8   0.1   3.7
-## 18   White-whiskered Hermit 23.7   8.0  38.0
+## 1            Andean Emerald 25.8   7.0  58.4
+## 2        Booted Racket-tail 19.1   9.2  37.0
+## 3                Brown Inca 16.2   9.2  26.1
+## 4       Buff-tailed Coronet  5.8   2.2  13.8
+## 5             Collared Inca  6.8   4.3  10.2
+## 6         Crowned Woodnymph 16.8   7.5  28.9
+## 7   Fawn-breasted Brilliant  3.9   1.5  11.6
+## 8         Gorgeted Sunangel 39.7  15.5  79.1
+## 9   Green-crowned Brilliant  0.9   0.4   2.7
+## 10  Green-fronted Lancebill 23.2  11.7  42.0
+## 11            Hoary Puffleg  8.0   2.7  18.8
+## 12   Purple-bibbed Whitetip  2.0   0.3   7.1
+## 13     Speckled Hummingbird 31.7  16.1  58.1
+## 14   Stripe-throated Hermit 19.6  12.7  29.9
+## 15     Tawny-bellied Hermit 22.6  13.1  30.5
+## 16      Violet-tailed Sylph 16.8  10.0  25.2
+## 17 Wedge-billed Hummingbird  0.5   0.2   1.6
+## 18   White-whiskered Hermit 18.4  10.1  29.0
 ```
 
 ```r
@@ -878,7 +1021,7 @@ daydf<-rbind_all(daydf)
 ggplot(md) + geom_ribbon(alpha=.5,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_line(aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
 ```
 
-<img src="figureObserved/unnamed-chunk-39-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-49-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/DetectionDays.jpeg",height=7,width=9,dpi=300) 
@@ -894,7 +1037,7 @@ tabD<-merge(tab,sampling,by="Hummingbird")
 ggplot(tabD,aes(x=Obs,ymin=lower,ymax=upper,y=mean)) + geom_pointrange() + labs(y="Detectability",x="Detections") + geom_text(aes(label=Hummingbird),vjust=2) + theme_bw() + xlim(0,175)
 ```
 
-<img src="figureObserved/unnamed-chunk-40-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-50-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##DIC Table
 
@@ -904,7 +1047,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 4252.173
+## [1] 4263.11
 ```
 
 ```r
@@ -912,7 +1055,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 12463.9
+## [1] 5744.475
 ```
 
 #Predicted versus Observed Data
@@ -926,6 +1069,7 @@ true_state<-acast(mat,jBird~jPlant,fill=0)
 ```
 
 ###Test Statistic
+
 Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus  observed for each data point.
 
 
@@ -948,9 +1092,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1768878  94.5    5489235  293.2   6861544  366.5
-## Vcells 101956563 777.9  228441221 1742.9 215004437 1640.4
+##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
+## Ncells  1727303  92.3    3886542 207.6   3886542 207.6
+## Vcells 44910352 342.7  104795118 799.6 100360379 765.7
 ```
 
 ```r
@@ -989,9 +1133,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1771929  94.7    5489235  293.2   6861544  366.5
-## Vcells 102919454 785.3  228441221 1742.9 215004437 1640.4
+##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
+## Ncells  1733665  92.6    3886542 207.6   3886542 207.6
+## Vcells 49387853 376.8  104795118 799.6 100360379 765.7
 ```
 
 ```r
@@ -1042,7 +1186,7 @@ simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM"))
 ggplot(simdat,aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 ```
 
-<img src="figureObserved/unnamed-chunk-45-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-55-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Summary of discrepancy of predicted matrices
 
@@ -1058,7 +1202,7 @@ occ_disc<-sapply(occ,function(x) mean(x))
 ggplot() + xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-<img src="figureObserved/unnamed-chunk-46-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-56-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Comparison of summary statistics for all three approaches
 
@@ -1076,8 +1220,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.85    0.35  1366.73
-## 2 Poisson_GLM      3.52    0.45  2598.11
+## 1    Nmixture      2.42    0.33  1786.45
+## 2 Poisson_GLM      4.12    0.47  3041.15
 ```
 
 Merge with morphological data.
@@ -1099,7 +1243,7 @@ simT<-simdat %>% group_by(variable,Traitmatch) %>% summarize(Lower=quantile(valu
 ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.6) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw() + facet_wrap(~variable,nrow=3) + geom_point(data=mmat,aes(y=True_State))
 ```
 
-<img src="figureObserved/unnamed-chunk-49-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-59-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 
 
@@ -1108,9 +1252,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1772342  94.7    5489235  293.2   6861544  366.5
-## Vcells 108833752 830.4  228441221 1742.9 228268169 1741.6
+##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
+## Ncells  1734093  92.7    3886542 207.6   3886542 207.6
+## Vcells 51452766 392.6  104795118 799.6 104673739 798.6
 ```
 
 ```r
