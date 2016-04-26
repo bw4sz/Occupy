@@ -73,13 +73,6 @@
     sigma_beta2 ~ dt(0,10,1)I(0,)
     tau_beta2 <- pow(sigma_beta2,-2)
 
-    #Discrepancy by species 
-    #set beginning values
-    for (i in 1:Nobs){
-    birdfit[Bird[i]]<-E[i]+birdfit[Bird[i]]
-    }
-    
-
     #derived posterior check
 
     fit<-sum(E[]) #Discrepancy for the observed data

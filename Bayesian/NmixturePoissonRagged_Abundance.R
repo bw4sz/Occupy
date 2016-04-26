@@ -39,7 +39,6 @@ cat("
     dtrans[i] ~ dnorm(dprior,tau_detect)
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta1[i] ~ dnorm(gamma1,tau_beta1)  
-    beta2[i] ~ dnorm(gamma2,tau_beta2)    
     }
     
     #Hyperpriors
@@ -61,19 +60,11 @@ cat("
     #Trait Slope
     
     #Mean
-    gamma1~dnorm(0,0.0001)
+    gamma1 ~ dnorm(0,0.0001)
     
     #Variance
     sigma_beta1 ~ dt(0,10,1)I(0,)
     tau_beta1 <- pow(sigma_beta1,-2)
-    
-    #Abundance slope
-    
-    #Mean
-    gamma2~dnorm(0,0.0001)
-    
-    sigma_beta2 ~ dt(0,10,1)I(0,)
-    tau_beta2 <- pow(sigma_beta2,-2)
     
     #derived posterior check
     

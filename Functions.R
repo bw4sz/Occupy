@@ -1,6 +1,6 @@
 #extract and create a dataframe of posteriors
 
-extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
+extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant",ynew=T){
   #extract desired info from the models
   n<-dim(x$BUGSoutput$sims.array)[1]
   parsO<-melt(x$BUGSoutput$sims.array[max(0,(n-500)):n,,])
@@ -16,6 +16,7 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   sp_pl<-data.frame(parameter=l,species=as.numeric(str_match(l,pattern="\\[(\\d+)]")[,2]),par=str_extract(l,"\\w+"))
   
   #correct N samples
+  if(ynew){
   i<-sp_pl$par %in% "ynew"
   
   #Species
@@ -27,6 +28,7 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   sp_pl$plant<-NA
   sp_pl[i,][,"plant"]<-
     data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Plant]
+  }
   
   #merge levels, can be very large, do in pieces. 
   parsO<-inner_join(parsO,sp_pl) %>% filter(!par == "deviance")
