@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-04-27 07:33:07"
+## [1] "Run Completed at 2016-04-27 10:57:22"
 ```
 
 
@@ -542,34 +542,9 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
 ```r
 #recompile if needed
 load.module("dic")
-runs<-80000
+runs<-10000
 recompile(traits)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266165
-##    Total graph size: 328649
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266165
-##    Total graph size: 328649
-## 
-## Initializing model
-```
-
-```r
-m2_<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=15)
+traits<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=15)
 ```
 
 
@@ -650,31 +625,6 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 load.module("dic")
 runs<-80000
 recompile(m2)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266185
-##    Total graph size: 595477
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266185
-##    Total graph size: 595477
-## 
-## Initializing model
-```
-
-```r
 m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=15)
 ```
 
@@ -705,11 +655,6 @@ ggplot(pars_detect[pars_detect$par %in% c("gamma1","gamma2","intercept","sigma_a
 ```
 
 <img src="figureObserved/unnamed-chunk-31-1.png" title="" alt="" style="display: block; margin: auto;" />
-
-```r
-ggsave("Figures/BothObs.svg",height=5,width=7)
-ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
-```
 
 
 ```r
@@ -783,6 +728,11 @@ fplot
 ```
 
 <img src="figureObserved/unnamed-chunk-37-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+```r
+ggsave("Figures/BothObs.svg",height=5,width=7)
+ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
+```
 
 # Does including abundance change the biological inference?
 
@@ -936,10 +886,6 @@ ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Flowers,y=Yobs)) + ge
 ```
 
 <img src="figureObserved/unnamed-chunk-43-1.png" title="" alt="" style="display: block; margin: auto;" />
-
-```r
-ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
-```
 
 ##Discrepancy 
 
@@ -1124,8 +1070,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1772858  94.7    5489235  293.2   6861544  366.5
-## Vcells 104498493 797.3  246916799 1883.9 217564676 1659.9
+## Ncells   1756397  93.9    5489235  293.2   6861544  366.5
+## Vcells 104553333 797.7  229635468 1752.0 224878179 1715.7
 ```
 
 ```r
@@ -1165,8 +1111,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1775921  94.9    5489235  293.2   6861544  366.5
-## Vcells 105461404 804.7  246916799 1883.9 217564676 1659.9
+## Ncells   1759478  94.0    5489235  293.2   6861544  366.5
+## Vcells 105516274 805.1  229635468 1752.0 224878179 1715.7
 ```
 
 ```r
@@ -1284,8 +1230,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1776328  94.9    5489235  293.2   6861544  366.5
-## Vcells 111375703 849.8  246916799 1883.9 246799088 1883.0
+## Ncells   1759888  94.0    5489235  293.2   6861544  366.5
+## Vcells 111430575 850.2  229635468 1752.0 229626523 1752.0
 ```
 
 ```r
