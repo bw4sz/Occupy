@@ -401,14 +401,13 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=F}
-runs<-10000
+runs<-1000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
 
 #print model
 print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
-
 
   #Data objects for parallel run
   Yobs=indat$Yobs
@@ -426,7 +425,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   Ninit<-rep(max(indat$Yobs)+1,Nobs)
   
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,dprior=0,gamma1=0,gamma2=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,gamma1=0,gamma2=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
@@ -437,12 +436,10 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Nobs","Ninit","resources")
-
-    m2_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Nobs","Ninit","resources","nb","nt","nc","ni")
     
+  system.time(m2_niave<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags", n.iter=ni,n.burnin=nb,n.chains=nc,n.thin=nt))
 ```
-
 
 ```{r,eval=F}
 #recompile if needed
@@ -499,7 +496,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -507,18 +504,18 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   nb <- runs*.90 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","nb","nc","ni")
 
-    system.time(traits<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+    system.time(traits<-jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
   
 ```
 
 ```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-50000
 recompile(traits)
-traits<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+traits<-update(traits,n.iter=runs,n.burnin=runs*.9,n.thin=5)
 ```
 
 ```{r}
@@ -539,13 +536,13 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ## Traits + Abundance
 
-```{r,eval=F}
-runs<-10000
+```{r,eval=T}
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -572,7 +569,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta2=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","gamma1","gamma2","fit","fitnew","ynew")
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","gamma1","gamma2","fit","fitnew","dprior","sigma_detect","ynew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -580,18 +577,17 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   nb <- runs*.90 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources","nc","nb","ni")
 
-    system.time(m2<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
-  
+    system.time(m2<-jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-2000
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+m2<-update(m2,n.iter=runs,n.thin=5)
 ```
 
 ```{r}
@@ -656,7 +652,6 @@ castdf<-split(castdf,castdf$Model)
 ## Trait+Abundance
 
 ```{r}
-
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
   pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)
@@ -910,7 +905,6 @@ true_state<-acast(mat,jBird~jPlant,fill=0)
 ###Test Statistic
 
 Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus  observed for each data point.
-
 
 #Compare using true known interactions
 
