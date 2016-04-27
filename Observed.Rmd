@@ -513,12 +513,12 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-10000
 recompile(traits)
-m2_<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+traits<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=15)
 ```
 
 ```{r}
@@ -586,12 +586,12 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-80000
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=15)
 ```
 
 ```{r}
@@ -613,8 +613,6 @@ ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],ae
 
 ```{r,fig.height=5,fig.width=11}
 ggplot(pars_detect[pars_detect$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
-ggsave("Figures/BothObs.svg",height=5,width=7)
-ggsave("Figures/BothObs.jpg",height=5,width=7,dpi=300)
 ```
 
 ```{r}
@@ -668,6 +666,8 @@ predy<-rbind_all(lapply(castdf,function(i){
 
 fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
 fplot
+ggsave("Figures/BothObs.svg",height=5,width=7)
+ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 ```
 
 # Does including abundance change the biological inference?
@@ -748,6 +748,59 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model")  + ylab("Interactions per day")
 
 ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
+```
+
+##Species Predictions - Abundance
+
+### How many overlap 0?
+
+```{r,fig.height=10,fig.width=11,eval=T}
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
+
+spbeta2<-filter(castdf,Model %in% "Nmixture") %>% select(species,beta2) %>% group_by(species) %>% summarize(lower=quantile(beta2,0.05),mean=mean(beta2),upper=quantile(beta2,0.95))
+
+spbeta2<-merge(spbeta2,jagsIndexBird,by.x="species",by.y="jBird")
+ggplot(spbeta2,aes(x=Hummingbird,y=mean,ymin=lower,ymax=upper)) + geom_pointrange() + geom_hline(yintercept=0,linetype='dashed',col='red') + theme_bw() + coord_flip() + labs(y="Effect of Resources")
+```
+
+### Abundance Predictions
+
+```{r,fig.height=10,fig.width=13}
+#
+#Turn to species level
+castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
+
+species.split<-split(castdf,list(castdf$species,castdf$Model))
+
+species.traj<-list()
+
+for(d in 1:length(species.split)){
+  x<-species.split[[d]]
+  #species name
+  index<-jagsIndexBird[unique(x$species),"Hummingbird"]
+  
+  #range of trait distances
+  tsp<-indat %>% filter(Hummingbird==index) %>% .$Traitmatch
+  
+  #Range of abundances
+    fsp<-indat %>% filter(Hummingbird==index) %>% .$Flowers
+    
+  species.traj[[d]]<-trajA(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,x=tsp,resources=fsp)
+}
+
+names(species.traj)<-names(species.split)
+
+species.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))
+
+#split out names and model
+species.traj[,c("Index","Model")]<-colsplit(species.traj$L1,"\\.",c("Index","Model"))
+
+spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
+
+#match colnames
+
+#plot and compare to original data
+ggplot(data=spe[,],aes(x=x)) + geom_point(data=indat,aes(x=Flowers,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model")  + ylab("Interactions per day")
 ```
 
 ##Discrepancy 

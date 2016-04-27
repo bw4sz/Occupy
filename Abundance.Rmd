@@ -56,7 +56,7 @@ $$\beta2 = N(0.5,0.2)$$
 **View simulated strength and form of trait matching **
 
 ```{r}
-#load("Abundance.RData")
+load("AbundanceSimulation.RData")
 gc()
 source("Functions.R")
 ```
@@ -760,7 +760,8 @@ ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
 #difference in the middle
 simd<-dcast(simdat,...~variable)
 simd$Diff<-simd$Nmixture-simd$`Poisson GLMM`
-ggplot(simd,aes(x=True_State,y=Diff)) + geom_point() + ylab("Difference in Nmixture and Poisson GLMM")
+ggplot(simd,aes(x=True_State,y=abs(Diff))) + geom_point() + ylab("|Nmixture - Poisson GLMM|") + theme_bw() + labs(x="True State")
+ggsave("Figures/Difference_Pred.jpeg",height=4,width=6)
 ```
 
 ## View predicted trait-matching relationship with the number of visits.
