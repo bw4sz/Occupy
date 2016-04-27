@@ -513,12 +513,12 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-10000
+runs<-20000
 recompile(traits)
-traits<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=15)
+traits<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 ```
 
 ```{r}
@@ -586,12 +586,12 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-80000
+runs<-20000
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=15)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=5)
 ```
 
 ```{r}
