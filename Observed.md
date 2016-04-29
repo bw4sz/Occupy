@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-04-27 11:10:08"
+## [1] "Run Completed at 2016-04-28 21:11:17"
 ```
 
 
@@ -326,8 +326,8 @@ indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 
 
 ```r
-keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>2) %>% .$Hummingbird
-indat<-indat[indat$Hummingbird %in% keep,]
+#keep<-unique(indat %>% group_by(Hummingbird,Camera,Day) %>% filter(Yobs>0) %>% summarise(n=n()) %>% summarize(d=n()) %>% filter(d>1) %>% summarize(s=n()) %>% .$Hummingbird)
+#indat<-indat[indat$Hummingbird %in% keep,]
 
 #take our sparkling violetear, does not occur year round
 indat<-indat[!indat$Hummingbird %in% "Sparkling Violetear",]
@@ -366,8 +366,11 @@ Jags needs a vector of input species 1:n with no breaks.
 ```r
 indat$Hummingbird<-as.factor(indat$Hummingbird)
 indat$Iplant_Double<-as.factor(indat$Iplant_Double)
+indat$Camera<-as.factor(indat$Camera)
+
 indat$jBird<-as.numeric(indat$Hummingbird)
 indat$jPlant<-as.numeric(indat$Iplant_Double)
+indat$jCamera<-as.numeric(indat$Camera)
 
 jagsIndexBird<-data.frame(Hummingbird=levels(indat$Hummingbird),jBird=1:length(levels(indat$Hummingbird)))
  
@@ -377,8 +380,7 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),colnames(traitmatchT) %in% unique(indat$Iplant_Double)]
 
 #And resources
-
-resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0) 
+resourcemat<-group_by(indat,jBird,jPlant,jCamera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0) 
 
 #and data for predictions
 write.csv(indat,"InputData/ObservedData.csv")
@@ -419,7 +421,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-10000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -427,15 +429,14 @@ source("Bayesian/NoDetectNmixturePoissonRagged.R")
 #print model
 print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
-
   #Data objects for parallel run
   Yobs=indat$Yobs
   Bird=indat$jBird
   Birds=max(indat$jBird)
   Plant=indat$jPlant
   Plants=max(indat$jPlant)
-  Camera=indat$Camera
-  Cameras=max(indat$Camera)
+  Camera=indat$jCamera
+  Cameras=max(indat$jCamera)
   Traitmatch=jTraitmatch
   Nobs=length(indat$Yobs)
   resources=resourcemat
@@ -444,7 +445,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   Ninit<-rep(max(indat$Yobs)+1,Nobs)
   
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,dprior=0,gamma1=0,gamma2=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,gamma1=0,gamma2=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
@@ -455,19 +456,18 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Nobs","Ninit","resources")
-
-    m2_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Nobs","Ninit","resources","nb","nt","nc","ni")
+    
+  system.time(m2_niave<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags", n.iter=ni,n.burnin=nb,n.chains=nc,n.thin=nt))
 ```
-
 
 
 ```r
 #recompile if needed
 load.module("dic")
-runs<-5000
+runs<-10000
 recompile(m2_niave)
-m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
+m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9,n.thin = 5)
 ```
 
 
@@ -499,7 +499,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 
 
 ```r
-runs<-10000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_traits.R")
@@ -511,8 +511,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
-  Camera=indat$Camera
-  Cameras=max(indat$Camera)
+  Camera=indat$jCamera
+  Cameras=max(indat$jCamera)
   Traitmatch=jTraitmatch
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
@@ -525,17 +525,17 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1","dprior")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- runs*.90 # number to discard for burn-in
+  nt <- 10   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","nb","nc","ni","nt")
 
-    system.time(traits<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+    system.time(traits<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
 
 
@@ -544,32 +544,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
 load.module("dic")
 runs<-20000
 recompile(traits)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266165
-##    Total graph size: 328649
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266165
-##    Total graph size: 328649
-## 
-## Initializing model
-```
-
-```r
-traits<-update(traits,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+traits<-update(traits,n.iter=runs,n.burnin=runs*.9,n.thin=5)
 ```
 
 
@@ -595,7 +570,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"
 
 
 ```r
-ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 <img src="figureObserved/unnamed-chunk-26-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -604,7 +579,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","si
 
 
 ```r
-runs<-10000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -616,8 +591,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
-  Camera=indat$Camera
-  Cameras=max(indat$Camera)
+  Camera=indat$jCamera
+  Cameras=max(indat$jCamera)
   Traitmatch=jTraitmatch
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
@@ -631,51 +606,26 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta2=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","gamma1","gamma2","fit","fitnew","ynew")
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","gamma1","gamma2","fit","fitnew","dprior","sigma_detect","ynew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- runs*.90 # number to discard for burn-in
+  nt <- 10   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources","nc","nb","ni","nt")
 
-    system.time(m2<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
+    system.time(m2<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
 
 
 ```r
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-1000
 recompile(m2)
-```
-
-```
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266185
-##    Total graph size: 595477
-## 
-## Initializing model
-## 
-## Compiling model graph
-##    Resolving undeclared variables
-##    Allocating nodes
-## Graph information:
-##    Observed stochastic nodes: 1901
-##    Unobserved stochastic nodes: 266185
-##    Total graph size: 595477
-## 
-## Initializing model
-```
-
-```r
-m2<-update(m2,n.iter=runs,n.burnin=runs*.95,n.thin=5)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage)
 ```
 
 
@@ -972,24 +922,24 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                 Hummingbird mean lower upper
-## 1            Andean Emerald 38.9  13.1  68.7
-## 2        Booted Racket-tail 27.4  11.5  45.0
-## 3                Brown Inca 34.9  12.1  52.9
-## 4       Buff-tailed Coronet 19.4   4.9  53.7
-## 5             Collared Inca 22.8   9.2  52.5
-## 6         Crowned Woodnymph 26.7   9.2  48.2
-## 7   Fawn-breasted Brilliant 11.5   2.6  39.1
-## 8         Gorgeted Sunangel 64.6  33.1  88.9
-## 9   Green-crowned Brilliant  7.8   0.6  40.0
-## 10  Green-fronted Lancebill 35.3  11.8  68.5
-## 11            Hoary Puffleg 16.8   4.3  43.8
-## 12   Purple-bibbed Whitetip 11.5   1.0  50.6
-## 13     Speckled Hummingbird 53.7  21.4  88.6
-## 14   Stripe-throated Hermit 27.2  13.2  42.5
-## 15     Tawny-bellied Hermit 28.2  14.3  43.0
-## 16      Violet-tailed Sylph 35.7  21.2  53.5
-## 17 Wedge-billed Hummingbird  6.1   0.0  37.4
-## 18   White-whiskered Hermit 23.0   6.8  37.3
+## 1            Andean Emerald 21.1   7.0  45.9
+## 2        Booted Racket-tail 18.7  10.1  32.8
+## 3                Brown Inca 11.5   7.0  18.6
+## 4       Buff-tailed Coronet 12.6   1.8  30.5
+## 5             Collared Inca 14.6   4.2  29.1
+## 6         Crowned Woodnymph 17.2   5.0  34.7
+## 7   Fawn-breasted Brilliant 12.6   2.2  29.5
+## 8         Gorgeted Sunangel 32.6  10.8  75.4
+## 9   Green-crowned Brilliant 12.3   1.6  27.7
+## 10  Green-fronted Lancebill 19.4   5.9  43.1
+## 11            Hoary Puffleg 14.7   2.7  33.2
+## 12   Purple-bibbed Whitetip 13.1   2.1  34.7
+## 13     Speckled Hummingbird 19.1   6.1  41.1
+## 14   Stripe-throated Hermit 19.5   8.6  36.4
+## 15     Tawny-bellied Hermit 23.4  11.2  38.7
+## 16      Violet-tailed Sylph 16.1  10.7  23.3
+## 17 Wedge-billed Hummingbird  8.2   0.7  27.1
+## 18   White-whiskered Hermit 15.9   5.4  29.5
 ```
 
 ```r
@@ -1074,7 +1024,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 4276.707
+## [1] 4264.517
 ```
 
 ```r
@@ -1082,7 +1032,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 11019.85
+## [1] 8655.676
 ```
 
 #Predicted versus Observed Data
@@ -1098,7 +1048,6 @@ true_state<-acast(mat,jBird~jPlant,fill=0)
 ###Test Statistic
 
 Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus  observed for each data point.
-
 
 #Compare using true known interactions
 
@@ -1119,9 +1068,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1771947  94.7    5489235  293.2   6861544  366.5
-## Vcells 104570635 797.9  230047692 1755.2 217646734 1660.6
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells  1756593  93.9    5489235  293.2   6861544  366.5
+## Vcells 98623968 752.5  234581295 1789.8 211773670 1615.8
 ```
 
 ```r
@@ -1160,9 +1109,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1775010  94.8    5489235  293.2   6861544  366.5
-## Vcells 105533546 805.2  230047692 1755.2 217646734 1660.6
+##            used (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells  1759617   94    5489235  293.2   6861544  366.5
+## Vcells 99613564  760  234581295 1789.8 211773670 1615.8
 ```
 
 ```r
@@ -1247,8 +1196,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.81    0.33  1337.45
-## 2 Poisson_GLM      3.72    0.51  2746.69
+## 1    Nmixture      2.47    0.35  1824.69
+## 2 Poisson_GLM      4.19    0.54  3093.72
 ```
 
 Merge with morphological data.
@@ -1280,8 +1229,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1775417  94.9    5489235  293.2   6861544  366.5
-## Vcells 111447845 850.3  230047692 1755.2 229949485 1754.4
+## Ncells   1760030  94.0    5489235  293.2   6861544  366.5
+## Vcells 105521962 805.1  234581295 1789.8 234436230 1788.7
 ```
 
 ```r

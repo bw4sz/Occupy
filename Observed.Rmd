@@ -311,8 +311,8 @@ indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 ```
 
 ```{r}
-keep<-indat %>% group_by(Hummingbird) %>% filter(Yobs>0) %>% summarise(n=n()) %>% filter(n>2) %>% .$Hummingbird
-indat<-indat[indat$Hummingbird %in% keep,]
+#keep<-unique(indat %>% group_by(Hummingbird,Camera,Day) %>% filter(Yobs>0) %>% summarise(n=n()) %>% summarize(d=n()) %>% filter(d>1) %>% summarize(s=n()) %>% .$Hummingbird)
+#indat<-indat[indat$Hummingbird %in% keep,]
 
 #take our sparkling violetear, does not occur year round
 indat<-indat[!indat$Hummingbird %in% "Sparkling Violetear",]
@@ -349,8 +349,11 @@ Jags needs a vector of input species 1:n with no breaks.
 ```{r}
 indat$Hummingbird<-as.factor(indat$Hummingbird)
 indat$Iplant_Double<-as.factor(indat$Iplant_Double)
+indat$Camera<-as.factor(indat$Camera)
+
 indat$jBird<-as.numeric(indat$Hummingbird)
 indat$jPlant<-as.numeric(indat$Iplant_Double)
+indat$jCamera<-as.numeric(indat$Camera)
 
 jagsIndexBird<-data.frame(Hummingbird=levels(indat$Hummingbird),jBird=1:length(levels(indat$Hummingbird)))
  
@@ -360,8 +363,7 @@ jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:l
 jTraitmatch<-traitmatchT[rownames(traitmatchT) %in% unique(indat$Hummingbird),colnames(traitmatchT) %in% unique(indat$Iplant_Double)]
 
 #And resources
-
-resourcemat<-group_by(indat,jBird,jPlant,Camera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0) 
+resourcemat<-group_by(indat,jBird,jPlant,jCamera) %>% summarize(m=mean(unique(Flowers))) %>% acast(jBird~jPlant~Camera,fill=0) 
 
 #and data for predictions
 write.csv(indat,"InputData/ObservedData.csv")
@@ -401,7 +403,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=F}
-runs<-1000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -415,8 +417,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   Birds=max(indat$jBird)
   Plant=indat$jPlant
   Plants=max(indat$jPlant)
-  Camera=indat$Camera
-  Cameras=max(indat$Camera)
+  Camera=indat$jCamera
+  Cameras=max(indat$jCamera)
   Traitmatch=jTraitmatch
   Nobs=length(indat$Yobs)
   resources=resourcemat
@@ -444,9 +446,9 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-5000
+runs<-10000
 recompile(m2_niave)
-m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9)
+m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9,n.thin = 5)
 ```
 
 ```{r}
@@ -470,7 +472,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("gamma1","gamma2","sigma_alpha","sigma
 ## Traits
 
 ```{r,eval=F}
-runs<-10000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_traits.R")
@@ -482,8 +484,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
-  Camera=indat$Camera
-  Cameras=max(indat$Camera)
+  Camera=indat$jCamera
+  Cameras=max(indat$jCamera)
   Traitmatch=jTraitmatch
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
@@ -496,24 +498,24 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1")
+  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1","dprior")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- runs*.90 # number to discard for burn-in
+  nt <- 10   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","nb","nc","ni")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","nb","nc","ni","nt")
 
-    system.time(traits<-jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+    system.time(traits<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
   
 ```
 
-```{r,eval=T}
+```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-50000
+runs<-20000
 recompile(traits)
 traits<-update(traits,n.iter=runs,n.burnin=runs*.9,n.thin=5)
 ```
@@ -536,13 +538,13 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ## Traits + Abundance
 
-```{r,eval=T}
-runs<-100000
+```{r,eval=F}
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -554,8 +556,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
-  Camera=indat$Camera
-  Cameras=max(indat$Camera)
+  Camera=indat$jCamera
+  Cameras=max(indat$jCamera)
   Traitmatch=jTraitmatch
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
@@ -573,21 +575,21 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- runs*.90 # number to discard for burn-in
+  nt <- 10   #thinning rate
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources","nc","nb","ni")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources","nc","nb","ni","nt")
 
-    system.time(m2<-jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+    system.time(m2<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
 
 ```{r,eval=F}
 #recompile if needed
 load.module("dic")
-runs<-2000
+runs<-1000
 recompile(m2)
-m2<-update(m2,n.iter=runs,n.thin=5)
+m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage)
 ```
 
 ```{r}
@@ -704,7 +706,7 @@ allplot
 
 ##Species Predictions
 
-```{r,fig.height=10,fig.width=11,eval=T}
+```{r,fig.height=10,fig.width=11}
 castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 #Turn to species level
@@ -749,7 +751,7 @@ ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
 
 ### How many overlap 0?
 
-```{r,fig.height=10,fig.width=11,eval=T}
+```{r,fig.height=10,fig.width=11}
 castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 spbeta2<-filter(castdf,Model %in% "Nmixture") %>% select(species,beta2) %>% group_by(species) %>% summarize(lower=quantile(beta2,0.05),mean=mean(beta2),upper=quantile(beta2,0.95))
@@ -911,7 +913,6 @@ Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 t
 ## Poisson GLMM
 
 ```{r}
-
 #Discrepancy function
 chisq<-function(o,e){(o-e)^2/(e+0.5)}
 
