@@ -443,10 +443,10 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   system.time(m2_niave<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags", n.iter=ni,n.burnin=nb,n.chains=nc,n.thin=nt))
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-10000
+runs<-100000
 recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9,n.thin = 5)
 ```
@@ -512,10 +512,10 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-100000
 recompile(traits)
 traits<-update(traits,n.iter=runs,n.burnin=runs*.9,n.thin=5)
 ```
@@ -584,10 +584,10 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
     system.time(m2<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
 
-```{r,eval=F}
+```{r,eval=T}
 #recompile if needed
 load.module("dic")
-runs<-1000
+runs<-100000
 recompile(m2)
 m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage)
 ```

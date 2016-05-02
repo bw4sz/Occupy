@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-04-28 21:11:17"
+## [1] "Run Completed at 2016-05-01 20:21:10"
 ```
 
 
@@ -465,8 +465,33 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```r
 #recompile if needed
 load.module("dic")
-runs<-10000
+runs<-100000
 recompile(m2_niave)
+```
+
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 1963
+##    Total graph size: 316940
+## 
+## Initializing model
+## 
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 1963
+##    Total graph size: 316940
+## 
+## Initializing model
+```
+
+```r
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9,n.thin = 5)
 ```
 
@@ -542,8 +567,33 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
 ```r
 #recompile if needed
 load.module("dic")
-runs<-20000
+runs<-100000
 recompile(traits)
+```
+
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 266165
+##    Total graph size: 328649
+## 
+## Initializing model
+## 
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 266165
+##    Total graph size: 328649
+## 
+## Initializing model
+```
+
+```r
 traits<-update(traits,n.iter=runs,n.burnin=runs*.9,n.thin=5)
 ```
 
@@ -623,8 +673,33 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```r
 #recompile if needed
 load.module("dic")
-runs<-1000
+runs<-100000
 recompile(m2)
+```
+
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 266185
+##    Total graph size: 594299
+## 
+## Initializing model
+## 
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+## Graph information:
+##    Observed stochastic nodes: 1901
+##    Unobserved stochastic nodes: 266185
+##    Total graph size: 594299
+## 
+## Initializing model
+```
+
+```r
 m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage)
 ```
 
@@ -922,24 +997,24 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                 Hummingbird mean lower upper
-## 1            Andean Emerald 21.1   7.0  45.9
-## 2        Booted Racket-tail 18.7  10.1  32.8
-## 3                Brown Inca 11.5   7.0  18.6
-## 4       Buff-tailed Coronet 12.6   1.8  30.5
-## 5             Collared Inca 14.6   4.2  29.1
-## 6         Crowned Woodnymph 17.2   5.0  34.7
-## 7   Fawn-breasted Brilliant 12.6   2.2  29.5
-## 8         Gorgeted Sunangel 32.6  10.8  75.4
-## 9   Green-crowned Brilliant 12.3   1.6  27.7
-## 10  Green-fronted Lancebill 19.4   5.9  43.1
-## 11            Hoary Puffleg 14.7   2.7  33.2
-## 12   Purple-bibbed Whitetip 13.1   2.1  34.7
-## 13     Speckled Hummingbird 19.1   6.1  41.1
-## 14   Stripe-throated Hermit 19.5   8.6  36.4
-## 15     Tawny-bellied Hermit 23.4  11.2  38.7
-## 16      Violet-tailed Sylph 16.1  10.7  23.3
-## 17 Wedge-billed Hummingbird  8.2   0.7  27.1
-## 18   White-whiskered Hermit 15.9   5.4  29.5
+## 1            Andean Emerald 32.8  10.5  61.6
+## 2        Booted Racket-tail 27.3  11.5  45.1
+## 3                Brown Inca 31.2  14.3  51.7
+## 4       Buff-tailed Coronet 31.8   7.8  72.2
+## 5             Collared Inca 30.2   8.4  56.6
+## 6         Crowned Woodnymph 25.6   7.3  47.8
+## 7   Fawn-breasted Brilliant 24.1   4.4  52.2
+## 8         Gorgeted Sunangel 62.3  32.7  86.1
+## 9   Green-crowned Brilliant 20.9   2.1  49.5
+## 10  Green-fronted Lancebill 37.4  12.2  67.6
+## 11            Hoary Puffleg 27.7   5.9  58.3
+## 12   Purple-bibbed Whitetip 29.3   4.2  62.8
+## 13     Speckled Hummingbird 41.7  14.0  75.8
+## 14   Stripe-throated Hermit 25.5   9.5  42.3
+## 15     Tawny-bellied Hermit 30.4  13.3  46.8
+## 16      Violet-tailed Sylph 35.0  15.3  54.5
+## 17 Wedge-billed Hummingbird 23.9   1.1  60.3
+## 18   White-whiskered Hermit 20.1   6.7  35.6
 ```
 
 ```r
@@ -1024,7 +1099,7 @@ m2_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 4264.517
+## [1] 4264.353
 ```
 
 ```r
@@ -1032,7 +1107,7 @@ m2$BUGSoutput$DIC
 ```
 
 ```
-## [1] 8655.676
+## [1] 14280.52
 ```
 
 #Predicted versus Observed Data
@@ -1068,9 +1143,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  1756593  93.9    5489235  293.2   6861544  366.5
-## Vcells 98623968 752.5  234581295 1789.8 211773670 1615.8
+##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   1772203  94.7    5489235  293.2   6861544  366.5
+## Vcells 104602622 798.1  230129700 1755.8 217764656 1661.5
 ```
 
 ```r
@@ -1109,9 +1184,9 @@ gc()
 ```
 
 ```
-##            used (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  1759617   94    5489235  293.2   6861544  366.5
-## Vcells 99613564  760  234581295 1789.8 211773670 1615.8
+##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   1775174  94.9    5489235  293.2   6861544  366.5
+## Vcells 105565543 805.5  230129700 1755.8 217764656 1661.5
 ```
 
 ```r
@@ -1196,8 +1271,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      2.47    0.35  1824.69
-## 2 Poisson_GLM      4.19    0.54  3093.72
+## 1    Nmixture      1.78    0.35  1312.25
+## 2 Poisson_GLM      3.74    0.50  2762.35
 ```
 
 Merge with morphological data.
@@ -1229,8 +1304,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1760030  94.0    5489235  293.2   6861544  366.5
-## Vcells 105521962 805.1  234581295 1789.8 234436230 1788.7
+## Ncells   1775581  94.9    5489235  293.2   6861544  366.5
+## Vcells 111479839 850.6  230129700 1755.8 230110041 1755.7
 ```
 
 ```r
