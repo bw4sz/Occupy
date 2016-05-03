@@ -1,0 +1,18 @@
+{
+    "contents" : "\nsink(\"Bayesian/NmixturePoissonRagged_traits.jags\")\n\ncat(\"\n    model {\n    #Compute intensity for each pair of birds and plants\n    for (i in 1:Birds){\n    for (j in 1:Plants){\n    for (k in 1:Cameras){\n    \n    #Process Model\n    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j]\n    \n    #For each camera - there is a latent count\n    N[i,j,k] ~ dpois(lambda[i,j,k])\n    }\n    }\n    }\n    \n    #Observed counts for each day of sampling at that camera\n    for (x in 1:Nobs){\n    \n    #Observation Process\n    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])    \n    \n    #Assess Model Fit\n    \n    #Fit discrepancy statistics\n    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]\n    E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)\n    \n    ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])\n    E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)\n    \n    }\n    \n    for (i in 1:Birds){\n    logit(detect[i]) <- dtrans[i]\n    dtrans[i] ~ dnorm(dprior,tau_detect)\n    alpha[i] ~ dnorm(intercept,tau_alpha)\n    beta1[i] ~ dnorm(gamma1,tau_beta1)  \n    }\n    \n    #Hyperpriors\n    \n    #Intercept grouping\n    intercept~dnorm(0,0.0001)\n    \n    #Group intercept variance\n    sigma_alpha ~ dt(0,1,1)I(0,)\n    tau_alpha <- pow(sigma_alpha,-2)\n    \n    #Detect grouping\n    dprior ~ dnorm(0,0.5)\n    \n    # Detect variance\n    tau_detect ~ dunif(0,5)\n    sigma_detect<-pow(1/tau_detect,0.5) \n    \n    #Trait Slope\n    \n    #Mean\n    gamma1~dnorm(0,0.0001)\n    \n    #Variance\n    sigma_beta1 ~ dt(0,1,1)I(0,)\n    tau_beta1 <- pow(sigma_beta1,-2)\n    \n    #derived posterior check\n    \n    fit<-sum(E[]) #Discrepancy for the observed data\n    fitnew<-sum(E.new[])\n    \n    }\n    \",fill=TRUE)\n\nsink()\n",
+    "created" : 1461365613083.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1610909526",
+    "id" : "EAAA9A6E",
+    "lastKnownWriteTime" : 1461883929,
+    "path" : "~/Occupy/Bayesian/NmixturePoissonRagged_traits.R",
+    "project_path" : "Bayesian/NmixturePoissonRagged_traits.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
