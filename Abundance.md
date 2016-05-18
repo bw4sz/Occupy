@@ -5,26 +5,28 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-04-08 12:08:53"
+## [1] "Run Completed at 2016-04-15 21:42:56"
 ```
 
 #Simulation   
 
-### Parameters
+## Parameters
 
 * 10 hummingbird species
+* 20 plant species
 * Range of hummingbird bill sizes (in mm) ~ Pois(10)/10
-* Twenty plants
 * Range of corolla sizes (in mm) ~ Pois(15)/10
 * Mean frequeny ($\lambda$) for each hummingbird is drawn from U(0,10)  
 * Trait matching (minimizing Bill-Corolla difference) is drawn from a hierarcichal distribution
 $$log(\lambda)<-\alpha_i + \beta_i *traitmatch$$
 $$\alpha=N(3,0.2)$$
-$$\beta = N(1,0.2)$$
+$$\beta1 = N(-1,0.2)$$
+$$\beta2 = N(0.5,0.2)$$
 
 * Imperfect detection 
-* $$ p_i = U(0,0.5) $$ 
-* 36 camera replicates
+* $$ p_i = U(0.1,0.9) $$ 
+* 20 camera
+* 3 days per camera
 
 **View simulated strength and form of trait matching **
 
@@ -35,9 +37,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used  (Mb)
-## Ncells   1660487  88.7    2637877  140.9   2164898 115.7
-## Vcells 105075893 801.7  151427102 1155.3 105089057 801.8
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells    571864   30.6     940480   50.3    750400   40.1
+## Vcells 158846304 1212.0  228555840 1743.8 158859433 1212.1
 ```
 
 ```r
@@ -63,15 +65,37 @@ Corolla<-rpois(plant_species,15)
 #Subtract both and take absolute value, convert cm
 traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
   
-#regression slope
-gamma<- -1
+#regression slopes
+#traits
+gamma1<- -1
+#abundance
+gamma2<- 0.2
+
+#species variance in slopes
+sigma_beta1<- 0.2
+sigma_beta2<- 0.2
+
+#Species intercept
 intercept<- 3
-sigma_slope<- 0.2
-sigma_intercept<- 0.2
+sigma_alpha<- 0.2
 
 detection= runif(h_species,0.1,0.9)
-beta<-rnorm(h_species,gamma,sigma_slope)
-alpha<-rnorm(h_species,intercept,sigma_intercept)
+beta1<-rnorm(h_species,gamma1,sigma_beta1)
+beta2<-rnorm(h_species,gamma2,sigma_beta2)
+alpha<-rnorm(h_species,intercept,sigma_alpha)
+```
+
+#Compute resource abundance
+
+
+```r
+resources<-array(NA,dim=c(h_species,plant_species,cameras))
+
+#fill for each month
+for (x in 1:cameras){
+   resources[,,x]<-rpois(1,10)   
+  }
+resources<-array(data=scale(resources),dim=c(h_species,plant_species,cameras))
 ```
 
 #Compute true interaction matrices
@@ -80,23 +104,25 @@ alpha<-rnorm(h_species,intercept,sigma_intercept)
 ```r
 #for each species loop through and create a replicate dataframe
 obs<-array(dim=c(h_species,plant_species,cameras,days))
-lambda<-array(dim=c(h_species,plant_species))
+lambda<-array(dim=c(h_species,plant_species,cameras))
 N<-array(dim=c(h_species,plant_species,cameras))
 
-#draw intensities
+#create intensities
 for(x in 1:h_species){
   for (y in 1:plant_species){
-          #true lambda - interaction intensity
-      lambda[x,y]<-exp(alpha[x] + beta[x] * traitmatch[x,y])
+    for (z in 1:cameras){
+      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y]+beta2[x]*resources[x,y,z])
+  }
   }
 }
+
 
 #draw latent states
 for(x in 1:h_species){
   for (y in 1:plant_species){
     for (z in 1:cameras){
       # true latent count
-      N[x,y,z]<-rpois(1,lambda[x,y])
+      N[x,y,z]<-rpois(1,lambda[x,y,z])
     }
   }
 }
@@ -128,7 +154,14 @@ mdat<-merge(mdat,traitmelt,c("Bird","Plant"))
 ggplot(mdat,aes(x=traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson")) + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
 ```
 
-<img src="figure/unnamed-chunk-6-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-7-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+```r
+#Merge resources
+mr<-melt(resources)
+colnames(mr)<-c("Bird","Plant","Camera","Abundance")
+mdat<-merge(mdat,mr,by=c("Bird","Plant","Camera"))
+```
 
 ##View Detection Rates
 
@@ -140,7 +173,7 @@ obs.state<-merge(mdat,obs.state,by=c("Bird","Plant","Camera"))
 ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Camera)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
 ```
 
-<img src="figure/unnamed-chunk-7-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-8-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 # Hierarcichal Nmixture Model
 
@@ -148,7 +181,7 @@ For hummingbird i visiting plant j recorded by camera k on day d:
 
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_i * abs(Bill_i - Corolla_i) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| * \beta_{2,i} * Abundance_{j,k}$$
 
 **Priors**
 
@@ -158,24 +191,28 @@ $$\omega_i \sim (\mu_{\omega},\tau_{\omega})$$  $$\mu_{\omega} \sim Normal(0,0.5
 $$\tau_{\omega} \sim Uniform(0,10)
 
 $$\alpha_i \sim Normal(\mu_{\alpha},\tau_{\alpha})$$
-$$\beta_i \sim Normal(\mu_{\beta},\tau_{\beta})$$
+$$\beta_{i,1} \sim Normal(\mu_{\beta_1},\tau_{\beta_1})$$
 
 **Hyperpriors**
 $$\mu_{\alpha} \sim Normal(0,0.0001)$$
-$$\mu_{\beta} \sim Normal(0,0.0001)$$
+$$\mu_{\beta_1} \sim Normal(0,0.0001)$$
+$$\mu_{\beta_2} \sim Normal(0,0.0001)$$
 
-$$\tau_{\alpha} \sim T(0.0001,0.0001)$$
-$$\tau_{\beta} = \sqrt[2]{\frac{1}{\sigma_\beta}}$$
-
+$$\tau_{\alpha} \sim Half-T(0.0001,0.0001)$$
 $$\sigma_{\alpha} = \sqrt[2]{\frac{1}{\tau_\alpha}}$$
-$$\sigma_{\beta} \sim T(0,1)$$
+
+$$\tau_{\beta_1} \sim \sqrt[2]{\frac{1}{\sigma_{\beta_1}}}$$
+$$\sigma_{\beta_1} \sim Half-T(0,1)$$
+
+$$\tau_{\beta_2} \sim \sqrt[2]{\frac{1}{\sigma_{\beta_2}}}$$
+$$\sigma_{\beta_2} \sim Half-T(0,1)$$
+
 
 #Simulated data without detection
 
 
 ```r
-runs<-50000
-#runs<-1000
+runs<-10000
 
 #trigger parallel
 paralleljags<-T
@@ -193,31 +230,28 @@ if(paralleljags){
   Bird=obs.state$Bird
   Plant=obs.state$Plant
   Plants=max(obs.state$Plant)
+  Cameras=max(obs.state$Camera)
   Camera=obs.state$Camera
-  Day=obs.state$Day
-  Traitmatch<-traitmatch
-  #number of birds to iterate
+  Traitmatch=traitmatch
   Birds=max(obs.state$Bird)
   Nobs=length(obs.state$Yobs)
+  resources=resources
 
-  #A blank Y matrix - all present
-  Ninit<-rep(max(obs.state$Yobs)+1,Nobs)
-  
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_int=0.1,sigma_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function(){list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,gamma1=0,gamma2=0)}
   
   #Parameters to track
-  ParsStage <- c("alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 5   #thinning rate
-  nb <- runs*.97 # number to discard for burn-in
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Cameras","Camera","resources")
 
-    sim_niave<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+    sim_niave<-do.call(jags.parallel,list(data=Dat,inits=InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
     
   } else {
  #Input Data
@@ -226,25 +260,23 @@ if(paralleljags){
     Bird=obs.state$Bird,
     Plant=obs.state$Plant,
     Plants=max(obs.state$Plant),
-    Time=obs.state$Time,
     Traitmatch=traitmatch,
-    #number of birds to iterate
+    Cameras=max(obs.state$Camera),
+    Camera=obs.state$Camera,
     Birds=max(obs.state$Bird),
-    Nobs=length(obs.state$Yobs))
-  
-    #A blank Y matrix - all present
-    Ninit<-rep(max(Dat$Yobs)+1,Dat$Nobs)
-  
+    Nobs=length(obs.state$Yobs),
+    resources=resources)
+
     #Inits
-  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,sigma_int=0.1,sigma_beta=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Dat$Birds),beta2=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,gamma1=0,gamma2=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 5   #thinning rate
-  nb <- runs*.97 # number to discard for burn-in
+  nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
   
   #Jags
@@ -267,7 +299,7 @@ if(paralleljags){
 load.module("dic")
 runs<-5000
 recompile(sim_niave)
-sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.96,DIC=F)
+sim_niave<-update(sim_niave,n.iter=runs,n.burnin=runs*.95,n.thin=10)
 ```
 
 
@@ -276,9 +308,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used  (Mb)
-## Ncells   1731916  92.5    2637877  140.9   2637877 140.9
-## Vcells 105148574 802.3  151427102 1155.3 110243806 841.1
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells    644617   34.5    1168576   62.5    940480   50.3
+## Vcells 158925463 1212.6  228555840 1743.8 162262489 1238.0
 ```
 
 ```r
@@ -290,33 +322,33 @@ pars_niave$Model<-c("Poisson GLMM")
 
 
 ```r
-ggplot(pars_niave[pars_niave$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-```
-
-<img src="figure/unnamed-chunk-11-1.png" title="" alt="" style="display: block; margin: auto;" />
-
-
-```r
-ggplot(pars_niave[pars_niave$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 <img src="figure/unnamed-chunk-12-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+
+```r
+ggplot(pars_niave[pars_niave$par %in% c("gamma1","gamma2","sigma_alpha","sigma_beta1","sigma_beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+```
+
+<img src="figure/unnamed-chunk-13-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Posteriors
 
 
 ```r
 ###Posterior Distributions
-p<-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1","beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),alpha=alpha,beta=beta),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),alpha=alpha,beta1=beta1,beta2=beta2),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 psim
 ```
 
-<img src="figure/unnamed-chunk-13-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-14-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/SimulationPosteriorsNoDetect.jpg",dpi=300,height=8,width=8)
@@ -324,10 +356,10 @@ ggsave("Figures/SimulationPosteriorsNoDetect.jpg",dpi=300,height=8,width=8)
 
 
 ```r
-p<-ggplot(pars_niave[pars_niave$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw()
+p<-ggplot(pars_niave[pars_niave$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_grid(~par,scale="free") + theme_bw()
 
 #Add true values
-tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
+tr<-melt(list(gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_alpha=sigma_alpha,sigma_beta1=sigma_beta1,sigma_beta2=sigma_beta2))
 
 colnames(tr)<-c("value","par")
 
@@ -340,22 +372,24 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 
 
 ```r
-castdf<-group_by(pars_niave,Chain) %>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
+castdf<-group_by(pars_niave,Chain) %>% select(par,estimate) %>% filter(par %in% c("gamma1","gamma2","intercept"))
 
-castdf<-dcast(pars_niave[pars_niave$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars_niave[pars_niave$par %in% c("gamma1","gamma2","intercept"),], Chain + Draw~par,value.var="estimate")
 
 #calculated predicted y
-predyniave<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=as.numeric(traitmatch))
+predyniave_trait<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=0,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
 
-orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,sigma_slope),x=as.numeric(traitmatch))
+predyniave_abundance<-trajA(alpha=castdf$intercept,beta1=0,beta2=castdf$gamma2,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
+
+
+predyniave_both<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$gamma2,x=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
 ```
 
 # Simulated data with detection
 
 
 ```r
-#runs<-90000
-runs<-100000
+runs<-20000
 
 #trigger parallel
 paralleljags<-T
@@ -374,44 +408,40 @@ if(paralleljags){
   Plant=obs.state$Plant
   Camera=obs.state$Camera
   Cameras=max(obs.state$Camera)
-  Day<-obs.state$Day
-  Days<-max(obs.state$Day)
   Traitmatch=traitmatch
-  #number of birds to iterate
   Birds=max(obs.state$Bird)
   Plants=max(obs.state$Plant)
   Nobs=length(obs.state$Yobs)
+  resources=resources
 
   #A blank Y matrix - all present
   Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(obs.state$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,sigma_alpha=0.1,sigma_slope=0.1,N=Ninit,gamma=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Birds),beta2=rep(0.5,Birds),alpha=rep(0.5,Birds),dtrans=rep(0,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,N=Ninit,gamma1=0,gamma2=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 10   #thinning rate
+  nt <- 5   #thinning rate
   nb <- runs*.95 # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Day","Days","Camera","Cameras")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","resources","Birds","Nobs","Ninit","Camera","Cameras")
 
     system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
   } else {
   #Input Data
   Dat <- list(
-     Yobs=obs.state$Yobs,
+    Yobs=obs.state$Yobs,
     Bird=obs.state$Bird,
     Plant=obs.state$Plant,
     Camera=obs.state$Camera,
     Cameras=max(obs.state$Camera),
-    Day<-obs.state$Day,
-    Days<-max(obs.state$Day),
     Traitmatch=traitmatch,
-    #number of birds to iterate
+    resources=resources,
     Birds=max(obs.state$Bird),
     Plants=max(obs.state$Plant),
     Nobs=length(obs.state$Yobs)
@@ -419,11 +449,11 @@ if(paralleljags){
     #A blank Y matrix - all present
   Ninit<-array(dim=c(h_species,plant_species,cameras),data=max(obs.state$Yobs)+1)
   
-    #Inits
-  InitStage <- function() {list(beta=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,tau_alpha=0.1,tau_beta=0.1,N=Ninit,gamma=0)}
+  #Inits
+  InitStage <- function() {list(beta1=rep(0.5,Dat$Birds),beta2=rep(0.5,Dat$Birds),alpha=rep(0.5,Dat$Birds),dtrans=rep(0,Dat$Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,sigma_beta2=0.1,N=Ninit,gamma1=0,gamma2=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta","intercept","sigma_int","sigma_slope","ynew","gamma","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta2","sigma_beta1","ynew","gamma1","gamma2","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -449,9 +479,33 @@ if(paralleljags){
 ```r
 #recompile if needed
 load.module("dic")
-runs<-5000
+runs<-10000
 recompile(sim_detect)
-system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.97,n.thin=5,DIC=F))
+```
+
+```
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+##    Graph Size: 143389
+## 
+## Initializing model
+## 
+## Compiling model graph
+##    Resolving undeclared variables
+##    Allocating nodes
+##    Graph Size: 143389
+## 
+## Initializing model
+```
+
+```r
+system.time(sim_detect<-update(sim_detect,n.iter=runs,n.burnin=runs*.95,n.thin=10,parameters.to.save=ParsStage))
+```
+
+```
+##     user   system  elapsed 
+## 1690.099  101.693 1683.901
 ```
 
 
@@ -464,27 +518,27 @@ pars$Model<-"Nmixture"
 
 
 ```r
-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
-```
-
-<img src="figure/unnamed-chunk-19-1.png" title="" alt="" style="display: block; margin: auto;" />
-
-
-```r
-ggplot(pars[pars$par %in% c("gamma","sigma_int","sigma_slope"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars[pars$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 <img src="figure/unnamed-chunk-20-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+
+```r
+ggplot(pars[pars$par %in% c("gamma1","sigma_alpha","sigma_beta1","gamma2","sigma_beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+```
+
+<img src="figure/unnamed-chunk-21-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Posteriors
 
 
 ```r
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect","alpha","beta"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars[pars$par %in% c("detect","alpha","beta1","beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,beta2=beta2),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',size=1)
 #ggsave("Figures/SimulationPosteriors.jpg",dpi=300,height=8,width=8)
@@ -492,10 +546,10 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 
 
 ```r
-p<-ggplot(pars[pars$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+p<-ggplot(pars[pars$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2"),],aes(x=estimate)) + geom_histogram() + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
+tr<-melt(list(gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_alpha=sigma_alpha,sigma_beta1=sigma_beta1,sigma_beta2=sigma_beta2))
 
 colnames(tr)<-c("value","par")
 
@@ -514,16 +568,16 @@ parsall<-rbind.data.frame(pars[!pars$par %in% "ynew",],pars_niave[!pars_niave$pa
 parsall$Model<-as.factor(parsall$Model)
 
 ###Posterior Distributions
-p<-ggplot(parsall[parsall$par %in% c("detect","alpha","beta"),],aes(x=estimate,fill=Model)) + geom_histogram(position="identity") + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
+p<-ggplot(parsall[parsall$par %in% c("detect","alpha","beta1","beta2"),],aes(x=estimate,fill=Model)) + geom_histogram(position="identity") + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,beta2=beta2),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='black',linetype='dashed',size=1)
 psim
 ```
 
-<img src="figure/unnamed-chunk-23-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-24-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 #ggsave("Figures/SimulationPosteriorsBoth.jpg",dpi=300,height=8,width=8)
@@ -531,10 +585,10 @@ psim
 
 
 ```r
-p<-ggplot(parsall[parsall$par %in% c("gamma","intercept","sigma_int","sigma_slope"),],aes(x=estimate,fill=Model)) + geom_histogram(position="identity") + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+p<-ggplot(parsall[parsall$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2"),],aes(x=estimate,fill=Model)) + geom_histogram(position="identity") + ggtitle("Hierarchical Posteriors") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 
 #Add true values
-tr<-melt(list(gamma=gamma,intercept=intercept,sigma_int=sigma_intercept,sigma_slope=sigma_slope))
+tr<-melt(list(gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_alpha=sigma_alpha,sigma_beta1=sigma_beta1,sigma_beta2=sigma_beta2))
 
 colnames(tr)<-c("value","par")
 
@@ -542,7 +596,7 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 psim2
 ```
 
-<img src="figure/unnamed-chunk-24-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-25-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 #ggsave("Figures/SimulationHBoth.jpg",dpi=300,height=4,width=10)
@@ -552,112 +606,138 @@ psim2
 Plot the posterior mean density
 
 ```r
-spars<-parsall %>% filter(par %in% c("alpha","beta","detect")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+spars<-parsall %>% filter(par %in% c("alpha","beta1","beta2","detect")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta=beta),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,beta2=beta2),id.var='species')
 colnames(tr)<-c("species","par","value")
 
 ggplot(spars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_grid(par~species,scales="free") + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
 ```
 
-<img src="figure/unnamed-chunk-25-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-26-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 #Hierarchical posteriors
-hpars<-parsall %>% filter(par %in% c("gamma","intercept","sigma_int","sigma_slope")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+hpars<-parsall %>% filter(par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+
+tr<-melt(data.frame(species=1:length(detection),gamma1=gamma1,gamma2=gamma2,intercept=intercept,sigma_beta1=sigma_beta1,sigma_beta2=sigma_beta2,sigma_alpha=sigma_alpha),id.var='species')
+colnames(tr)<-c("species","par","value")
 
 ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
 ```
 
-<img src="figure/unnamed-chunk-25-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-26-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
-ggsave("Figures/StripPlots.svg",height=4,width=9)
+#ggsave("Figures/StripPlots.svg",height=4,width=9)
 ```
 
 ##Correlation in posteriors for Nmixture Model
 
 
 ```r
-castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw) %>% filter(par %in% c("gamma","intercept")) %>% dcast(Chain+Draw~par,value.var="estimate")
+castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw) %>% filter(par %in% c("gamma1","gamma2","intercept")) %>% dcast(Chain+Draw~par,value.var="estimate")
 head(castdf)
 ```
 
 ```
-##   Chain Draw      gamma intercept
-## 1     1    1 -1.1560864  3.008477
-## 2     1    2 -1.1411331  2.898388
-## 3     1    3 -0.8568936  2.937584
-## 4     1    4 -1.0811604  2.995751
-## 5     1    5 -1.0508893  2.808395
-## 6     1    6 -0.8510390  2.934967
+##   Chain Draw     gamma1     gamma2 intercept
+## 1     1    1 -0.9857899 0.22541674  2.947197
+## 2     1    2 -1.1295515 0.22430728  3.089482
+## 3     1    3 -1.1816846 0.10629628  3.018119
+## 4     1    4 -1.2220386 0.14121967  3.029004
+## 5     1    5 -1.1155330 0.09497706  2.970081
+## 6     1    6 -0.8490234 0.12048731  2.998761
 ```
 
 ```r
 ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
 ```
 
-<img src="figure/unnamed-chunk-26-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-27-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
-castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
+castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta1","beta2","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
 head(castdf)
 ```
 
 ```
-##   species Chain Draw    alpha       beta    detect
-## 1       1     1    1 2.995332 -0.5698542 0.5188879
-## 2       1     1    2 3.087161 -0.6578827 0.5154735
-## 3       1     1    3 2.975078 -0.5397453 0.5073732
-## 4       1     1    4 3.027340 -0.6109345 0.5139869
-## 5       1     1    5 3.003763 -0.5994086 0.5157211
-## 6       1     1    6 3.073435 -0.6615115 0.5046803
+##   species Chain Draw    alpha      beta1     beta2    detect
+## 1       1     1    1 3.081301 -0.7213364 0.2867213 0.5509497
+## 2       1     1    2 3.095045 -0.6879065 0.2701101 0.5208868
+## 3       1     1    3 3.140656 -0.7235818 0.2633017 0.5252405
+## 4       1     1    4 3.168372 -0.7775007 0.2892912 0.5141201
+## 5       1     1    5 3.160529 -0.7667692 0.2886481 0.5232369
+## 6       1     1    6 3.137666 -0.7222659 0.2664197 0.5249491
 ```
 
 ```r
 ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
 ```
 
-<img src="figure/unnamed-chunk-26-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-27-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Predicted Relationship 
 
-Does accounting for non-independence and detection change our estimate of trait matching?
-
 
 ```r
-castdf<-group_by(pars,Chain) %>% select(par,estimate) %>% filter(par %in% c("gamma","intercept"))
-
-castdf<-dcast(pars[pars$par %in% c("gamma","intercept"),], Chain + Draw~par,value.var="estimate")
-
-trajF<-function(alpha,beta,x){
-  indat<-cbind(alpha,beta)
-  
-  #fit regression for each input estimate
-  sampletraj<-apply(indat,1,function(s){
-    data.frame(x=x,y=exp(s['alpha'] + s['beta'] *x))})
-  sample_all<-rbind_all(sampletraj)
-  
-  #Compute CI intervals
-  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
-  }
-
-#calculated predicted y
-predy<-trajF(alpha=castdf$intercept,beta=castdf$gamma,x=as.numeric(traitmatch))
-
-orig<-trajF(alpha=rnorm(2000,intercept,sigma_intercept),beta=rnorm(2000,gamma,sigma_slope),x=as.numeric(traitmatch))
-
-
-#plot and compare to original data
-psim3<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.1,fill="red")  + geom_line(aes(y=mean),size=.8,col="red",linetype="dashed") + theme_bw() + ylab("Interactions") + geom_line(data=orig,aes(x=x,y=mean),col='black',size=1) + geom_ribbon(data=predyniave,aes(ymin=lower,ymax=upper),alpha=0.1,fill="blue") +  geom_line(data=predyniave,aes(y=mean),size=.8,col="blue",linetype="dashed") + xlab("Difference between Bill and Corolla Length") 
-
-psim3
+castdf<-dcast(pars[pars$par %in% c("gamma1","gamma2","intercept"),], Chain + Draw~par,value.var="estimate")
 ```
 
-<img src="figure/unnamed-chunk-27-1.png" title="" alt="" style="display: block; margin: auto;" />
+## Calculated predicted visitation rates
+
+### Traits
+
 
 ```r
-ggsave("Figures/SimulationResults.jpg",height=5,width=6,dpi=300)
+predy_trait<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitmatch),resources=as.numeric(resources),beta2=0)
+orig<-trajF(alpha=rnorm(2000,intercept,sigma_alpha),beta1=rnorm(2000,gamma1,sigma_beta1),beta2=0,x=as.numeric(traitmatch),resources=as.numeric(resources))
+
+pm<-melt(list(Nmixture=predy_trait,'Poisson GLMM'=predyniave_trait),id.vars=colnames(predy_trait))
+
+tplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.3)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits") + theme(legend.position='none')+ geom_line(data=orig,aes(y=mean),col='black',size=.8)
+```
+
+###Abundance
+
+
+```r
+predy_abundance<-trajA(alpha=castdf$intercept,beta1=0,x=as.numeric(traitmatch),resources=as.numeric(resources),beta2=castdf$gamma2)
+
+orig<-trajA(alpha=rnorm(1000,intercept,sigma_alpha),beta1=0,beta2=rnorm(1000,gamma2,sigma_beta1),x=as.numeric(traitmatch),resources=as.numeric(resources))
+
+pm<-melt(list(Nmixture=predy_abundance,'Poisson GLMM'=predyniave_abundance),id.vars=colnames(predy_abundance))
+
+aplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.3)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flower Abundance") + geom_line(data=orig,aes(y=mean),col='black',size=.8) + geom_point(data=mdat,aes(x=Abundance,y=Interactions),size=.5,alpha=.5) + labs(fill="Model") + ggtitle("Abundance") + theme(legend.position='none')
+```
+
+
+```r
+predy<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,x=as.numeric(traitmatch),resources=as.numeric(resources),beta2=castdf$gamma2)
+
+orig<-trajF(alpha=rnorm(1000,intercept,sigma_alpha),beta1=rnorm(1000,gamma1,sigma_beta1),beta2=rnorm(1000,gamma2,sigma_beta2),x=as.numeric(traitmatch),resources=as.numeric(resources))
+
+pm<-melt(list(Nmixture=predy,'Poisson GLMM'=predyniave_both),id.vars=colnames(predy))
+
+fplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.3)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")+ geom_line(data=orig,aes(y=mean),col='black',size=.8)
+```
+
+
+```r
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,3,3),c(1,1,1) ))
+```
+
+<img src="figure/unnamed-chunk-32-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+```r
+jpeg("Figures/SimPredictBoth.jpg",height=6,width=10,units="in",res=300)
+grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
+dev.off()
+```
+
+```
+## png 
+##   2
 ```
 
 Black line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The blue line is the same model, but assuming perfect detection rates.
@@ -682,7 +762,7 @@ psim4<-p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated d
 psim4
 ```
 
-<img src="figure/unnamed-chunk-28-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-33-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/SimulationDisc.jpeg",height=5,width=5)
@@ -694,77 +774,17 @@ ggsave("Figures/SimulationDisc.jpeg",height=5,width=5)
 ##   2
 ```
 
-```
-## png 
-##   2
-```
 
-#Compare Nmixture Models to a Multinomial fit
-
-Several studies follow Vasquez 2009 in fitting a multinomial relationship to frequency and interaction probabilities. See ??mgen in package bipartite. Since traitmatching is a distance, take 1-probabilities to correct weight the multinomial
-
-
-```r
-#true number of observed interactions
-true_state<-obs.state %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
-
-m<-max(traitmatch)-traitmatch
-m<-m/sum(m)
-
-#True latent interactions, since the simulated data is known.
-print(paste("Correlation coefficient is:", round(cor(c(true_state),c(m),method="spearman"),2)))
-```
-
-```
-## [1] "Correlation coefficient is: 0.58"
-```
-
-What is the discrepancy of a multinomial approach?
-
-Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus mean observed.
-
-
-```r
-#define discrep function
-chisq<-function(o,e){(o-e)^2/(e+0.5)}
-
-nullm<-function(){
-r<-mgen(m,sum(true_state),keep.species = F)
-}
-
-#same number of draws as bayesian
-#cl<-makeCluster(20,"SOCK")
-#registerDoSNOW(cl)
-mult_matrix<-foreach(x=1:length(pars[pars$par %in% "fit","estimate"]),.packages=c("bipartite","reshape2")) %do% nullm()
-#stopCluster(cl)
-
-mats<-lapply(mult_matrix,function(r){
-rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
-
-#for each position what is the chisq
-for (x in 1:nrow(r)){
-  for (y in 1:ncol(r)){
-   rmerge[x,y]<-chisq(e=r[x,y],o=true_state[x,y])
-  }
-}
-
-#sum of chisq driscrepancy
-return(rmerge)
-})
-
-multi_disc<-sapply(mats,function(x) sum(x))
-
-qplot(multi_disc)+ xlab("Chi-squared Discrepancy for Multimonial Liklihood") + geom_vline(xintercept=mean(multi_disc),col='red',linetype='dashed')
-```
-
-<img src="figure/unnamed-chunk-31-1.png" title="" alt="" style="display: block; margin: auto;" />
-
-#Compare Bayesian Nmixture and Multinomial using true known interactions
+#Compare using true known interactions
 
 ## No Detection Nmixture Model
 
 
 ```r
+#Discrepancy function
+#define discrep function
+chisq<-function(o,e){(o-e)^2/(e+0.5)}
+
 N_niave<-pars_niave[ pars_niave$par %in% "ynew",]
 
 bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
@@ -776,8 +796,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1763588   94.2    3205452  171.2   3205452  171.2
-## Vcells 300883781 2295.6  547666643 4178.4 433962624 3310.9
+## Ncells    712959   38.1    1770749   94.6   1770749   94.6
+## Vcells 338600765 2583.4  492750708 3759.4 492688706 3759.0
 ```
 
 ```r
@@ -785,6 +805,17 @@ occ_nodetect_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
 })
 
+rm(bydraw)
+gc()
+```
+
+```
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells    698168   37.3    1770749   94.6   1770749   94.6
+## Vcells 260590813 1988.2  492750708 3759.4 492688706 3759.0
+```
+
+```r
 #calculate discrep on those deviates
 occ_nodetect<-lapply(occ_nodetect_matrix,function(r){
     #for each position what is the chisq
@@ -815,8 +846,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1762201   94.2    3205452  171.2   3205452  171.2
-## Vcells 271730642 2073.2  657279971 5014.7 433962624 3310.9
+## Ncells    713153   38.1    1770749   94.6   1770749   94.6
+## Vcells 338758740 2584.6  591380849 4511.9 591366348 4511.8
 ```
 
 ```r
@@ -824,6 +855,17 @@ occ_matrix<-lapply(bydraw,function(x){
   r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
   })
 
+rm(bydraw)
+gc()
+```
+
+```
+##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells    702367   37.6    1770749   94.6   1770749   94.6
+## Vcells 260737851 1989.3  591380849 4511.9 591366348 4511.8
+```
+
+```r
 #calculate discrep for those aggregated matrices
 occ<-lapply(occ_matrix,function(r){
     #for each position what is the chisq
@@ -844,6 +886,10 @@ names(occ_matrix)<-1:length(occ_matrix)
 
 
 ```r
+#true number of observed interactions
+true_state<-obs.state %>% group_by(Bird,Plant) %>% summarize(n=sum(Yobs)) %>% acast(.$Bird~.$Plant)
+
+
 mmat<-melt(true_state)
 colnames(mmat)<-c("Bird","Plant","True_State")
 
@@ -860,25 +906,20 @@ colnames(moccd)<-c("Bird","Plant","Poisson GLMM","Iteration")
 
 simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
 
-#multinomial
-multmats<-melt(mult_matrix)
-colnames(multmats)<-c("Bird","Plant","Multinomial","Iteration")
-simdat<-merge(simdat,multmats,by=c("Bird","Plant","Iteration"))
+simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM"))
 
-simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM","Multinomial"))
-
-ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
+ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=1) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 ```
 
-<img src="figure/unnamed-chunk-34-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-37-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 
-ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable),alpha=.4) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
+ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable)) + geom_point(alpha=.3) + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
 ```
 
-<img src="figure/unnamed-chunk-34-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-37-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
@@ -890,7 +931,7 @@ simd$Diff<-simd$Nmixture-simd$`Poisson GLMM`
 ggplot(simd,aes(x=True_State,y=Diff)) + geom_point() + ylab("Difference in Nmixture and Poisson GLMM")
 ```
 
-<img src="figure/unnamed-chunk-34-3.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-37-3.png" title="" alt="" style="display: block; margin: auto;" />
 
 ## View predicted trait-matching relationship with the number of visits.
 
@@ -908,7 +949,7 @@ simT<-simdat %>% group_by(variable,traitmatch) %>% summarize(Lower=quantile(valu
 ggplot(simT,aes(x=traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.4) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw()  + geom_point(data=mmat,aes(y=True_State)) + labs(x="Difference in Bill and Corolla Length",y="Total Predicted Visits",fill="Model",col='Model')
 ```
 
-<img src="figure/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-39-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 View a couple example data points from across the type of interactions.
 
@@ -920,7 +961,7 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("High Visitation Example")
 ```
 
-<img src="figure/unnamed-chunk-37-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-40-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
@@ -929,15 +970,12 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
 ```
 
-<img src="figure/unnamed-chunk-37-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-40-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Summary of discrepancy of predicted matrices
 
 
 ```r
-#Multinomial
-multi_disc<-sapply(mats,function(x) median(x))
-
 #Nmixture without detection
 occno_disc<-sapply(occ_nodetect,function(x) median(x))
 
@@ -945,16 +983,16 @@ occno_disc<-sapply(occ_nodetect,function(x) median(x))
 occ_disc<-sapply(occ,function(x) median(x))
 
 #compared to bayesian
-ggplot(data.frame(multi_disc)) + geom_histogram(aes(x=multi_disc),fill="blue",alpha=.6)+ xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red")+ geom_vline(xintercept=mean(multi_disc),linetype="dashed",col="blue") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
+ggplot() + xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-<img src="figure/unnamed-chunk-38-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-41-1.png" title="" alt="" style="display: block; margin: auto;" />
 
-##Comparison of summary statistics for all three approaches
+##Comparison of summary statistics
 
 
 ```r
-d<-list(Nmixture=occ,Multinomial=mats,Poisson_GLM=occ_nodetect)
+d<-list(Nmixture=occ,Poisson_GLM=occ_nodetect)
 d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 
@@ -962,13 +1000,12 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ```
 
 ```
-## Source: local data frame [3 x 4]
+## Source: local data frame [2 x 4]
 ## 
-##         Model mean_mean mean_sd  mean_sum
-##         (chr)     (dbl)   (dbl)     (dbl)
-## 1 Multinomial    676.04    1.87 135208.54
-## 2    Nmixture      1.09    0.12    218.15
-## 3 Poisson_GLM      3.07    0.24    614.40
+##         Model mean_mean mean_sd mean_sum
+##         (chr)     (dbl)   (dbl)    (dbl)
+## 1    Nmixture      1.03    0.12   206.54
+## 2 Poisson_GLM      2.89    0.22   578.48
 ```
 
 #DIC
@@ -979,7 +1016,7 @@ sim_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 51121.68
+## [1] 51736.26
 ```
 
 ```r
@@ -987,12 +1024,12 @@ sim_detect$BUGSoutput$DIC
 ```
 
 ```
-## [1] 47974.17
+## [1] 48977.12
 ```
 
 
 
 ```r
-save.image("Abundance.Rdata")
+save.image("Abundance.RData")
 ```
 
