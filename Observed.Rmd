@@ -661,8 +661,9 @@ predy<-rbind_all(lapply(castdf,function(i){
   return(pr)
   }))
 
-fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.3)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
+fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.5)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
 fplot
+
 ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 ```
@@ -875,7 +876,7 @@ for (x in 1:nrow(tab)){
 }
 daydf<-rbind_all(daydf)
 
-ggplot(md) + geom_ribbon(alpha=.5,aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + geom_line(aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
+ggplot(md) + geom_ribbon(aes(x=Days,y=mean,ymin=lower,ymax=upper)) + geom_line(aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
 ggsave("Figures/DetectionDays.jpeg",height=7,width=9,dpi=300) 
 ```
 
