@@ -39,43 +39,43 @@ cat("
     for (i in 1:Birds){
     logit(detect[i]) <- dtrans[i]
     dtrans[i] ~ dnorm(dprior,tau_detect)
-    alpha[i] ~ dnorm(intercept,tau_alpha)
-    beta1[i] ~ dnorm(gamma1,tau_beta1)  
-    beta2[i] ~ dnorm(gamma2,tau_beta2)    
+    alpha[i] ~ dnorm(alpha_mu,alpha_tau)
+    beta1[i] ~ dnorm(beta1_mu,beta1_tau)  
+    beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
     }
     
     #Hyperpriors
     
     #Intercept grouping
-    intercept~dnorm(0,0.0001)
+    alpha_mu~dnorm(0,0.0001)
 
     #Group intercept variance
-    sigma_alpha ~ dt(0,1,1)I(0,)
-    tau_alpha <- pow(sigma_alpha,-2)
+    alpha_sigma ~ dt(0,1,1)I(0,)
+    alpha_tau <- pow(alpha_sigma,-2)
 
     #Detect grouping
     dprior ~ dnorm(0,0.5)
 
-  # Detect variance
+    #Detect variance
     tau_detect ~ dunif(0,5)
     sigma_detect<-pow(1/tau_detect,0.5) 
     
     #Trait Slope
 
     #Mean
-    gamma1~dnorm(0,0.0001)
+    beta1_mu~dnorm(0,0.0001)
 
     #Variance
-    sigma_beta1 ~ dt(0,1,1)I(0,)
-    tau_beta1 <- pow(sigma_beta1,-2)
+    beta1_sigma ~ dt(0,1,1)I(0,)
+    beta1_tau <- pow(beta1_sigma,-2)
 
     #Abundance slope
 
     #Mean
-    gamma2~dnorm(0,0.0001)
+    beta2_mu~dnorm(0,0.0001)
     
-    sigma_beta2 ~ dt(0,1,1)I(0,)
-    tau_beta2 <- pow(sigma_beta2,-2)
+    beta2_sigma ~ dt(0,1,1)I(0,)
+    beta2_tau <- pow(beta2_sigma,-2)
 
     #derived posterior check
 

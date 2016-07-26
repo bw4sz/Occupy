@@ -472,8 +472,10 @@ resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR)) 
 For hummingbird i visiting plant j recorded by camera k on day d:
 
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
-$$N_{i,j,k} \sim Pois(\lambda_{i,j}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} *Resource_{j,k} $$
+$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * \gamma_{i,j,k} $$
+$$ \gamma = \beta_{2,i} *Resource_{j,k} $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
+
 
 **Priors**
 
@@ -501,7 +503,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-500
+runs<-100
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -525,15 +527,15 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   Ninit<-rep(max(indat$Yobs)+1,Nobs)
   
   #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,gamma1=0,gamma2=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),alpha_mu=0,sigma_alpha=0.1,sigma_beta=0.1,N=Ninit,beta1_mu=0,beta2_mu=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta1","beta2","alpha_mu","beta1_mu","beta2_mu","ynew","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 1   #thinning rate
+  nb <- 0 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Nobs","Ninit","resources","nb","nt","nc","ni")
@@ -562,7 +564,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","beta2_mu","sigma_alpha","sigma_beta1","sigma_beta2","alpha_mu"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","beta2_mu","sigma_alpha","beta1_sigma","sigma_beta2","alpha_mu"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 # Observed Data With Detection
@@ -593,15 +595,15 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),alpha_mu=0,sigma_alpha=0.1,beta1_sigma=0.1,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","intercept","sigma_alpha","sigma_beta1","gamma1","dprior")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","sigma_alpha","beta1_sigma","beta1_mu","dprior")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 10   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 1   #thinning rate
+  nb <- 0 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","nb","nc","ni","nt")
@@ -636,13 +638,13 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept","sigma_alpha","sigma_beta1","dprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ## Traits + Abundance
 
 ```{r,eval=T}
-runs<-200
+runs<-100
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -666,15 +668,15 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),intercept=0,sigma_alpha=0.1,sigma_beta2=0.1,sigma_beta1=0.1,N=Ninit,gamma1=0)}
+  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),alpha_mu=0,sigma_alpha=0.1,sigma_beta2=0.1,beta1_sigma=0.1,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","beta2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","gamma1","gamma2","fit","fitnew","dprior","sigma_detect","ynew")
+  ParsStage <- c("detect","alpha","beta1","beta2","alpha_mu","sigma_alpha","beta1_sigma","sigma_beta2","beta1_mu","beta2_mu","fit","fitnew","dprior","sigma_detect","ynew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 10   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 1   #thinning rate
+  nb <- 0 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources","nc","nb","ni","nt")
@@ -708,7 +710,7 @@ ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],ae
 ###Hierarcichal Posteriors
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","sigma_beta2","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ```{r}
@@ -734,7 +736,7 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
 ```{r,cache=FALSE,fig.height=5,fig.width=13}
-ggplot(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept","sigma_alpha","sigma_beta1","sigma_beta2","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+ggplot(parsObs[parsObs$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","sigma_beta2","dprior","sigma_detect"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
 ###Overall predicted relationship 
@@ -744,7 +746,7 @@ Calculated predicted visitation rates
 Does accounting for non-independence and detection change our estimate of trait matching?
 
 ```{r,fig.height=6,fig.width=10}
-castdf<-dcast(parsObs[parsObs$par %in% c("gamma1","gamma2","intercept"),], Model+Chain + Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1_mu","beta2_mu","alpha_mu"),], Model+Chain + Draw~par,value.var="estimate")
 
 castdf<-split(castdf,castdf$Model)
 ```
@@ -754,7 +756,7 @@ castdf<-split(castdf,castdf$Model)
 ```{r}
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$intercept,beta1=i$gamma1,beta2=i$gamma2,x=indat$Traitmatch,resources=indat$Flowers)
+  pr<-trajF(alpha=i$alpha_mu,beta1=i$beta1_mu,beta2=i$beta2_mu,x=indat$Traitmatch,resources=indat$Flowers)
   pr$Model<-unique(i$Model)
   return(pr)
   }))
@@ -773,9 +775,9 @@ We are only interested in the inference for the observed detection model data.
 ## Trait only
 
 ```{r}
-castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("gamma1","intercept"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
-predy_traits<-trajF(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)
+predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,beta2=0,x=indat$Traitmatch,resources=indat$Flowers)
 
 tplot<-ggplot(data=predy_traits,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits")
 tplot
@@ -786,9 +788,9 @@ tplot
 As part of the full model.
 
 ```{r}
-castdf<-dcast(pars_detect[pars_detect$par %in% c("gamma1","gamma2","intercept"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
-predy_abundance<-trajA(alpha=castdf$intercept,beta1=castdf$gamma1,beta2=castdf$gamma2,x=indat$Traitmatch,resources=indat$Flowers)
+predy_abundance<-trajA(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,beta2=castdf$beta2_mu,x=indat$Traitmatch,resources=indat$Flowers)
 
 aplot<-ggplot(data=predy_abundance,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Available Resources") + geom_point(data=indat,aes(x=Flowers,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Abundance")
 aplot
@@ -857,7 +859,7 @@ castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Ch
 spbeta2<-filter(castdf,Model %in% "Nmixture") %>% select(species,beta2) %>% group_by(species) %>% summarize(lower=quantile(beta2,0.05),mean=mean(beta2),upper=quantile(beta2,0.95))
 
 spbeta2<-merge(spbeta2,jagsIndexBird,by.x="species",by.y="jBird")
-ggplot(spbeta2,aes(x=Hummingbird,y=mean,ymin=lower,ymax=upper)) + geom_pointrange() + geom_hline(yintercept=0,linetype='dashed',col='red') + theme_bw() + coord_flip() + labs(y="Effect of Resources")
+ggplot(spbeta2,aes(x=Hummingbird,y=mean,ymin=lower,ymax=upper)) + geom_pointrange() + geom_hline(yalpha_mu=0,linetype='dashed',col='red') + theme_bw() + coord_flip() + labs(y="Effect of Resources")
 ```
 
 ### Abundance Predictions
@@ -1114,7 +1116,7 @@ occno_disc<-sapply(occ_nodetect,function(x) mean(x))
 occ_disc<-sapply(occ,function(x) mean(x))
 
 #compared to bayesian
-ggplot() + xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
+ggplot() + xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xalpha_mu=mean(occ_disc)),linetype="dashed",col="red") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xalpha_mu=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
 ##Comparison of summary statistics for all three approaches
@@ -1193,7 +1195,7 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
 
-#ggplot(species.mean) + geom_density2d(aes(x=TotalCorolla,y=lambda,col=as.factor(BAll_Flowers))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + ggtitle("2D Density Plots") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
+#ggplot(species.mean) + geom_density2d(aes(x=TotalCorolla,y=lambda,col=as.factor(BAll_Flowers))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + ggtitle("2D Density Plots") + geom_vline(aes(xalpha_mu=Total_Culmen),linetype='dashed')
 
 
 #Niche Breadth 
@@ -1215,13 +1217,16 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 #add level to hum.morph to match naming convention
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
-ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(Model))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=as.factor(Model))) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability")
+ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(Model))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xalpha_mu=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=as.factor(Model))) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability")
 ggsave("Figures/NicheBreadth.jpeg",height=6,width=9)
+```
 
 
-#Generate network
+#Network Statistics
 
+Given the uncertainty in species interactions, what do emergant statistics look like?
 
+```{r}
 #Split by resource
 nsplit<-split(species.mean,species.mean$Model)
 
