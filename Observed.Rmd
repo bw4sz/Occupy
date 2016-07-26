@@ -661,7 +661,7 @@ predy<-rbind_all(lapply(castdf,function(i){
   return(pr)
   }))
 
-fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.5)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance")
+fplot<-ggplot(data=predy,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.5)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance") + scale_fill_manual(values=c("grey70","black"))+ scale_color_manual(values=c("grey70","black"))
 fplot
 
 ggsave("Figures/BothObs.svg",height=5,width=7)
@@ -701,8 +701,9 @@ allpred<-list('Traits+Abundance'=predy[predy$Model=="Nmixture",!colnames(predy) 
 
 allpred<-melt(allpred,id.vars=colnames(predy_traits))
 
-allplot<-ggplot(data=allpred,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.4)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.7) + labs(fill="Model",col="Model") + ggtitle("Nmixture Model Comparison") + scale_fill_manual(values=c("black","red")) + scale_color_manual(values=c("black","red"))
+allplot<-ggplot(data=allpred,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.7)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.7) + labs(fill="Model",col="Model") + ggtitle("N-mixture Model Comparison") + scale_fill_manual(values=c("black","grey70")) + scale_color_manual(values=c("black","grey80"))
 allplot
+ggsave("Figures/AbundanceBothPlot.jpeg",height=4,width=7,dpi=300)
 ```
 
 ##Species Predictions
@@ -1044,6 +1045,111 @@ simT<-simdat %>% group_by(variable,Traitmatch) %>% summarize(Lower=quantile(valu
 
 ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.6) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw() + facet_wrap(~variable,nrow=3) + geom_point(data=mmat,aes(y=True_State))
 ```
+
+##Generate Networks
+
+```{r}
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Model+Chain + Draw~par,value.var="estimate")
+
+#Turn to 
+castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
+
+species.split<-split(castdf,list(castdf$species,castdf$Model),drop = T)
+
+species.traj<-lapply(species.split,function(dat){
+  index<-unique(dat$species)
+  
+  #get data for those species
+  billd<-indat[indat$jBird %in% index,]
+  
+  d<-data.frame(alpha=dat$alpha,beta1=dat$beta1,beta2=dat$beta2)
+  
+  #fit regression for each input estimate
+  sampletraj<-list()
+  
+  for (y in 1:nrow(d)){
+    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch + d$beta2[y])
+    
+    sampletraj[[y]]<-data.frame(x=as.numeric(billd$Traitmatch),y=as.numeric(v),jBird=billd$jBird,jPlant=billd$jPlant,Model=unique(dat$Model))
+  }
+  
+  sample_all<-rbind_all(sampletraj)
+})
+
+species.traj<-rbind_all(species.traj)
+
+
+
+species.mean<-species.traj %>% group_by(jBird,jPlant,Model) %>% summarize(Traitmatch=unique(x),phi=mean(y))
+
+species.mean<-merge(species.mean,indat[,colnames(indat) %in% c("jBird","jPlant","jTime","Hummingbird","Iplant_Double")])
+
+#get corolla sizes
+species.mean<-merge(species.mean,fl.morph,by.x="Iplant_Double", by.y="Group.1")
+
+#bill order
+ord<-hum.morph %>% arrange(Total_Culmen) %>% .$English
+species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
+
+#add level to hum.morph to match naming convention
+species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
+
+
+#ggplot(species.mean) + geom_density2d(aes(x=TotalCorolla,y=lambda,col=as.factor(BAll_Flowers))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + ggtitle("2D Density Plots") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
+
+
+#Niche Breadth 
+
+
+species.mean<-species.traj %>% group_by(jBird,jPlant,Model) %>% summarize(Traitmatch=unique(x),phi=mean(y),phi_low=quantile(y,0.05),phi_high=quantile(y,0.95))
+
+#merge names
+species.mean<-merge(species.mean,jagsIndexBird)
+species.mean<-merge(species.mean,jagsIndexPlants)
+
+#get corolla sizes
+species.mean<-merge(species.mean,fl.morph,by.x="Iplant_Double", by.y="Group.1")
+
+#bill order
+ord<-hum.morph %>% arrange(Total_Culmen) %>% .$English
+species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
+
+#add level to hum.morph to match naming convention
+species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
+
+ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(Model))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=as.factor(Model))) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability")
+ggsave("Figures/NicheBreadth.jpeg",height=6,width=9)
+
+
+#Generate network
+
+
+#Split by resource
+nsplit<-split(species.mean,species.mean$Model)
+
+makeN<-function(x){
+  
+  #input matrix
+  aggm<-matrix(nrow=nrow(jagsIndexBird),ncol=nrow(jagsIndexPlants),data=0)
+  for (j in 1:nrow(x)){
+    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rbinom(1,1,prob=x[j,"phi"])
+  }
+  #calculate network statistic
+  nstat<-networklevel(aggm,index=c("connectance","nestedness"))
+}
+
+nstat<-lapply(nsplit,function(x){
+  netstat<-melt(t(sapply(1:500,function(k) makeN(x)))) 
+  colnames(netstat)<-c("Iteration","Metric","value")
+  return(netstat)
+})
+
+nstat<-melt(nstat,colnames(nstat[[1]]))
+
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2) + scale_fill_discrete("Model")
+```
+
+
 
 
 ```{r}
