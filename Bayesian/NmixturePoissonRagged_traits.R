@@ -38,7 +38,7 @@ cat("
     logit(detect[i]) <- dtrans[i]
     dtrans[i] ~ dnorm(dprior,tau_detect)
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
-    beta1[i] ~ dnorm(beta1_mu,beta_tau)  
+    beta1[i] ~ dnorm(beta1_mu,beta1_tau)  
     }
     
     #Hyperpriors
