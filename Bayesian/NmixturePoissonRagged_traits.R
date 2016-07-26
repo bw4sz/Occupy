@@ -37,18 +37,18 @@ cat("
     for (i in 1:Birds){
     logit(detect[i]) <- dtrans[i]
     dtrans[i] ~ dnorm(dprior,tau_detect)
-    alpha[i] ~ dnorm(intercept,tau_alpha)
-    beta1[i] ~ dnorm(gamma1,tau_beta1)  
+    alpha[i] ~ dnorm(alpha_mu,alpha_tau)
+    beta1[i] ~ dnorm(beta1_mu,beta_tau)  
     }
     
     #Hyperpriors
     
     #Intercept grouping
-    intercept~dnorm(0,0.0001)
-    
-    #Group intercept variance
-    sigma_alpha ~ dt(0,1,1)I(0,)
-    tau_alpha <- pow(sigma_alpha,-2)
+    alpha_mu~dnorm(0,0.0001)
+
+    # Group intercept variance
+    alpha_tau ~ dgamma(0.0001,0.0001)
+    alpha_sigma<-pow(1/alpha_tau,0.5) 
     
     #Detect grouping
     dprior ~ dnorm(0,0.5)
@@ -58,16 +58,13 @@ cat("
     sigma_detect<-pow(1/tau_detect,0.5) 
     
     #Trait Slope
+    beta1_mu~dnorm(0,0.0001)
     
-    #Mean
-    gamma1~dnorm(0,0.0001)
-    
-    #Variance
-    sigma_beta1 ~ dt(0,1,1)I(0,)
-    tau_beta1 <- pow(sigma_beta1,-2)
+    #Slope variance, turning precision to sd
+    beta1_tau ~ dgamma(0.0001,0.0001)
+    beta1_sigma<-pow(1/beta1_tau,0.5)
     
     #derived posterior check
-    
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
     

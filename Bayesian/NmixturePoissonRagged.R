@@ -9,10 +9,11 @@ cat("
     for (k in 1:Cameras){
     
     #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] 
+    gamma[i,j,k]=beta2[i] * resources[i,j,k]
     
     #For each camera - there is a latent count
-    N[i,j,k] ~ dpois(lambda[i,j,k])
+    N[i,j,k] ~ dpois(lambda[i,j,k] * gamma[i,j,k])
     }
     }
     }
