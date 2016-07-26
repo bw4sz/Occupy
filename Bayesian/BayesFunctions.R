@@ -16,7 +16,7 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   
   #correct N samples
   i<-sp_pl$par %in% "E"
-  
+
   #Species
   sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Bird]
   
@@ -75,12 +75,12 @@ trajF<-function(alpha,beta1,beta2,beta3,trait,resources){
 
 #sample trajectory for a given posterior using quantile or hdi interval
 traj<-function(alpha,beta1,beta2,beta3,trait,resources){
-  
-  #fit regression for each input estimate
-  
-  v=exp(alpha + beta1 * trait + beta2 * resources + beta3 * trait*resources)
-  
-  sampletraj<-data.frame(trait=trait,y=as.numeric(v))
+
+    #fit regression for each input estimate
+    
+    v=exp(alpha + beta1 * trait + beta2 * resources + beta3 * trait*resources)
+    
+    sampletraj<-data.frame(trait=trait,y=as.numeric(v))
   
   #Compute CI intervals
   return(sampletraj)
