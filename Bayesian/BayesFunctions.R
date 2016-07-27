@@ -1,6 +1,6 @@
 #extract and create a dataframe of posteriors
 
-extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
+extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant",ynew=T){
   #extract desired info from the models
   parsO<-melt(x$BUGSoutput$sims.array)
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
@@ -15,6 +15,7 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   sp_pl<-data.frame(parameter=l,species=as.numeric(str_match(l,pattern="\\[(\\d+)]")[,2]),par=str_extract(l,"\\w+"))
   
   #correct N samples
+  if(ynew){
   i<-sp_pl$par %in% "ynew"
 
   #Species
@@ -24,6 +25,7 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant"){
   #add a NA plant columns
   sp_pl$plant<-NA
   sp_pl[i,][,"plant"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Plant]
+  }
   
   #merge levels
   pars<-merge(parsO,sp_pl)
@@ -63,13 +65,13 @@ trajState<-function(alpha,beta,x,observed){
 }
 
 #sample trajectory for a given posterior
-trajF<-function(alpha,beta1,beta2,beta3,trait,resources){
-  g<-data.frame(alpha,beta1,beta2,beta3)
+trajF<-function(alpha,beta1,beta2,trait,resources){
+  g<-data.frame(alpha,beta1,beta2)
   
   #label rows
   g$id<-1:nrow(g)
   
-  sampletraj<-g %>% group_by(id) %>% do(traj(.$alpha,.$beta1,trait=trait,resources,.$beta2,.$beta3)) %>% group_by(trait) %>% summarize(mean=mean(y),lower=quantile(y,0.05),upper=quantile(y,0.95))
+  sampletraj<-g %>% group_by(id) %>% do(traj(.$alpha,.$beta1,trait=trait,resources=resources,.$beta2)) %>% group_by(trait) %>% summarize(mean=mean(y),lower=quantile(y,0.05),upper=quantile(y,0.95))
   return(sampletraj)
 }
 
@@ -78,7 +80,7 @@ traj<-function(alpha,beta1,beta2,beta3,trait,resources){
 
     #fit regression for each input estimate
     
-    v=exp(alpha + beta1 * trait + beta2 * resources + beta3 * trait*resources)
+    v=exp(alpha + beta1 * trait) * resources
     
     sampletraj<-data.frame(trait=trait,y=as.numeric(v))
   
@@ -86,49 +88,6 @@ traj<-function(alpha,beta1,beta2,beta3,trait,resources){
   return(sampletraj)
 }
 
-#sample trajectory for a given posterior using quantile or hdi interval
-trajLog<-function(alpha,beta1,beta2,beta3,x,resources,type='quantile'){
-  indat<-data.frame(alpha,beta1,beta2,beta3)
-  
-  #fit regression for each input estimate
-  sampletraj<-list()
-  
-  for (y in 1:nrow(indat)){
-    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
-    
-    sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
-  }
-  
-  sample_all<-rbind_all(sampletraj)
-  
-  #Compute CI intervals
-  if(type=='quantile'){
-    predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
-  }
-  if(type=='hdi'){
-    predy<-group_by(sample_all,x) %>% summarise(lower=hdi(y)[[1]],upper=hdi(y)[[2]],mean=mean(y,na.rm=T))
-  }
-  return(predy)
-}
-
-#predicted y for logistic
-trajLogistic<-function(alpha,beta1,beta2,beta3,x,resources){
-  indat<-data.frame(alpha,beta1,beta2,beta3)
-  
-  #fit regression for each input estimate
-  sampletraj<-list()
-  
-  for (y in 1:nrow(indat)){
-    v=exp(indat$alpha[y] + indat$beta1[y] * x + indat$beta2[y] * resources + indat$beta3[y] * x*resources)
-    
-    sampletraj[[y]]<-data.frame(x=as.numeric(x),y=as.numeric(v))
-  }
-  
-  sample_all<-rbind_all(sampletraj)
-  
-  #Compute CI intervals
-  predy<-group_by(sample_all,x) %>% summarise(lower=quantile(y,0.025,na.rm=T),upper=quantile(y,0.975,na.rm=T),mean=mean(y,na.rm=T))
-}
 
 #calculate poisson interactions
 

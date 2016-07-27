@@ -10,10 +10,10 @@ cat("
     
     #Process Model
     log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] 
-    gamma[i,j,k]=beta2[i] * resources[i,j,k]
+
     
     #For each camera - there is a latent count
-    N[i,j,k] ~ dpois(lambda[i,j,k] * gamma[i,j,k])
+    N[i,j,k] ~ dpois(lambda[i,j,k] * resources[i,j,k] + 0.0000001)
     }
     }
     }
@@ -28,7 +28,7 @@ cat("
     #Assess Model Fit
     
     #Fit discrepancy statistics
-    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]
+    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]] * resources[Bird[x],Plant[x],Camera[x]]
     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
     
     ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])
@@ -41,7 +41,6 @@ cat("
     dtrans[i] ~ dnorm(dprior,tau_detect)
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)  
-    beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
     }
     
     #Hyperpriors
@@ -68,14 +67,6 @@ cat("
     #Variance
     beta1_sigma ~ dt(0,1,1)I(0,)
     beta1_tau <- pow(beta1_sigma,-2)
-
-    #Abundance slope
-
-    #Mean
-    beta2_mu~dnorm(0,0.0001)
-    
-    beta2_sigma ~ dt(0,1,1)I(0,)
-    beta2_tau <- pow(beta2_sigma,-2)
 
     #derived posterior check
 
