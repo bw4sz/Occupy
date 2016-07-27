@@ -72,8 +72,6 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
-int<-int[1:100,]
-
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
@@ -507,7 +505,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-1000
+runs<-5000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -538,8 +536,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- 0 # number to discard for burn-in
+  nt <- 4   #thinning rate
+  nb <- runs-2000 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","resources","nb","nt","nc","ni")
@@ -576,7 +574,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","beta2_mu","sigma_alpha","b
 ## Traits
 
 ```{r,eval=T}
-runs<-1000
+runs<-5000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_traits.R")
@@ -606,8 +604,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- 0 # number to discard for burn-in
+  nt <- 4   #thinning rate
+  nb <- runs-2000 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","nb","nc","ni","nt")
@@ -648,7 +646,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Traits + Abundance
 
 ```{r,eval=T}
-runs<-1000
+runs<-5000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -679,8 +677,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- 0 # number to discard for burn-in
+  nt <- 4   #thinning rate
+  nb <- runs-2000 # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources","nc","nb","ni","nt")
@@ -1091,7 +1089,7 @@ ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=vari
 ##Generate Networks
 
 ```{r}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Model+Chain + Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha"),], species +Model+Chain + Draw~par,value.var="estimate")
 
 #Turn to 
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -1110,7 +1108,7 @@ species.traj<-lapply(species.split,function(dat){
   sampletraj<-list()
   
   for (y in 1:nrow(d)){
-    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch + d$beta2[y])
+    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch) * billd$scaledR
     
     sampletraj[[y]]<-data.frame(x=as.numeric(billd$Traitmatch),y=as.numeric(v),jBird=billd$jBird,jPlant=billd$jPlant,Model=unique(dat$Model))
   }
@@ -1159,7 +1157,7 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 #add level to hum.morph to match naming convention
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
-ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(Model))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=as.factor(Model))) + ylab("Probability of Interaction") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability")
+ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(Model))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=as.factor(Model))) + ylab("Daily Interaction Rate") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability")
 ggsave("Figures/NicheBreadth.jpeg",height=6,width=9)
 ```
 
@@ -1177,14 +1175,14 @@ makeN<-function(x){
   #input matrix
   aggm<-matrix(nrow=nrow(jagsIndexBird),ncol=nrow(jagsIndexPlants),data=0)
   for (j in 1:nrow(x)){
-    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rbinom(1,1,prob=x[j,"phi"])
+    aggm[x[j,"jBird"],x[j,"jPlant"]]<-rpois(1,lambda=x[j,"phi"])
   }
   #calculate network statistic
   nstat<-networklevel(aggm,index=c("connectance","nestedness"))
 }
 
 nstat<-lapply(nsplit,function(x){
-  netstat<-melt(t(sapply(1:500,function(k) makeN(x)))) 
+  netstat<-melt(t(sapply(1:100,function(k) makeN(x)))) 
   colnames(netstat)<-c("Iteration","Metric","value")
   return(netstat)
 })
