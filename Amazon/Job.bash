@@ -3,6 +3,7 @@
 cd Occupy||sudo halt
 
 #git pull to make sure we are at HEAD
+git checkout master
 git pull
 
 #make new branch
