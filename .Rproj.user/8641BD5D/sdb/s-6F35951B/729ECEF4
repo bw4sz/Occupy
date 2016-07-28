@@ -1,0 +1,18 @@
+{
+    "contents" : "\ncastdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c(\"beta1\",\"alpha\"),], species +Chain +Model+ Draw~par,value.var=\"estimate\")\n\n#Turn to species level\ncastdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))\n\nspecies.split<-split(castdf,list(castdf$species,castdf$Model))\n\nspecies.traj<-list()\n\nfor(d in 1:length(species.split)){\n  x<-species.split[[d]]\n  #species name\n  index<-jagsIndexBird[unique(x$species),\"Hummingbird\"]\n  \n  #range of trait distances\n  tsp<-indat %>% filter(Hummingbird==index) %>% .$Traitmatch\n  \n  #Range of abundances\n  fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR\n  \n  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,trait=tsp,resources=fsp)\n}\n\nnames(species.traj)<-names(species.split)\n\nspecies.traj<-melt(species.traj,id.var=colnames(species.traj[[1]]))\n\n#split out names and model\nspecies.traj[,c(\"Index\",\"Model\")]<-colsplit(species.traj$L1,\"\\\\.\",c(\"Index\",\"Model\"))\n\nspe<-merge(species.traj,jagsIndexBird,by.x=\"Index\",by.y=\"jBird\")\n\n#match colnames\n\n#plot and compare to original data\nggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab(\"Interactions\") + xlab(\"Difference between Bill and Corolla Length\") + facet_wrap(~Hummingbird,scales=\"free\",ncol=3)+ labs(fill=\"Model\")  + ylab(\"Interactions per day\")\n",
+    "created" : 1466102417533.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "3278523805",
+    "id" : "729ECEF4",
+    "lastKnownWriteTime" : 29836824280170608,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

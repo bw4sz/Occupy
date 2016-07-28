@@ -1,0 +1,17 @@
+{
+    "contents" : "\nsink(\"Bayesian/NmixturePoissonRagged_traits.jags\")\n\ncat(\"\n    model {\n    #Compute true state for each pair of birds and plants\n    for (i in 1:Birds){\n    for (j in 1:Plants){\n    for (k in 1:Times){\n    \n    #Process Model\n    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j]\n    \n    #True State\n    N[i,j,k] ~ dpois(lambda[i,j,k])\n    }\n    }\n    }\n    \n    #Observation Model\n    for (x in 1:Nobs){\n    \n    #Observation Process for cameras\n    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])    \n    \n    #     #Assess Model Fit - Posterior predictive check\n    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]]\n    E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)\n    #     \n    ynew[x]~dbin(detect[Bird[x]], N[Bird[x],Plant[x],Time[x]])\n    E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)\n    }\n    \n    #Priors\n    #Observation model\n    #Detect priors, logit transformed - Following lunn 2012 p85\n    \n    for(x in 1:Birds){\n    #For Cameras\n    logit(detect[x])<-dcam[x]\n    dcam[x] ~ dnorm(dprior,tau_dcam)\n    }\n    \n    #Detection group prior\n    dprior ~ dnorm(0,0.386)\n    \n    #Group effect detect camera\n    tau_dcam ~ dunif(0,1000)\n    sigma_dcam<-pow(1/tau_dcam,.5)\n    \n    #Process Model\n    #Species level priors\n    for (i in 1:Birds){\n    \n    #Intercept\n    alpha[i] ~ dnorm(alpha_mu,alpha_tau)\n    \n    #Traits slope \n    beta1[i] ~ dnorm(beta1_mu,beta1_tau)    \n    }\n    \n    #Group process priors\n    \n    #Intercept \n    alpha_mu ~ dnorm(0,0.386)\n    alpha_tau ~ dunif(0,1000)\n    alpha_sigma<-pow(1/alpha_tau,0.5) \n    \n    #Trait\n    beta1_mu~dnorm(0,0.386)\n    beta1_tau ~ dunif(0,1000)\n    beta1_sigma<-pow(1/beta1_tau,0.5)\n    \n    #derived posterior check\n    fit<-sum(E[]) #Discrepancy for the observed data\n    fitnew<-sum(E.new[])\n    \n    }\n    \",fill=TRUE)\n\nsink()\n",
+    "created" : 1469656297375.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1471753493",
+    "id" : "C8C062EE",
+    "lastKnownWriteTime" : 1469719192,
+    "path" : "~/Occupy/Bayesian/NmixturePoissonRagged_traits.R",
+    "project_path" : "Bayesian/NmixturePoissonRagged_traits.R",
+    "properties" : {
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

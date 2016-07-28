@@ -1,7 +1,4 @@
 
-sink("Bayesian/NmixturePoissonRagged_traits.jags")
-
-cat("
     model {
     #Compute true state for each pair of birds and plants
     for (i in 1:Birds){
@@ -53,6 +50,7 @@ cat("
     for (i in 1:Birds){
     
     #Intercept
+    #logit prior, then transform for plotting
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
     
     #Traits slope 
@@ -76,6 +74,4 @@ cat("
     fitnew<-sum(E.new[])
     
     }
-    ",fill=TRUE)
-
-sink()
+    
