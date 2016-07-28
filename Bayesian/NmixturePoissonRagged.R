@@ -6,38 +6,38 @@ cat("
     #Compute intensity for each pair of birds and plants
     for (i in 1:Birds){
     for (j in 1:Plants){
-    for (k in 1:Cameras){
+    for (k in 1:Times){
     
     #Process Model
     log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
     
-    #For each camera - there is a latent count
+    #For each Time - there is a latent count
     N[i,j,k] ~ dpois(lambda[i,j,k])
     }
     }
     }
     
     
-    #Observed counts for each day of sampling at that camera
+    #Observed counts for each day of sampling at that Time
     for (x in 1:Nobs){
     
     #Observation Process
-    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])    
+    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])    
     
     #Assess Model Fit
     
     #Fit discrepancy statistics
-    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]
+    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]]
     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
     
-    ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])
+    ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])
     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)
     
     }
     
     for (i in 1:Birds){
     logit(detect[i]) <- dtrans[i]
-    dtrans[i] ~ dnorm(dprior,tau_detect)
+    dtrans[i] ~ dnorm(dprior,tau_dcam)
     alpha[i] ~ dnorm(intercept,tau_alpha)
     beta1[i] ~ dnorm(gamma1,tau_beta1)  
     beta2[i] ~ dnorm(gamma2,tau_beta2)    
@@ -52,12 +52,12 @@ cat("
     sigma_alpha ~ dt(0,1,1)I(0,)
     tau_alpha <- pow(sigma_alpha,-2)
 
-    #Detect grouping
-    dprior ~ dnorm(0,0.5)
-
-  # Detect variance
-    tau_detect ~ dunif(0,5)
-    sigma_detect<-pow(1/tau_detect,0.5) 
+    #Detection group prior
+    dprior ~ dnorm(0,0.386)
+    
+    #Group effect detect camera
+    tau_dcam ~ dunif(0,1000)
+    sigma_dcam<-pow(1/tau_dcam,.5)
     
     #Trait Slope
 
