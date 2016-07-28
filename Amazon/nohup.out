@@ -37,3 +37,14 @@ Switched to a new branch 'i-084e24d5'
 To git@github.com:bw4sz/Occupy.git
  * [new branch]      i-084e24d5 -> i-084e24d5
 Branch i-084e24d5 set up to track remote branch i-084e24d5 from origin.
+Warning: Permanently added 'ec2-52-37-213-214.us-west-2.compute.amazonaws.com,52.37.213.214' (ECDSA) to the list of known hosts.
+From github.com:bw4sz/Occupy
+   24fe565..2c40f67  master     -> origin/master
+Your configuration specifies to merge with the ref 'i-287319f5'
+from the remote, but no such ref was fetched.
+Switched to a new branch 'i-c2472d1f'
+[i-c2472d1f 6effe3e] ec2 run complete
+ 1 file changed, 55 insertions(+), 3 deletions(-)
+Branch i-c2472d1f set up to track remote branch i-c2472d1f from origin.
+To git@github.com:bw4sz/Occupy.git
+ * [new branch]      i-c2472d1f -> i-c2472d1f
