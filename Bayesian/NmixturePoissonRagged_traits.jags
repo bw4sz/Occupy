@@ -1,64 +1,71 @@
 
     model {
-    #Compute intensity for each pair of birds and plants
+    #Compute true state for each pair of birds and plants
     for (i in 1:Birds){
     for (j in 1:Plants){
-    for (k in 1:Cameras){
+    for (k in 1:Times){
     
     #Process Model
     log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j]
     
-    #For each camera - there is a latent count
+    #True State
     N[i,j,k] ~ dpois(lambda[i,j,k])
     }
     }
     }
     
-    #Observed counts for each day of sampling at that camera
+    #Observation Model
     for (x in 1:Nobs){
     
-    #Observation Process
-    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])    
+    #Observation Process for cameras
+    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])    
     
-    #Assess Model Fit
-    
-    #Fit discrepancy statistics
-    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]
+    #     #Assess Model Fit - Posterior predictive check
+    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]]
     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
-    
-    ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])
+    #     
+    ynew[x]~dbin(detect[Bird[x]], N[Bird[x],Plant[x],Time[x]])
     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)
-    
     }
     
+    #Priors
+    #Observation model
+    #Detect priors, logit transformed - Following lunn 2012 p85
+    
+    for(x in 1:Birds){
+    #For Cameras
+    logit(detect[x])<-dcam[x]
+    dcam[x] ~ dnorm(dprior,tau_dcam)
+    }
+    
+    #Detection group prior
+    dprior ~ dnorm(0,0.386)
+    
+    #Group effect detect camera
+    tau_dcam ~ dunif(0,1000)
+    sigma_dcam<-pow(1/tau_dcam,.5)
+    
+    #Process Model
+    #Species level priors
     for (i in 1:Birds){
-    logit(detect[i]) <- dtrans[i]
-    dtrans[i] ~ dnorm(dprior,tau_detect)
+    
+    #Intercept
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
-    beta1[i] ~ dnorm(beta1_mu,beta1_tau)  
+    
+    #Traits slope 
+    beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
     }
     
-    #Hyperpriors
+    #Group process priors
     
-    #Intercept grouping
-    alpha_mu~dnorm(0,0.0001)
-
-    # Group intercept variance
-    alpha_tau ~ dgamma(0.0001,0.0001)
+    #Intercept 
+    alpha_mu ~ dnorm(0,0.386)
+    alpha_tau ~ dunif(0,1000)
     alpha_sigma<-pow(1/alpha_tau,0.5) 
     
-    #Detect grouping
-    dprior ~ dnorm(0,0.5)
-    
-    # Detect variance
-    tau_detect ~ dunif(0,5)
-    sigma_detect<-pow(1/tau_detect,0.5) 
-    
-    #Trait Slope
-    beta1_mu~dnorm(0,0.0001)
-    
-    #Slope variance, turning precision to sd
-    beta1_tau ~ dgamma(0.0001,0.0001)
+    #Trait
+    beta1_mu~dnorm(0,0.386)
+    beta1_tau ~ dunif(0,1000)
     beta1_sigma<-pow(1/beta1_tau,0.5)
     
     #derived posterior check

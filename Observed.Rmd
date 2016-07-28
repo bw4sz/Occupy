@@ -39,7 +39,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #reload if needed
-load("Observed.Rdata")
+#load("Observed.Rdata")
 ```
 
 #Load in data
@@ -70,6 +70,7 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
+#int<-int[int$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Violet-tailed Sylph"),]
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
@@ -318,7 +319,6 @@ indatab<-rbind_all(absences)
 
 #merge with original data
 indat<-rbind_all(list(indatraw,indatab))
-
 ```
 
 ```{r}
@@ -335,11 +335,18 @@ In our model the covariate is indexed at the scale at which the latent count is 
 #Get flower transect data
 full.fl<-read.csv("C:/Users/Ben/Dropbox/Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/FlowerTransectClean.csv")[,-1]
 
+#some taxonomy changes
+full.fl[full.fl$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
+full.fl[full.fl$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
+full.fl[full.fl$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
+full.fl[full.fl$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
+full.fl[full.fl$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
+full.fl[full.fl$Iplant_Double=="Alloplectus tenuis","Iplant_Double"]<-"Drymonia tenuis"
  #month should be capital 
 colnames(full.fl)[colnames(full.fl) %in% "month"]<-"Month"
 
 #group by month and replicate, remove date errors by making a max of 10 flowers, couple times where the gps places it in wrong transect by 1 to 2 meters. 
-flower.month<-group_by(full.fl,Month,Year,Transect_R,Date_F) %>% dplyr::summarise(Flowers=sum(Total_Flowers,na.rm=TRUE))  %>% filter(Flowers>20)
+flower.month<-group_by(full.fl,Month,Year,Date_F) %>% dplyr::summarise(Flowers=sum(Total_Flowers,na.rm=TRUE))  %>% filter(Flowers>20)
   
 #Make month abbreviation column, with the right order
 flower.month$Month.a<-factor(month.abb[flower.month$Month],month.abb[c(1:12)])
@@ -438,7 +445,6 @@ f[f==0]<-NA
 indat$Transect<-indat$Yobs * f
 ```
 
-
 Reformat index for jags.
 Jags needs a vector of input species 1:n with no breaks.
 
@@ -450,7 +456,6 @@ indat$jBird<-as.numeric(indat$Hummingbird)
 indat$jPlant<-as.numeric(indat$Iplant_Double)
 
 jagsIndexBird<-data.frame(Hummingbird=levels(indat$Hummingbird),jBird=1:length(levels(indat$Hummingbird)))
- 
 jagsIndexPlants<-data.frame(Iplant_Double=levels(indat$Iplant_Double),jPlant=1:length(levels(indat$Iplant_Double)))
 
 #Similiarly, the trait matrix needs to reflect this indexing.
@@ -536,7 +541,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 4   #thinning rate
-  nb <- runs-2000 # number to discard for burn-in
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","resources","nb","nt","nc","ni")
@@ -573,7 +578,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-50000
+runs<-20000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_traits.R")
@@ -585,29 +590,29 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
-  Camera=indat$jID
-  Cameras=max(indat$jID)
+  Time=indat$jID
+  Times=max(indat$jID)
   Traitmatch=jTraitmatch
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
   Nobs=length(indat$Yobs)
 
   #A blank Y matrix - all present
-  Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
+  Ninit<-array(dim=c(Birds,Plants,Times),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),N=Ninit,beta1_mu=0)}
+  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","sigma_alpha","beta1_sigma","beta1_mu","dprior")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","dprior")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 4   #thinning rate
-  nb <- runs-2000 # number to discard for burn-in
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","nb","nc","ni","nt")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
 
     system.time(traits<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
   
@@ -645,7 +650,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Traits + Abundance
 
 ```{r,eval=T}
-runs<-50000
+runs<-20000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -657,8 +662,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Yobs=indat$Yobs
   Bird=indat$jBird
   Plant=indat$jPlant
-  Camera=indat$jID
-  Cameras=max(indat$jID)
+  Time=indat$jID
+  Times=max(indat$jID)
   Traitmatch=jTraitmatch
   Birds=max(indat$jBird)
   Plants=max(indat$jPlant)
@@ -669,18 +674,18 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),alpha_mu=0,beta1_sigma=0.1,N=Ninit,beta1_mu=0)}
+  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","sigma_alpha","beta1_sigma","beta1_mu","fit","fitnew","dprior","sigma_detect","ynew")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_mu","fit","fitnew","dprior","ynew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 4   #thinning rate
-  nb <- runs-2000 # number to discard for burn-in
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Camera","Cameras","resources","nc","nb","ni","nt")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
 
     system.time(m2<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
@@ -780,7 +785,7 @@ castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha
 
 predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$Traitmatch,resources=indat$scaledR)
 
-tplot<-ggplot(data=predy_traits,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits")
+tplot<-ggplot(data=predy_traits,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + ggtitle("Traits")
 tplot
 ```
 
@@ -1129,7 +1134,6 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 #add level to hum.morph to match naming convention
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
 
-
 #ggplot(species.mean) + geom_density2d(aes(x=TotalCorolla,y=lambda,col=as.factor(BAll_Flowers))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + ggtitle("2D Density Plots") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
 
 
@@ -1170,7 +1174,7 @@ makeN<-function(x){
     aggm[x[j,"jBird"],x[j,"jPlant"]]<-rpois(1,lambda=x[j,"phi"])
   }
   #calculate network statistic
-  nstat<-networklevel(aggm,index=c("connectance","nestedness"))
+  nstat<-networklevel(aggm,index=c("weighted connectance","weighted NODF"))
 }
 
 nstat<-lapply(nsplit,function(x){
@@ -1182,6 +1186,7 @@ nstat<-lapply(nsplit,function(x){
 nstat<-melt(nstat,colnames(nstat[[1]]))
 
 ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2) + scale_fill_discrete("Model")
+ggsave("Figures/NetworkStats.jpeg")
 ```
 
 ```{r}
