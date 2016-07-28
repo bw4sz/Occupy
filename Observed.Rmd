@@ -42,8 +42,7 @@ paste("Run Completed at",Sys.time())
 
 ```{r}
 #read in flower morphology data, comes from Nectar.R
-droppath<-"C:/Users/Ben/Dropbox/"
-fl.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerMorphology.csv",sep=""))
+fl.morph<-read.csv("InputData/FlowerMorphology.csv",sep="")
 
 #use effective corolla where possible.
 fl.morph$Corolla<-fl.morph$EffectiveCorolla
@@ -57,14 +56,14 @@ fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
 fl.morph<-fl.morph[-1,]
 
 #Bring in Hummingbird Morphology Dataset, comes from
-hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",sep=""))
+hum.morph<-read.csv("InputData/HummingbirdMorphology.csv",sep="")
 
 #taxonomy change, we are calling them Crowned Woodnymph's now.
 hum.morph$English<-as.character(hum.morph$English)
 hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Woodnymph"
 
 #Bring in Interaction Matrix
-int<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
+int<-read.csv("InputData/HummingbirdInteractions.csv",sep="")
 
 #int<-int[int$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Violet-tailed Sylph"),]
 #one date error
@@ -329,7 +328,7 @@ In our model the covariate is indexed at the scale at which the latent count is 
 
 ```{r,fig.height=5,fig.width=9}
 #Get flower transect data
-full.fl<-read.csv("C:/Users/Ben/Dropbox/Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/FlowerTransectClean.csv")[,-1]
+full.fl<-read.csv("InputData/FlowerTransectClean.csv")[,-1]
 
 #some taxonomy changes
 full.fl[full.fl$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
