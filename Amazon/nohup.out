@@ -24,3 +24,16 @@ Switched to a new branch 'i-287319f5'
 To git@github.com:bw4sz/Occupy.git
  * [new branch]      i-287319f5 -> i-287319f5
 Branch i-287319f5 set up to track remote branch i-287319f5 from origin.
+Warning: Permanently added 'ec2-52-42-241-255.us-west-2.compute.amazonaws.com,52.42.241.255' (ECDSA) to the list of known hosts.
+fatal: destination path 'Occupy' already exists and is not an empty directory.
+Warning: Permanently added the RSA host key for IP address '192.30.253.113' to the list of known hosts.
+From github.com:bw4sz/Occupy
+ * branch            i-287319f5 -> FETCH_HEAD
+   24fe565..1ba1bc7  master     -> origin/master
+Already up-to-date.
+Switched to a new branch 'i-084e24d5'
+[i-084e24d5 9aa4bf2] ec2 run complete
+ 1 file changed, 55 insertions(+), 3 deletions(-)
+To git@github.com:bw4sz/Occupy.git
+ * [new branch]      i-084e24d5 -> i-084e24d5
+Branch i-084e24d5 set up to track remote branch i-084e24d5 from origin.
