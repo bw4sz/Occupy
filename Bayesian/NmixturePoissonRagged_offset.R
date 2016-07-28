@@ -1,4 +1,7 @@
 
+sink("Bayesian/NmixturePoissonRagged_offset.jags")
+
+cat("
     model {
     #Compute intensity for each pair of birds and plants
     for (i in 1:Birds){
@@ -6,16 +9,17 @@
     for (k in 1:Times){
     
     #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] 
     
-    #For each Time - there is a latent count
-    N[i,j,k] ~ dpois(lambda[i,j,k])
+    
+    #For each camera - there is a latent count
+    N[i,j,k] ~ dpois(lambda[i,j,k] * resources[i,j,k] + 0.0000001)
     }
     }
     }
     
     
-    #Observed counts for each day of sampling at that Time
+    #Observed counts for each day of sampling at that camera
     for (x in 1:Nobs){
     
     #Observation Process
@@ -24,7 +28,7 @@
     #Assess Model Fit
     
     #Fit discrepancy statistics
-    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]]
+    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]] * resources[Bird[x],Plant[x],Time[x]]
     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
     
     ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])
@@ -33,22 +37,14 @@
     }
     
     for (i in 1:Birds){
-    logit(detect[i]) <- dtrans[i]
-    dtrans[i] ~ dnorm(dprior,tau_dcam)
-    alpha[i] ~ dnorm(intercept,tau_alpha)
-    beta1[i] ~ dnorm(gamma1,tau_beta1)  
-    beta2[i] ~ dnorm(gamma2,tau_beta2)    
+    logit(detect[i])<-dcam[i]
+    dcam[i] ~ dnorm(dprior,tau_dcam)
+    alpha[i] ~ dnorm(alpha_mu,alpha_tau)
+    beta1[i] ~ dnorm(beta1_mu,beta1_tau)  
     }
     
     #Hyperpriors
     
-    #Intercept grouping
-    intercept~dnorm(0,0.0001)
-
-    #Group intercept variance
-    sigma_alpha ~ dt(0,1,1)I(0,)
-    tau_alpha <- pow(sigma_alpha,-2)
-
     #Detection group prior
     dprior ~ dnorm(0,0.386)
     
@@ -56,27 +52,27 @@
     tau_dcam ~ dunif(0,1000)
     sigma_dcam<-pow(1/tau_dcam,.5)
     
-    #Trait Slope
-
-    #Mean
-    gamma1~dnorm(0,0.0001)
-
-    #Variance
-    sigma_beta1 ~ dt(0,1,1)I(0,)
-    tau_beta1 <- pow(sigma_beta1,-2)
-
-    #Abundance slope
-
-    #Mean
-    gamma2~dnorm(0,0.0001)
+    #Intercept grouping
+    alpha_mu~dnorm(0,0.0001)
     
-    sigma_beta2 ~ dt(0,1,1)I(0,)
-    tau_beta2 <- pow(sigma_beta2,-2)
-
+    #Group intercept variance
+    alpha_sigma ~ dt(0,1,1)I(0,)
+    alpha_tau <- pow(alpha_sigma,-2)
+    
+    #Trait Slope
+    #Mean
+    beta1_mu~dnorm(0,0.0001)
+    
+    #Variance
+    beta1_sigma ~ dt(0,1,1)I(0,)
+    beta1_tau <- pow(beta1_sigma,-2)
+    
     #derived posterior check
-
+    
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
     
     }
-    
+    ",fill=TRUE)
+
+sink()

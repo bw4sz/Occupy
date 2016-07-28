@@ -78,3 +78,4 @@ Switched to a new branch 'i-55583288'
 To git@github.com:bw4sz/Occupy.git
  * [new branch]      i-55583288 -> i-55583288
 Branch i-55583288 set up to track remote branch i-55583288 from origin.
+ssh: connect to host ec2-52-39-39-113.us-west-2.compute.amazonaws.com port 22: Connection timed out
