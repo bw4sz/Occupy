@@ -38,8 +38,6 @@ paste("Run Completed at",Sys.time())
 #load("Observed.Rdata")
 ```
 
-#Load in data
-
 ```{r}
 #read in flower morphology data, comes from Nectar.R
 fl.morph<-read.csv("InputData/FlowerMorphology.csv")
@@ -116,8 +114,6 @@ dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
-##Match Species to Morphology
-
 ```{r}
 #observed traitmatching
 traitmatchF<-abs(t(sapply(hum.morph$Bill,function(x){x-fl.morph$Corolla})))
@@ -131,13 +127,6 @@ traitmatchT<-round(traitmatchF[rownames(traitmatchF) %in% dath$Hummingbird,colna
 traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))]
 ```
 
-##Elevation ranges
-
-Create a binary variable whether each observation was in a low elevation or high elevation transect. We have some species that just occur at the top of the gradient, and are not present in the sampling window of flowers at the low elevation.
-
-Accounting for non-availability.
-We have to figure out which plants were sampled in which periods, and if it was sampled, the non-detection are 0 if it wasn't the non-detection are NA. then remove all the Na's.
-
 ```{r}
 elevH<-read.csv("InputData/HummingbirdElevation.csv",row.names=1)
 head(elevH)
@@ -149,13 +138,6 @@ elevP<-read.csv("InputData/PlantElevation.csv",row.names=1)
 colnames(elevP)[5]<-"Elevation"
 elevP$Plant<-1:nrow(elevP)
 elevP$Iplant_Double<-as.character(elevP$Iplant_Double)
-
-#Correct known taxonomic errors
-elevP[elevP$Iplant_Double %in% "Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
-elevP[elevP$Iplant_Double %in% "Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
-elevP[elevP$Iplant_Double %in% "Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
-elevP[elevP$Iplant_Double %in% "Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
-elevP[elevP$Iplant_Double %in% "Alloplectus tenuis","Iplant_Double"]<-"Drymonia tenuis"
 
 #Merge to observed Data
 #plants
@@ -188,8 +170,6 @@ datph[datph$Survey_Type=='Transect',"ele"]<-sapply(tran_elev,function(x){
   mean(as.numeric(str_split(x,"_")[[1]]))
 })
 ```
-
-### Define Time Events
 
 ```{r}
 #ID for NA is holger transects, make the id's 1:n for each day of transect at each elevation, assuming no elevation was split across days.
@@ -241,16 +221,10 @@ indatraw<-indatraw[,c("Hummingbird","Iplant_Double","ID","Time","Month","Year","
 
 ```
 
-##Summarize daily interactions
-To estimate the daily detectability, there can only be a max of one interaction per day.
-We use mean elevation to average across observations within a transect
+
 ```{r}
 indatraw<-indatraw %>% group_by(Hummingbird,Iplant_Double,ID,Day) %>% summarize(Yobs=sum(Yobs),Time=unique(Time),Transect_R=unique(Transect_R),Month=unique(Month),Year=unique(Year),ele=mean(ele),DateP=unique(DateP),Survey_Type=unique(Survey_Type)) %>% ungroup()
 ```
-
-##Absences - accounting for non-detection
-
-We have more information than just the presences, given species elevation ranges, we have absences as well. Absences are birds that occur at the elevation of the plant sample, but were not recorded feeding on the flower.
 
 ```{r}
 #Only non-detections are real 0's, the rest are NA's and are removed.
@@ -322,21 +296,10 @@ indat<-rbind_all(list(indatraw,indatab))
 indat<-merge(indat,traitmelt,by=c("Hummingbird","Iplant_Double"))
 ```
 
-#Resources at each month
-
-In our model the covariate is indexed at the scale at which the latent count is considered fixed. This means we need the resource availability per month across the entire elevation gradient for each point.
-
 ```{r,fig.height=5,fig.width=9}
 #Get flower transect data
 full.fl<-read.csv("InputData/FlowerTransectClean.csv")[,-1]
 
-#some taxonomy changes
-full.fl[full.fl$Iplant_Double=="Alloplectus purpureus","Iplant_Double"]<-"Glossoloma purpureum"
-full.fl[full.fl$Iplant_Double=="Capanea affinis","Iplant_Double"]<-"Kohleria affinis"
-full.fl[full.fl$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersonii"
-full.fl[full.fl$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
-full.fl[full.fl$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
-full.fl[full.fl$Iplant_Double=="Alloplectus tenuis","Iplant_Double"]<-"Drymonia tenuis"
  #month should be capital 
 colnames(full.fl)[colnames(full.fl) %in% "month"]<-"Month"
 
@@ -399,13 +362,9 @@ for (x in 1:nrow(indat)){
 }
 ```
 
-###Relationship between resource measures
-
 ```{r}
 ggplot(indat,aes(x=All_Flowers,y=Used_Flowers)) + geom_point() + facet_wrap(~Hummingbird,scales="free")
 ```
-
-##Binary Measures of Resources
 
 ```{r}
 #All Resources
@@ -440,9 +399,6 @@ f[f==0]<-NA
 indat$Transect<-indat$Yobs * f
 ```
 
-Reformat index for jags.
-Jags needs a vector of input species 1:n with no breaks.
-
 ```{r}
 #Easiest to work with jags as numeric ordinal values
 indat$Hummingbird<-as.factor(indat$Hummingbird)
@@ -469,7 +425,7 @@ indat$scaledR<-(indat$FlowerA>0)*1
 resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 ```
 
-# Hierarcichal Nmixture Model
+# Model Comparison
 
 For hummingbird i visiting plant j recorded by camera k on day d:
 
@@ -487,7 +443,7 @@ $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i
 Abundance as a covariate.
 
 ```{r,eval=T}
-runs<-50000
+runs<-10
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -501,8 +457,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Birds=max(indat$jBird)
   Plant=indat$jPlant
   Plants=max(indat$jPlant)
-  Camera=indat$jID
-  Cameras=max(indat$jID)
+  Time=indat$jID
+  Times=max(indat$jID)
   Traitmatch=jTraitmatch
   Nobs=length(indat$Yobs)
   resources=resourcemat
@@ -522,7 +478,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","resources","nb","nt","nc","ni")
+  Dat<-list("Yobs","Bird","Plant","Plants","Time","Times","Traitmatch","Birds","Ninit","Nobs","resources","nb","nt","nc","ni")
     
   system.time(m2_niave<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags", n.iter=ni,n.burnin=nb,n.chains=nc,n.thin=nt))
 ```
@@ -556,7 +512,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 Abundance as an offset
 
 ```{r,eval=T}
-runs<-20000
+runs<-20
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_offset.R")
@@ -662,8 +618,6 @@ castdf<-dcast(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu"),], Model+Chain +
 
 castdf<-split(castdf,castdf$Model)
 ```
-
-## Trait+Abundance
 
 ```{r}
 predy<-rbind_all(lapply(castdf,function(i){
