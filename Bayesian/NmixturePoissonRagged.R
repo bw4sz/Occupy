@@ -6,14 +6,13 @@ cat("
     #Compute intensity for each pair of birds and plants
     for (i in 1:Birds){
     for (j in 1:Plants){
-    for (k in 1:Times){
+    for (k in 1:Cameras){
     
     #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] 
-
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
     
     #For each camera - there is a latent count
-    N[i,j,k] ~ dpois(lambda[i,j,k] * resources[i,j,k] + 0.0000001)
+    N[i,j,k] ~ dpois(lambda[i,j,k])
     }
     }
     }
@@ -23,49 +22,59 @@ cat("
     for (x in 1:Nobs){
     
     #Observation Process
-    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])    
+    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])    
     
     #Assess Model Fit
     
     #Fit discrepancy statistics
-    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]] * resources[Bird[x],Plant[x],Time[x]]
+    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Camera[x]]
     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
     
-    ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])
+    ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Camera[x]])
     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)
     
     }
     
     for (i in 1:Birds){
-    logit(detect[i])<-dcam[i]
-    dcam[i] ~ dnorm(dprior,tau_dcam)
-    alpha[i] ~ dnorm(alpha_mu,alpha_tau)
-    beta1[i] ~ dnorm(beta1_mu,beta1_tau)  
+    logit(detect[i]) <- dtrans[i]
+    dtrans[i] ~ dnorm(dprior,tau_detect)
+    alpha[i] ~ dnorm(intercept,tau_alpha)
+    beta1[i] ~ dnorm(gamma1,tau_beta1)  
+    beta2[i] ~ dnorm(gamma2,tau_beta2)    
     }
     
     #Hyperpriors
     
-    #Detection group prior
-    dprior ~ dnorm(0,0.386)
-    
-    #Group effect detect camera
-    tau_dcam ~ dunif(0,1000)
-    sigma_dcam<-pow(1/tau_dcam,.5)
-
     #Intercept grouping
-    alpha_mu~dnorm(0,0.0001)
+    intercept~dnorm(0,0.0001)
 
     #Group intercept variance
-    alpha_sigma ~ dt(0,1,1)I(0,)
-    alpha_tau <- pow(alpha_sigma,-2)
+    sigma_alpha ~ dt(0,1,1)I(0,)
+    tau_alpha <- pow(sigma_alpha,-2)
 
+    #Detect grouping
+    dprior ~ dnorm(0,0.5)
+
+  # Detect variance
+    tau_detect ~ dunif(0,5)
+    sigma_detect<-pow(1/tau_detect,0.5) 
+    
     #Trait Slope
+
     #Mean
-    beta1_mu~dnorm(0,0.0001)
+    gamma1~dnorm(0,0.0001)
 
     #Variance
-    beta1_sigma ~ dt(0,1,1)I(0,)
-    beta1_tau <- pow(beta1_sigma,-2)
+    sigma_beta1 ~ dt(0,1,1)I(0,)
+    tau_beta1 <- pow(sigma_beta1,-2)
+
+    #Abundance slope
+
+    #Mean
+    gamma2~dnorm(0,0.0001)
+    
+    sigma_beta2 ~ dt(0,1,1)I(0,)
+    tau_beta2 <- pow(sigma_beta2,-2)
 
     #derived posterior check
 
