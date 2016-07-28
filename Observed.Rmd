@@ -56,14 +56,14 @@ fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
 fl.morph<-fl.morph[-1,]
 
 #Bring in Hummingbird Morphology Dataset, comes from
-hum.morph<-read.csv("InputData/HummingbirdMorphology.csv",sep="")
+hum.morph<-read.csv("InputData/HummingbirdMorphology.csv")
 
 #taxonomy change, we are calling them Crowned Woodnymph's now.
 hum.morph$English<-as.character(hum.morph$English)
 hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Woodnymph"
 
 #Bring in Interaction Matrix
-int<-read.csv("InputData/HummingbirdInteractions.csv",sep="")
+int<-read.csv("InputData/HummingbirdInteractions.csv")
 
 #int<-int[int$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Violet-tailed Sylph"),]
 #one date error
