@@ -65,7 +65,6 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
 
-#int<-int[int$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Violet-tailed Sylph"),]
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
@@ -79,7 +78,7 @@ int[int$Iplant_Double=="Columnea cinerea","Iplant_Double"]<-"Columnea mastersoni
 int[int$Iplant_Double=="Alloplectus teuscheri","Iplant_Double"]<-"Drymonia teuscheri"
 int[int$Iplant_Double=="Drymonia collegarum","Iplant_Double"]<-"Alloplectus tetragonoides"
 
-#Some reasonable level of presences, 25 points
+#Some reasonable level of presences, 10 points
 keep<-names(which(table(int$Hummingbird) > 10))
 
 int<-int[int$Hummingbird %in% keep & !int$Hummingbird %in% c("Sparkling Violetear"),]
@@ -140,7 +139,6 @@ We have to figure out which plants were sampled in which periods, and if it was 
 
 ```{r}
 elevH<-read.csv("InputData/HummingbirdElevation.csv",row.names=1)
-head(elevH)
 colnames(elevH)[5]<-"Elevation"
 elevH$Bird<-1:nrow(elevH)
 
@@ -559,7 +557,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-50000
+runs<-30000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_traits.R")
@@ -631,7 +629,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Traits + Abundance
 
 ```{r,eval=T}
-runs<-50000
+runs<-30000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -751,7 +749,6 @@ predy<-rbind_all(lapply(castdf,function(i){
 fplot<-ggplot(data=predy[predy$Model=="Poisson GLMM",],aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.5)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance") + scale_fill_manual(values=c("grey70","black"))+ scale_color_manual(values=c("grey70","black"))
 fplot
 
-ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 ```
 
