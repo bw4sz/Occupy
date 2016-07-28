@@ -62,8 +62,8 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
+int<-int[int$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Violet-tailed Sylph"),]
 
-#int<-int[int$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Violet-tailed Sylph"),]
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
@@ -443,7 +443,7 @@ $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i
 Abundance as a covariate.
 
 ```{r,eval=T}
-runs<-10
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -464,10 +464,10 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   resources=resourcemat
 
   #A blank Y matrix - all present
-  Ninit<-array(dim=c(Nobs),1)
-  
+  Ninit<-array(dim=c(Birds,Plants,Times),data=max(indat$Yobs)+1)
+
   #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),alpha_mu=0,beta1_mu=0)}
+  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
   ParsStage <- c("alpha","beta1","alpha_mu","beta1_mu","fit","fitnew")
@@ -492,7 +492,7 @@ m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9,n.thin = 5)
 ```
 
 ```{r}
-pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant")
+pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
 pars_dniave$Model<-"Covariate"
 ```
 
@@ -512,7 +512,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 Abundance as an offset
 
 ```{r,eval=T}
-runs<-20
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_offset.R")
@@ -533,7 +533,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_offset.R"))
   resources=resourcemat
 
   #A blank Y matrix - all present
-  Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
+  Ninit<-array(dim=c(Birds,Plants,Times),data=max(indat$Yobs)+1)
 
   #Inits
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
