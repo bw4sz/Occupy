@@ -12,8 +12,6 @@ output:
 
 ```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
 library(reshape2)
-library(foreach)
-library(doSNOW)
 library(chron)
 library(ggplot2)
 library(knitr)
@@ -22,9 +20,7 @@ library(dplyr)
 library(stringr)
 library(gridExtra)
 library(boot)
-library(picante)
 library(bipartite)
-library(VennDiagram)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 
