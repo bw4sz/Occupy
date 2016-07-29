@@ -455,7 +455,7 @@ Where resources are the total count of flower i on month k
 # Abundance as a Covariate
 
 ```{r,eval=T}
-runs<-50000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -522,7 +522,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","beta2_mu","sigma_alpha","b
 # Offset: Presence
 
 ```{r,eval=T}
-runs<-50000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_offset.R")
@@ -589,11 +589,10 @@ ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],ae
 ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-
 # Offset: Abundance
 
 ```{r,eval=T}
-runs<-50000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_offset.R")
