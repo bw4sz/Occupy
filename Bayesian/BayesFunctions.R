@@ -65,7 +65,7 @@ trajState<-function(alpha,beta,x,observed){
 }
 
 #sample trajectory for a given posterior
-trajF<-function(alpha,beta1,beta2,trait,resources){
+trajF<-function(alpha,beta1,trait,resources){
   g<-data.frame(alpha,beta1)
   
   #label rows
@@ -88,6 +88,29 @@ traj<-function(alpha,beta1,trait,resources){
   return(sampletraj)
 }
 
+#sample trajectory for a given posterior
+trajF2<-function(alpha,beta1,beta2,trait,resources){
+  g<-data.frame(alpha,beta1,beta2)
+  
+  #label rows
+  g$id<-1:nrow(g)
+  
+  sampletraj<-g %>% group_by(id) %>% do(traj2(.$alpha,.$beta1,.$beta2,trait=trait,resources=resources)) %>% group_by(trait) %>% summarize(mean=mean(y),lower=quantile(y,0.05),upper=quantile(y,0.95))
+  return(sampletraj)
+}
+
+#sample trajectory for a given posterior using quantile or hdi interval
+traj2<-function(alpha,beta1,beta2,trait,resources){
+  
+  #fit regression for each input estimate
+  
+  v=exp(alpha + beta1 * trait + beta2 * resources)
+  
+  sampletraj<-data.frame(trait=trait,y=as.numeric(v))
+  
+  #Compute CI intervals
+  return(sampletraj)
+}
 
 #calculate poisson interactions
 

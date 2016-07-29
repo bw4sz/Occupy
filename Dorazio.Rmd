@@ -62,7 +62,6 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
-int<-int[int$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Violet-tailed Sylph"),]
 
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
@@ -129,7 +128,6 @@ traitmatchT<-traitmatchT[sort(rownames(traitmatchT)),sort(colnames(traitmatchT))
 
 ```{r}
 elevH<-read.csv("InputData/HummingbirdElevation.csv",row.names=1)
-head(elevH)
 colnames(elevH)[5]<-"Elevation"
 elevH$Bird<-1:nrow(elevH)
 
@@ -321,7 +319,7 @@ flower.month$PTransect_R<-flower.month$Transect_R
 levels(flower.month$PTransect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 1900m","1900m - 2100m","2100m - 2300m","2300m - 2500m")
 #plot
 
-ggplot(flower.month,aes(x=Month.a,log(Flowers),col=R,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~PTransect_R) + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","Medium","High"),values=c("black","blue","red")) + labs(col="Resource Availability")
+#ggplot(flower.month,aes(x=Month.a,log(Flowers),col=R,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~PTransect_R) + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","Medium","High"),values=c("black","blue","red")) + labs(col="Resource Availability")
 ggsave("Figures/FlowerMonth.jpeg",dpi=600,height=5,width=9)
 
 #turn min and max elvation into seperate columns for the range
@@ -363,7 +361,7 @@ for (x in 1:nrow(indat)){
 ```
 
 ```{r}
-ggplot(indat,aes(x=All_Flowers,y=Used_Flowers)) + geom_point() + facet_wrap(~Hummingbird,scales="free")
+#ggplot(indat,aes(x=All_Flowers,y=Used_Flowers)) + geom_point() + facet_wrap(~Hummingbird,scales="free")
 ```
 
 ```{r}
@@ -423,33 +421,47 @@ indat$jID<-as.numeric(as.factor(indat$ID))
 #index resources
 indat$scaledR<-(indat$FlowerA>0)*1
 resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
+resourcematA<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(FlowerA))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 ```
 
 # Model Comparison
 
+
 For hummingbird i visiting plant j recorded by camera k on day d:
 
+## Abundance as a covariate
+
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
-$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * \Resource_{i,j,k}) $$
+$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * Resource_{i,j,k}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
 
+Where resources are the total count of flower i on month k
+
+## Presence as an offset
 
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j,k} ) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} * \Resource_{i,j,k}$$ 
+$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} * Resource_{i,j,k}$$ 
 
-# Original Model
+Where resources is the presences of flower i on month k
 
-Abundance as a covariate.
+## Abundance as an offset
+$$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
+$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} ) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} * Resource_{i,j,k}$$ 
+
+Where resources are the total count of flower i on month k
+
+# Abundance as a Covariate
 
 ```{r,eval=T}
-runs<-10000
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
 
 #print model
-print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
+#print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
   #Data objects for parallel run
   Yobs=indat$Yobs
@@ -470,7 +482,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("alpha","beta1","alpha_mu","beta1_mu","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","beta2","alpha_mu","beta1_mu","beta2_mu","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -500,25 +512,23 @@ pars_dniave$Model<-"Covariate"
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma","alpha_mu"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","beta2_mu","sigma_alpha","beta1_sigma","alpha_mu"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-# Proposed Model
-
-Abundance as an offset
+# Offset: Presence
 
 ```{r,eval=T}
-runs<-10000
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_offset.R")
 
 #print model
-print.noquote(readLines("Bayesian//NmixturePoissonRagged_offset.R"))
+#print.noquote(readLines("Bayesian//NmixturePoissonRagged_offset.R"))
 
   #for parallel run
   Yobs=indat$Yobs
@@ -562,44 +572,111 @@ m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage
 
 ```{r}
 #extract par to data.frame
-pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
+pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
 
 #name
-pars_detect$Model<-"Offset"
+pars_detect$Model<-"Offset_presence"
 ```
 
 ###Assess Convergence
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-###Hierarcichal Posteriors
+```{r,fig.height=5,fig.width=11}
+ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+```
+
+
+# Offset: Abundance
+
+```{r,eval=T}
+runs<-50000
+
+#Source model
+source("Bayesian/NmixturePoissonRagged_offset.R")
+
+#print model
+#print.noquote(readLines("Bayesian//NmixturePoissonRagged_offset.R"))
+
+  #for parallel run
+  Yobs=indat$Yobs
+  Bird=indat$jBird
+  Plant=indat$jPlant
+  Time=indat$jID
+  Times=max(indat$jID)
+  Traitmatch=jTraitmatch
+  Birds=max(indat$jBird)
+  Plants=max(indat$jPlant)
+  Nobs=length(indat$Yobs)
+  resources=resourcematA
+
+  #A blank Y matrix - all present
+  Ninit<-array(dim=c(Birds,Plants,Times),data=max(indat$Yobs)+1)
+
+  #Inits
+  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
+  
+  #Parameters to track
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_mu","fit","fitnew","dprior")
+  
+  #MCMC options
+  ni <- runs  # number of draws from the posterior
+  nt <- 4   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
+  nc <- 2  # number of chains
+
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
+
+    system.time(m3<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged_offset.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+```
+
+```{r,eval=F}
+#recompile if needed
+load.module("dic")
+runs<-100000
+recompile(m2)
+m3<-update(m3,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage)
+```
+
+```{r}
+#extract par to data.frame
+Offset_abundance<-extract_par(m3,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
+
+#name
+Offset_abundance$Model<-"Offset_abundance"
+```
+
+###Assess Convergence
+
+```{r,cache=FALSE,fig.width=13,fig.height=5}
+###Chains
+ggplot(Offset_abundance[Offset_abundance$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(Offset_abundance[Offset_abundance$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ```{r}
 #Bind together the two models
-parsObs<-rbind(pars_detect,pars_dniave)
+parsObs<-rbind_all(list(pars_detect,pars_dniave,Offset_abundance))
 ```
 
 ##Posteriors
 
 ```{r,cache=FALSE,fig.width=11,fig.height=14}
 ###Posterior Distributions
-ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
+ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1","beta2"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 ```
 
 ```{r,cache=FALSE,fig.width=10,fig.height=5}
 #Detection figure
-ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
+parsObs<-merge(parsObs,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
 
-pars_detect<-merge(pars_detect,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
-
-ggplot(pars_detect[pars_detect$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
+ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") + facet_wrap(~Hummingbird,scales="free") 
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
@@ -609,45 +686,33 @@ ggplot(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sig
 
 ###Overall predicted relationship 
 
-Calculated predicted visitation rates
-
-Does accounting for non-independence and detection change our estimate of trait matching?
-
 ```{r,fig.height=6,fig.width=10}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu"),], Model+Chain + Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","beta2_mu"),], Model+Chain + Draw~par,value.var="estimate")
 
 castdf<-split(castdf,castdf$Model)
 ```
 
 ```{r}
-predy<-rbind_all(lapply(castdf,function(i){
-  #calculate trajectory and append model
-  pr<-trajF(alpha=i$alpha_mu,beta1=i$beta1_mu,trait=indat$Traitmatch,resources=indat$scaledR)
-  pr$Model<-unique(i$Model)
-  return(pr)
-  }))
+#calculate trajectory and append model
+predcov<-trajF2(alpha=castdf[[1]]$alpha_mu,beta1=castdf[[1]]$beta1_mu,castdf[[1]]$beta2_mu,trait=indat$Traitmatch,resources=indat$scaledR)
+  
+predoffset<-trajF(alpha=castdf[[2]]$alpha_mu,beta1=castdf[[2]]$beta1_mu,trait=indat$Traitmatch,resources=indat$FlowerA)
 
-fplot<-ggplot(data=predy[predy$Model=="Poisson GLMM",],aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.5)  + geom_line(aes(y=mean,col=Model),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Traits+Abundance") + scale_fill_manual(values=c("grey70","black"))+ scale_color_manual(values=c("grey70","black"))
-fplot
+predoffsetA<-trajF(alpha=castdf[[3]]$alpha_mu,beta1=castdf[[3]]$beta1_mu,trait=indat$Traitmatch,resources=indat$scaledR)
+
+predy<-melt(list(Covariate=predcov,Offset_presence=predoffset,Offset_abundance=predoffsetA),id.vars=colnames(predcov))
+
+fplot<-ggplot(data=predy[,],aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.5)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model") + scale_fill_manual(values=c("red","black","green"))+ scale_color_manual(values=c("red","black","green"))
+fplot + ylim(0,20)
 
 ggsave("Figures/BothObs.svg",height=5,width=7)
 ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 ```
 
-```{r}
-allpred<-list('Traits+Abundance'=predy[predy$Model=="Nmixture",!colnames(predy) %in% "Model"])
-
-allpred<-melt(allpred,id.vars=colnames(predy_traits))
-
-allplot<-ggplot(data=allpred,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.7)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.7) + labs(fill="Model",col="Model") + ggtitle("N-mixture Model Comparison") + scale_fill_manual(values=c("black","grey70")) + scale_color_manual(values=c("black","grey80"))
-allplot
-ggsave("Figures/AbundanceBothPlot.jpeg",height=4,width=7,dpi=300)
-```
-
 ##Species Predictions
 
-```{r,fig.height=10,fig.width=11}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
+```{r,fig.height=10,fig.width=11,eval=F}
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","beta2","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -657,9 +722,13 @@ species.split<-split(castdf,list(castdf$species,castdf$Model))
 species.traj<-list()
 
 for(d in 1:length(species.split)){
+  
   x<-species.split[[d]]
   #species name
   index<-jagsIndexBird[unique(x$species),"Hummingbird"]
+  
+  #Model name
+  mod<-unique(x$Model)
   
   #range of trait distances
   tsp<-indat %>% filter(Hummingbird==index) %>% .$Traitmatch
@@ -667,7 +736,10 @@ for(d in 1:length(species.split)){
   #Range of abundances
     fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
     
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,trait=tsp,resources=fsp)
+  if(mod=="Offset_presence"|mod=="Offset_abundance"){species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,trait=tsp,resources=fsp)} else {
+    species.traj[[d]]<-trajF2(alpha=x$alpha,beta1=x$beta1,beta2=x$beta2,trait=tsp,resources=fsp)
+  }
+    
 }
 
 names(species.traj)<-names(species.split)
@@ -684,10 +756,8 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 #plot and compare to original data
 ggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.2)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=3)+ labs(fill="Model")  + ylab("Interactions per day")
 
-ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
+#ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
 ```
-
-##Species Predictions - Abundance
 
 ##Discrepancy 
 
@@ -703,7 +773,29 @@ ymax<-round(max(fitstat$fit))
 ab<-data.frame(x=0:ymax,y=0:ymax)
 disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
 disc_obs
-ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
+#ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
+```
+
+
+```{r,fig.height=4,fig.width=8,message=F,warning=F}
+fitstat<-parsObs[parsObs$par %in% c("fit","fitnew"),]
+fitstat<-dcast(fitstat,Model+Draw+Chain~par,value.var="estimate")
+fstat<-fitstat[!fitstat$Model == "Offset_abundance",]
+ymin<-round(min(fstat$fit))
+ymax<-round(max(fstat$fit))
+ab<-data.frame(x=0:ymax,y=0:ymax)
+disc_obs<-ggplot(fstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fstat$fit,fstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fstat$fit,fstat$fitnew))))
+disc_obs
+#ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
+```
+
+```{r}
+ggplot(fitstat,aes(x=log(fit),fill=Model)) + geom_histogram()
+```
+
+#table
+```{r}
+fitstat %>% group_by(Model) %>% summarize(mean(fit))
 ```
 
 ##Detection table
@@ -714,4 +806,8 @@ dp<-group_by(pars_detect[pars_detect$par %in% c("detect"),],species) %>% summari
 tab<-merge(dp,jagsIndexBird,by.x="species",by.y="jBird")[,-1]
 tab[,c(4,1,2,3)]
 write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
+```
+
+```{r}
+save.image("Dorazio.RData")
 ```
