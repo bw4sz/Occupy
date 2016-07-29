@@ -49,7 +49,7 @@ cat("
     dprior ~ dnorm(0,0.386)
     
     #Group effect detect camera
-    tau_dcam ~ dunif(0,1000)
+    tau_dcam ~  dt(0,1,1)I(0,)
     sigma_dcam<-pow(1/tau_dcam,.5)
     
     #Process Model
@@ -61,25 +61,25 @@ cat("
     
     #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
-    beta2[i] ~ dnorm(beta1_mu,beta1_tau)    
+    beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
 }
     
     #Group process priors
     
     #Intercept 
     alpha_mu ~ dnorm(0,0.386)
-    alpha_tau ~ dunif(0,1000)
+    alpha_tau ~ dt(0,1,1)I(0,)
     alpha_sigma<-pow(1/alpha_tau,0.5) 
     
     #Trait
     beta1_mu~dnorm(0,0.386)
-    beta1_tau ~ dunif(0,1000)
+    beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
 
     #Trait
     beta2_mu~dnorm(0,0.386)
-    beta2_tau ~ dunif(0,1000)
-    beta2_sigma<-pow(1/beta1_tau,0.5)
+    beta2_tau ~ dt(0,1,1)I(0,)
+    beta2_sigma<-pow(1/beta2_tau,0.5)
     
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data
