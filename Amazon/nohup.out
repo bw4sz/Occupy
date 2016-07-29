@@ -216,3 +216,83 @@ Fast-forward
 Switched to a new branch 'i-e488e239'
 Connection reset by 52.43.77.131
 Connection reset by 52.42.185.69
+Warning: Permanently added 'ec2-52-36-156-84.us-west-2.compute.amazonaws.com,52.36.156.84' (ECDSA) to the list of known hosts.
+Switched to branch 'master'
+Your branch is up-to-date with 'origin/master'.
+From github.com:bw4sz/Occupy
+   24fe565..e6bf280  master     -> origin/master
+Updating 24fe565..e6bf280
+Fast-forward
+ .Rhistory                                  |   838 +-
+ Amazon/Functions.R                         |   111 -
+ Amazon/Job.bash                            |     5 +-
+ Amazon/Startup.bash                        |     2 +-
+ Amazon/hostnames.txt                       |     1 -
+ Amazon/nohup.out                           |   204 +
+ Amazon/out.txt                             |   138 -
+ Bayesian/BayesFunctions.R                  |    25 +-
+ Bayesian/NmixturePoissonRagged.R           |    74 +-
+ Bayesian/NmixturePoissonRagged.jags        |    74 +-
+ Bayesian/NmixturePoissonRagged_offset.R    |    78 +
+ Bayesian/NmixturePoissonRagged_offset.jags |    73 +
+ Bayesian/NmixturePoissonRagged_traits.R    |    24 +-
+ Dorazio.Rmd                                |   813 +
+ Dorazio.html                               |   414 +
+ Dorazio.md                                 |   333 +
+ Figures/AbundanceBothPlot.jpeg             |   Bin 142859 -> 115281 bytes
+ Figures/BothObs.jpg                        |   Bin 133533 -> 156469 bytes
+ Figures/BothObs.svg                        |  3422 ++-
+ Figures/DetectionDays.jpeg                 |   Bin 334551 -> 540822 bytes
+ Figures/DetectionProb.jpg                  |   Bin 294521 -> 520300 bytes
+ Figures/FlowerMonth.jpeg                   |   Bin 254803 -> 1135606 bytes
+ Figures/NetworkStats.jpeg                  |   Bin 260185 -> 247696 bytes
+ Figures/NicheBreadth.jpeg                  |   Bin 396268 -> 552468 bytes
+ Figures/ObservedDiscrepancy.jpeg           |   Bin 146880 -> 148122 bytes
+ Figures/SpeciesPredictionsBoth.jpg         |   Bin 387367 -> 416397 bytes
+ Figures/Table1.csv                         |    26 +-
+ InputData/FlowerTransectClean.csv          | 39527 ++++++++++++++-------------
+ InputData/HummingbirdInteractions.csv      |  2623 ++
+ InputData/PlantElevation.csv               |   259 +-
+ Observed.Rdata                             |   Bin 133 -> 3237476 bytes
+ Observed.Rmd                               |    42 +-
+ Observed.html                              |   550 +-
+ Observed.md                                |   512 +-
+ figureObserved/unnamed-chunk-15-1.png      |   Bin 24144 -> 24173 bytes
+ figureObserved/unnamed-chunk-23-1.png      |   Bin 21632 -> 23455 bytes
+ figureObserved/unnamed-chunk-24-1.png      |   Bin 15986 -> 16296 bytes
+ figureObserved/unnamed-chunk-28-1.png      |   Bin 15836 -> 28042 bytes
+ figureObserved/unnamed-chunk-29-1.png      |   Bin 23956 -> 16357 bytes
+ figureObserved/unnamed-chunk-31-1.png      |   Bin 26841 -> 28590 bytes
+ figureObserved/unnamed-chunk-32-1.png      |   Bin 7018 -> 11232 bytes
+ figureObserved/unnamed-chunk-32-2.png      |   Bin 0 -> 13909 bytes
+ figureObserved/unnamed-chunk-33-1.png      |   Bin 17994 -> 10027 bytes
+ figureObserved/unnamed-chunk-34-1.png      |   Bin 22431 -> 8229 bytes
+ figureObserved/unnamed-chunk-35-1.png      |   Bin 14788 -> 13472 bytes
+ figureObserved/unnamed-chunk-36-1.png      |   Bin 27005 -> 25783 bytes
+ figureObserved/unnamed-chunk-37-1.png      |   Bin 8398 -> 7560 bytes
+ figureObserved/unnamed-chunk-37-2.png      |   Bin 13465 -> 14224 bytes
+ figureObserved/unnamed-chunk-38-1.png      |   Bin 12762 -> 10481 bytes
+ figureObserved/unnamed-chunk-40-1.png      |   Bin 13102 -> 13634 bytes
+ figureObserved/unnamed-chunk-41-1.png      |   Bin 11282 -> 12316 bytes
+ figureObserved/unnamed-chunk-42-1.png      |   Bin 12113 -> 12736 bytes
+ figureObserved/unnamed-chunk-43-1.png      |   Bin 36578 -> 38314 bytes
+ figureObserved/unnamed-chunk-44-1.png      |   Bin 7448 -> 7127 bytes
+ figureObserved/unnamed-chunk-46-1.png      |   Bin 19410 -> 23222 bytes
+ figureObserved/unnamed-chunk-47-1.png      |   Bin 21431 -> 22941 bytes
+ figureObserved/unnamed-chunk-52-1.png      |   Bin 13687 -> 16480 bytes
+ figureObserved/unnamed-chunk-53-1.png      |   Bin 8191 -> 7628 bytes
+ figureObserved/unnamed-chunk-56-1.png      |   Bin 15073 -> 18754 bytes
+ figureObserved/unnamed-chunk-57-1.png      |   Bin 29190 -> 37043 bytes
+ figureObserved/unnamed-chunk-58-1.png      |   Bin 13937 -> 12465 bytes
+ 61 files changed, 29732 insertions(+), 20436 deletions(-)
+ delete mode 100644 Amazon/Functions.R
+ delete mode 100644 Amazon/hostnames.txt
+ delete mode 100644 Amazon/out.txt
+ create mode 100644 Bayesian/NmixturePoissonRagged_offset.R
+ create mode 100644 Bayesian/NmixturePoissonRagged_offset.jags
+ create mode 100644 Dorazio.Rmd
+ create mode 100644 Dorazio.html
+ create mode 100644 Dorazio.md
+ create mode 100644 InputData/HummingbirdInteractions.csv
+ create mode 100644 figureObserved/unnamed-chunk-32-2.png
+Switched to a new branch 'i-d5a36841'
