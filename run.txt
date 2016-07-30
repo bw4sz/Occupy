@@ -1,0 +1,402 @@
+
+
+processing file: Dorazio.Rmd
+  |                                                                         |                                                                 |   0%  |                                                                         |.                                                                |   1%
+  ordinary text without R code
+
+  |                                                                         |.                                                                |   2%
+label: unnamed-chunk-1 (with options) 
+List of 4
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ echo   : logi FALSE
+ $ cache  : logi FALSE
+
+Loading required package: rjags
+Loading required package: coda
+Linked to JAGS 4.2.0
+Loaded modules: basemod,bugs
+
+Attaching package: 'R2jags'
+
+The following object is masked from 'package:coda':
+
+    traceplot
+
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+
+Attaching package: 'gridExtra'
+
+The following object is masked from 'package:dplyr':
+
+    combine
+
+Loading required package: vegan
+Loading required package: permute
+Loading required package: lattice
+
+Attaching package: 'lattice'
+
+The following object is masked from 'package:boot':
+
+    melanoma
+
+This is vegan 2.4-0
+Loading required package: sna
+sna: Tools for Social Network Analysis
+Version 2.3-2 created on 2014-01-13.
+copyright (c) 2005, Carter T. Butts, University of California-Irvine
+ For citation information, type citation("sna").
+ Type help(package="sna") to get started.
+
+ This is bipartite 2.06.1
+ For latest changes see versionlog in  ?"bipartite-package".
+ For citation see: citation("bipartite").
+ Have a nice time plotting and analysing two-mode networks.
+
+
+Attaching package: 'bipartite'
+
+The following object is masked from 'package:vegan':
+
+    nullmodel
+
+  |                                                                         |..                                                               |   3%
+  ordinary text without R code
+
+  |                                                                         |...                                                              |   4%
+label: unnamed-chunk-2 (with options) 
+List of 2
+ $ echo : symbol F
+ $ cache: logi FALSE
+
+  |                                                                         |...                                                              |   5%
+  ordinary text without R code
+
+  |                                                                         |....                                                             |   6%
+label: unnamed-chunk-3
+  |                                                                         |.....                                                            |   7%
+  ordinary text without R code
+
+  |                                                                         |......                                                           |   9%
+label: unnamed-chunk-4
+  |                                                                         |......                                                           |  10%
+  ordinary text without R code
+
+  |                                                                         |.......                                                          |  11%
+label: unnamed-chunk-5
+  |                                                                         |........                                                         |  12%
+  ordinary text without R code
+
+  |                                                                         |........                                                         |  13%
+label: unnamed-chunk-6
+  |                                                                         |.........                                                        |  14%
+  ordinary text without R code
+
+  |                                                                         |..........                                                       |  15%
+label: unnamed-chunk-7
+  |                                                                         |..........                                                       |  16%
+  ordinary text without R code
+
+  |                                                                         |...........                                                      |  17%
+label: unnamed-chunk-8
+  |                                                                         |............                                                     |  18%
+  ordinary text without R code
+
+  |                                                                         |............                                                     |  19%
+label: unnamed-chunk-9
+  |                                                                         |.............                                                    |  20%
+  ordinary text without R code
+
+  |                                                                         |..............                                                   |  21%
+label: unnamed-chunk-10
+  |                                                                         |...............                                                  |  22%
+  ordinary text without R code
+
+  |                                                                         |...............                                                  |  23%
+label: unnamed-chunk-11
+  |                                                                         |................                                                 |  24%
+  ordinary text without R code
+
+  |                                                                         |.................                                                |  26%
+label: unnamed-chunk-12
+  |                                                                         |.................                                                |  27%
+  ordinary text without R code
+
+  |                                                                         |..................                                               |  28%
+label: unnamed-chunk-13 (with options) 
+List of 2
+ $ fig.height: num 5
+ $ fig.width : num 9
+
+  |                                                                         |...................                                              |  29%
+  ordinary text without R code
+
+  |                                                                         |...................                                              |  30%
+label: unnamed-chunk-14
+  |                                                                         |....................                                             |  31%
+  ordinary text without R code
+
+  |                                                                         |.....................                                            |  32%
+label: unnamed-chunk-15
+  |                                                                         |.....................                                            |  33%
+  ordinary text without R code
+
+  |                                                                         |......................                                           |  34%
+label: unnamed-chunk-16
+  |                                                                         |.......................                                          |  35%
+  ordinary text without R code
+
+  |                                                                         |........................                                         |  36%
+label: unnamed-chunk-17
+  |                                                                         |........................                                         |  37%
+  ordinary text without R code
+
+  |                                                                         |.........................                                        |  38%
+label: unnamed-chunk-18
+  |                                                                         |..........................                                       |  39%
+  ordinary text without R code
+
+  |                                                                         |..........................                                       |  40%
+label: unnamed-chunk-19
+  |                                                                         |...........................                                      |  41%
+  ordinary text without R code
+
+  |                                                                         |............................                                     |  43%
+label: unnamed-chunk-20 (with options) 
+List of 1
+ $ eval: symbol T
+
+  |                                                                         |............................                                     |  44%
+  ordinary text without R code
+
+  |                                                                         |.............................                                    |  45%
+label: unnamed-chunk-21 (with options) 
+List of 1
+ $ eval: symbol F
+
+  |                                                                         |..............................                                   |  46%
+  ordinary text without R code
+
+  |                                                                         |..............................                                   |  47%
+label: unnamed-chunk-22
+  |                                                                         |...............................                                  |  48%
+  ordinary text without R code
+
+  |                                                                         |................................                                 |  49%
+label: unnamed-chunk-23 (with options) 
+List of 3
+ $ cache     : logi FALSE
+ $ fig.width : num 13
+ $ fig.height: num 5
+
+  |                                                                         |................................                                 |  50%
+  ordinary text without R code
+
+  |                                                                         |.................................                                |  51%
+label: unnamed-chunk-24 (with options) 
+List of 2
+ $ fig.height: num 5
+ $ fig.width : num 11
+
+  |                                                                         |..................................                               |  52%
+  ordinary text without R code
+
+  |                                                                         |...................................                              |  53%
+label: unnamed-chunk-25 (with options) 
+List of 1
+ $ eval: symbol T
+
+  |                                                                         |...................................                              |  54%
+  ordinary text without R code
+
+  |                                                                         |....................................                             |  55%
+label: unnamed-chunk-26 (with options) 
+List of 1
+ $ eval: symbol F
+
+  |                                                                         |.....................................                            |  56%
+  ordinary text without R code
+
+  |                                                                         |.....................................                            |  57%
+label: unnamed-chunk-27
+  |                                                                         |......................................                           |  59%
+  ordinary text without R code
+
+  |                                                                         |.......................................                          |  60%
+label: unnamed-chunk-28 (with options) 
+List of 3
+ $ cache     : logi FALSE
+ $ fig.width : num 13
+ $ fig.height: num 5
+
+  |                                                                         |.......................................                          |  61%
+  ordinary text without R code
+
+  |                                                                         |........................................                         |  62%
+label: unnamed-chunk-29 (with options) 
+List of 2
+ $ fig.height: num 5
+ $ fig.width : num 11
+
+  |                                                                         |.........................................                        |  63%
+  ordinary text without R code
+
+  |                                                                         |.........................................                        |  64%
+label: unnamed-chunk-30 (with options) 
+List of 1
+ $ eval: symbol T
+
+  |                                                                         |..........................................                       |  65%
+  ordinary text without R code
+
+  |                                                                         |...........................................                      |  66%
+label: unnamed-chunk-31 (with options) 
+List of 1
+ $ eval: symbol F
+
+  |                                                                         |............................................                     |  67%
+  ordinary text without R code
+
+  |                                                                         |............................................                     |  68%
+label: unnamed-chunk-32
+  |                                                                         |.............................................                    |  69%
+  ordinary text without R code
+
+  |                                                                         |..............................................                   |  70%
+label: unnamed-chunk-33 (with options) 
+List of 3
+ $ cache     : logi FALSE
+ $ fig.width : num 13
+ $ fig.height: num 5
+
+  |                                                                         |..............................................                   |  71%
+  ordinary text without R code
+
+  |                                                                         |...............................................                  |  72%
+label: unnamed-chunk-34 (with options) 
+List of 2
+ $ fig.height: num 5
+ $ fig.width : num 11
+
+  |                                                                         |................................................                 |  73%
+  ordinary text without R code
+
+  |                                                                         |................................................                 |  74%
+label: unnamed-chunk-35
+  |                                                                         |.................................................                |  76%
+  ordinary text without R code
+
+  |                                                                         |..................................................               |  77%
+label: unnamed-chunk-36 (with options) 
+List of 3
+ $ cache     : logi FALSE
+ $ fig.width : num 11
+ $ fig.height: num 14
+
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+  |                                                                         |..................................................               |  78%
+  ordinary text without R code
+
+  |                                                                         |...................................................              |  79%
+label: unnamed-chunk-37 (with options) 
+List of 3
+ $ cache     : logi FALSE
+ $ fig.width : num 10
+ $ fig.height: num 5
+
+  |                                                                         |....................................................             |  80%
+  ordinary text without R code
+
+  |                                                                         |.....................................................            |  81%
+label: unnamed-chunk-38 (with options) 
+List of 3
+ $ cache     : logi FALSE
+ $ fig.height: num 5
+ $ fig.width : num 13
+
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+  |                                                                         |.....................................................            |  82%
+  ordinary text without R code
+
+  |                                                                         |......................................................           |  83%
+label: unnamed-chunk-39 (with options) 
+List of 2
+ $ fig.height: num 6
+ $ fig.width : num 10
+
+  |                                                                         |.......................................................          |  84%
+  ordinary text without R code
+
+  |                                                                         |.......................................................          |  85%
+label: unnamed-chunk-40
+  |                                                                         |........................................................         |  86%
+  ordinary text without R code
+
+  |                                                                         |.........................................................        |  87%
+label: unnamed-chunk-41 (with options) 
+List of 3
+ $ fig.height: num 10
+ $ fig.width : num 11
+ $ eval      : symbol F
+
+  |                                                                         |.........................................................        |  88%
+  ordinary text without R code
+
+  |                                                                         |..........................................................       |  89%
+label: unnamed-chunk-42 (with options) 
+List of 4
+ $ fig.height: num 4
+ $ fig.width : num 8
+ $ message   : symbol F
+ $ warning   : symbol F
+
+  |                                                                         |...........................................................      |  90%
+  ordinary text without R code
+
+  |                                                                         |...........................................................      |  91%
+label: unnamed-chunk-43 (with options) 
+List of 4
+ $ fig.height: num 4
+ $ fig.width : num 8
+ $ message   : symbol F
+ $ warning   : symbol F
+
+  |                                                                         |............................................................     |  93%
+  ordinary text without R code
+
+  |                                                                         |.............................................................    |  94%
+label: unnamed-chunk-44
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+  |                                                                         |..............................................................   |  95%
+  ordinary text without R code
+
+  |                                                                         |..............................................................   |  96%
+label: unnamed-chunk-45
+  |                                                                         |...............................................................  |  97%
+  ordinary text without R code
+
+  |                                                                         |................................................................ |  98%
+label: unnamed-chunk-46
+  |                                                                         |................................................................ |  99%
+  ordinary text without R code
+
+  |                                                                         |.................................................................| 100%
+label: unnamed-chunk-47
+
+output file: Dorazio.knit.md
+
+/usr/bin/pandoc +RTS -K512m -RTS Dorazio.utf8.md --to html --from markdown+autolink_bare_uris+ascii_identifiers+tex_math_single_backslash --output Dorazio.html --smart --email-obfuscation none --self-contained --standalone --section-divs --table-of-contents --toc-depth 3 --template /home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/default.html --number-sections --variable 'theme:spacelab' --include-in-header /tmp/RtmpWJJZha/rmarkdown-str5a86c38fa0c.html --mathjax --variable 'mathjax-url:https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --no-highlight --variable highlightjs=/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/highlight --variable navigationjs=/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/navigation-1.0 
+
+Output created: Dorazio.html
+There were 22 warnings (use warnings() to see them)
