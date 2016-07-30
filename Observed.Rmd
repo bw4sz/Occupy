@@ -461,7 +461,6 @@ $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * \Resource_{i,j,k} $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
 
-
 **Priors**
 
 Please recall that jags parameterizes models using precision, not sd (precision = 1/sd^2)
@@ -620,22 +619,20 @@ pars_detect_traits$Model<-"Nmixture"
 ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-###Hierarcichal Posteriors
-
 ```{r,fig.height=5,fig.width=11}
 ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-## Traits + Abundance
+## Abundance
 
 ```{r,eval=T}
 runs<-30000
 
 #Source model
-source("Bayesian/NmixturePoissonRagged.R")
+source("Bayesian/NmixturePoissonRagged_abundance.R")
 
 #print model
-print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
+print.noquote(readLines("Bayesian//NmixturePoissonRagged_abundance.R"))
 
   #for parallel run
   Yobs=indat$Yobs
@@ -666,7 +663,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
 
-    system.time(m2<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+    system.time(abundance<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged_abundance.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
 
 ```{r,eval=F}
@@ -679,28 +676,26 @@ m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage
 
 ```{r}
 #extract par to data.frame
-pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant")
+pars_abundance<-extract_par(abundance,data=indat,Bird="jBird",Plant="jPlant")
 
 #name
-pars_detect$Model<-"Nmixture"
+pars_abundance$Model<-"Abundance"
 ```
 
 ###Assess Convergence
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_abundance[pars_abundance$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-###Hierarcichal Posteriors
-
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ```{r}
 #Bind together the two models
-parsObs<-rbind(pars_detect,pars_dniave)
+parsObs<-rbind(pars_abundance,pars_dniave)
 ```
 
 ##Posteriors
