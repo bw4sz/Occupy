@@ -1,6 +1,6 @@
 ---
 title: "Hierarchical Nmixture Models for species interactions: How should abundance be included?"
-author: "Ben Weinstein""
+author: "Ben Weinstein"
 output:
   html_document:
     toc: true
@@ -9,9 +9,6 @@ output:
     keep_md: true
   word_document: default
 ---
-
-#Abstract
-
 
 ```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
 library(reshape2)
