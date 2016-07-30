@@ -1,6 +1,6 @@
 ---
-title: "Hierarchical Nmixture Models for species interactions: Empirical Data"
-author: "Ben Weinstein - Stony Brook University"
+title: "Hierarchical Nmixture Models for species interactions: How should abundance be included?"
+author: "Ben Weinstein""
 output:
   html_document:
     toc: true
@@ -9,6 +9,9 @@ output:
     keep_md: true
   word_document: default
 ---
+
+#Abstract
+
 
 ```{r,warning=FALSE,message=FALSE,echo=FALSE,cache=FALSE}
 library(reshape2)
@@ -432,30 +435,34 @@ For hummingbird i visiting plant j recorded by camera k on day d:
 ## Abundance as a covariate
 
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
-$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * Resource_{i,j,k}) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
+$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} ) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} * Resource_{i,j,k}$$ 
 
 Where resources are the total count of flower i on month k
 
 ## Presence as an offset
 
+
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
-$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} ) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} * Resource_{i,j,k}$$ 
+$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * Resource_{i,j,k}) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
+
 
 Where resources is the presences of flower i on month k
 
 ## Abundance as an offset
+
 $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
-$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} ) $$
-$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} * Resource_{i,j,k}$$ 
+$$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * Resource_{i,j,k}) $$
+$$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
+
 
 Where resources are the total count of flower i on month k
 
 # Abundance as a Covariate
 
 ```{r,eval=T}
-runs<-100000
+runs<-120000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -508,21 +515,19 @@ pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
 pars_dniave$Model<-"Covariate"
 ```
 
-##Assess Convergence
-
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+#ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","beta2_mu","sigma_alpha","beta1_sigma","alpha_mu"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+#ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","beta2_mu","sigma_alpha","beta1_sigma","alpha_mu"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 # Offset: Presence
 
 ```{r,eval=T}
-runs<-100000
+runs<-120000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_offset.R")
@@ -578,21 +583,19 @@ pars_detect<-extract_par(m2,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
 pars_detect$Model<-"Offset_presence"
 ```
 
-###Assess Convergence
-
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+#ggplot(pars_detect[pars_detect$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+#ggplot(pars_detect[pars_detect$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 # Offset: Abundance
 
 ```{r,eval=T}
-runs<-100000
+runs<-120000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_offset.R")
@@ -648,15 +651,13 @@ Offset_abundance<-extract_par(m3,data=indat,Bird="jBird",Plant="jPlant",ynew=F)
 Offset_abundance$Model<-"Offset_abundance"
 ```
 
-###Assess Convergence
-
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(Offset_abundance[Offset_abundance$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+#ggplot(Offset_abundance[Offset_abundance$par %in% c("detect","alpha","beta1","beta2"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(Offset_abundance[Offset_abundance$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+#ggplot(Offset_abundance[Offset_abundance$par %in% c("beta1_mu","beta2_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ```{r}
@@ -664,7 +665,7 @@ ggplot(Offset_abundance[Offset_abundance$par %in% c("beta1_mu","beta2_mu","alpha
 parsObs<-rbind_all(list(pars_detect,pars_dniave,Offset_abundance))
 ```
 
-##Posteriors
+## How do the models differ in posterior estimates.
 
 ```{r,cache=FALSE,fig.width=11,fig.height=14}
 ###Posterior Distributions
@@ -683,7 +684,7 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ggplot(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
-###Overall predicted relationship 
+##Overall predicted relationship of trait-matching
 
 ```{r,fig.height=6,fig.width=10}
 castdf<-dcast(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","beta2_mu"),], Model+Chain + Draw~par,value.var="estimate")
@@ -774,6 +775,7 @@ disc_obs
 #ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
 ```
 
+Zoom in on just the presence/absence model
 
 ```{r,fig.height=4,fig.width=8,message=F,warning=F}
 fitstat<-parsObs[parsObs$par %in% c("fit","fitnew"),]
@@ -805,6 +807,12 @@ tab<-merge(dp,jagsIndexBird,by.x="species",by.y="jBird")[,-1]
 tab[,c(4,1,2,3)]
 write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 ```
+
+##Conclusion
+
+* The covariate model fits the data better, provides a more direct measure of trait-matching, and produces homogenous residuals.
+* The presence offset is slightly worse and overestimates (or atleast increases) the detection probabilities
+* The abundance offset is not a well fitting model for our data.
 
 ```{r}
 save.image("Dorazio.RData")
