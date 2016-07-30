@@ -456,7 +456,6 @@ $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * Resource_{i,j,k}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
 
-
 Where resources are the total count of flower i on month k
 
 # Abundance as a Covariate
@@ -813,6 +812,8 @@ write.csv(tab[,c(4,1,2,3)],"Figures/Table1.csv")
 * The covariate model fits the data better, provides a more direct measure of trait-matching, and produces homogenous residuals.
 * The presence offset is slightly worse and overestimates (or atleast increases) the detection probabilities
 * The abundance offset is not a well fitting model for our data.
+
+The offset presence model would seem very similiar to the covariate model if the predicted effect of abundance is 0, why is it different? We believe that since we know the plant had to exist at month k, setting 0 to presence values is intentionally misleading, falsely stating that we know the presence status to be 0, and therefore attributing that missed interaction to the likelihood of trait-matching. Yet we know for certain that the presence status is actually the opposite. We know for a fact that the plant was present, since there is a camera placed on it. It therefore must be non-detected! Much better to think of the abundance covariate of 0 as ‘very low abundance’ and allow interactions to be predicted rather than truly absent. It seems illogical to have a model where in the cases of perfect detection (Presence_jk), the covariate disappears entirely, and when non-detections occur, it contributes misinformation to the model.
 
 ```{r}
 save.image("Dorazio.RData")
