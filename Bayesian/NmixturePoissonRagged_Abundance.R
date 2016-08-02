@@ -1,5 +1,5 @@
 
-sink("Bayesian/NmixturePoissonRagged_abundance.jags")
+sink("Bayesian/NmixturePoissonRagged.jags")
 
 cat("
     model {
@@ -9,7 +9,7 @@ cat("
     for (k in 1:Times){
     
     #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta2[i] * resources[i,j,k]
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * resources[i,j,k] 
     
     #For each Time - there is a latent count
     N[i,j,k] ~ dpois(lambda[i,j,k])
@@ -59,8 +59,9 @@ cat("
     #Intercept
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
     
-    #Abudnance slope 
+    #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
+    beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
     }
     
     #Group process priors
@@ -70,10 +71,11 @@ cat("
     alpha_tau ~ dt(0,1,1)I(0,)
     alpha_sigma<-pow(1/alpha_tau,0.5) 
     
-    #Trait
+    #SLope
     beta1_mu~dnorm(0,0.386)
     beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
+  
     
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data
