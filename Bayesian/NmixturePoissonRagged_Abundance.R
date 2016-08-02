@@ -1,5 +1,5 @@
 
-sink("Bayesian/NmixturePoissonRagged.jags")
+sink("Bayesian/NmixturePoissonRagged_Abundance.jags")
 
 cat("
     model {
@@ -61,7 +61,6 @@ cat("
     
     #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
-    beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
     }
     
     #Group process priors
