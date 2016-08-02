@@ -80,7 +80,7 @@ traj<-function(alpha,beta1,trait,resources){
 
     #fit regression for each input estimate
     
-    v=exp(alpha + beta1 * trait) * resources
+    v=exp(alpha + beta1 * trait)
     
     sampletraj<-data.frame(trait=trait,y=as.numeric(v))
   
