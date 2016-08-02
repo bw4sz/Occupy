@@ -435,7 +435,7 @@ $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j,k} ) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j| + \beta_{2,i} * Resource_{i,j,k}$$ 
 
-Where resources are the total count of flower i on month k
+Where resources are the total count of flower j at month k
 
 ## Presence as an offset
 
@@ -445,7 +445,7 @@ $$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * Resource_{i,j,k}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
 
 
-Where resources is the presences of flower i on month k
+Where resources is the presences of flower j at month k
 
 ## Abundance as an offset
 
@@ -453,7 +453,7 @@ $$ Y_{i,j,k,d} \sim Binom(N_{i,j,k},\omega_i)$$
 $$N_{i,j,k} \sim Pois(\lambda_{i,j,k} * Resource_{i,j,k}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
 
-Where resources are the total count of flower i on month k
+Where resources are the total count of flower j on month k
 
 # Abundance as a Covariate
 

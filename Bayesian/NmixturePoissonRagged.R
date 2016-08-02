@@ -9,7 +9,7 @@ cat("
     for (k in 1:Times){
     
     #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + beta2[i] * resources[i,j,k]
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] 
     
     #For each Time - there is a latent count
     N[i,j,k] ~ dpois(lambda[i,j,k])
@@ -61,7 +61,6 @@ cat("
     
     #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
-    beta2[i] ~ dnorm(beta2_mu,beta2_tau)    
 }
     
     #Group process priors
@@ -76,11 +75,6 @@ cat("
     beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
 
-    #Trait
-    beta2_mu~dnorm(0,0.386)
-    beta2_tau ~ dt(0,1,1)I(0,)
-    beta2_sigma<-pow(1/beta2_tau,0.5)
-    
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
