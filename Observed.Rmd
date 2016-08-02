@@ -638,10 +638,10 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 runs<-50000
 
 #Source model
-source("Bayesian/NmixturePoissonRagged_abundance.R")
+source("Bayesian/NmixturePoissonRagged_Abundance.R")
 
 #print model
-print.noquote(readLines("Bayesian//NmixturePoissonRagged_abundance.R"))
+print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 
   #for parallel run
   Yobs=indat$Yobs
