@@ -591,7 +591,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","dprior","ynew","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -629,7 +629,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ## Abundance
@@ -662,7 +662,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_mu","fit","fitnew","dprior","ynew")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -699,7 +699,7 @@ ggplot(pars_abundance[pars_abundance$par %in% c("detect","alpha","beta1"),],aes(
 ```
 
 ```{r,fig.height=5,fig.width=11}
-ggplot(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
+ggplot(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
 ```{r}
@@ -725,7 +725,7 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
 ```{r,cache=FALSE,fig.height=5,fig.width=13}
-ggplot(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","dprior"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
+ggplot(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
 ### Predicted relationship 
@@ -1083,7 +1083,7 @@ species.traj<-lapply(species.split,function(dat){
   sampletraj<-list()
   
   for (y in 1:nrow(d)){
-    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch) * billd$FlowerA
+    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch)
     
     sampletraj[[y]]<-data.frame(x=as.numeric(billd$Traitmatch),y=as.numeric(v),jBird=billd$jBird,jPlant=billd$jPlant,Model=unique(dat$Model))
   }
@@ -1106,8 +1106,6 @@ species.mean$Hummingbird<-factor(species.mean$Hummingbird,levels=ord)
 
 #add level to hum.morph to match naming convention
 species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="Hummingbird",by.y="English")
-
-#ggplot(species.mean) + geom_density2d(aes(x=TotalCorolla,y=lambda,col=as.factor(BAll_Flowers))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=3)+ scale_color_manual("Resources Availability",labels=c("Low","High"),values=c("Blue","Red")) + ggtitle("2D Density Plots") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed')
 
 #Niche Breadth 
 species.mean<-species.traj %>% group_by(jBird,jPlant,Model) %>% summarize(Traitmatch=unique(x),phi=mean(y),phi_low=quantile(y,0.05),phi_high=quantile(y,0.95))
