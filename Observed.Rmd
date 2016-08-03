@@ -450,7 +450,7 @@ indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
 indat$scaledR<-(indat$FlowerA>0)*1
-resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
+resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(FlowerA))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 ```
 
 # Hierarcichal Nmixture Model
