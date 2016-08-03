@@ -769,7 +769,7 @@ castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu"),],
 
 predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$FlowerA)
 
-aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + ggtitle("Abundance")
+aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=FlowerA,y=Yobs),size=.5,alpha=.5) + ggtitle("Abundance")
 aplot
 ggsave("Figures/AbundanceBothPlot.jpeg",height=4,width=7,dpi=300)
 ```
