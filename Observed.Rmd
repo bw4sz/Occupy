@@ -496,7 +496,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-30000
+runs<-10
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -565,7 +565,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-100000
+runs<-10
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_traits.R")
@@ -635,7 +635,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-90000
+runs<-10
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -746,7 +746,7 @@ predy<-rbind_all(lapply(castdf,function(i){
   }))
 
 fplot<-ggplot(data=predy[,],aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.5)  + geom_line(aes(y=mean,col=Model),size=.4) + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + labs(fill="Model",col="Model")  + scale_fill_manual(values=c("grey70","black"))+ scale_color_manual(values=c("grey70","black"))
-fplot
+fplot + ylim(0,17)
 
 ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 ```
@@ -759,7 +759,7 @@ castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha
 predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$Traitmatch,resources=indat$scaledR)
 
 tplot<-ggplot(data=predy_traits,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=.5) + ggtitle("Traits")
-tplot
+tplot + ylim(0,17)
 ```
 
 ##Abundance
@@ -770,7 +770,7 @@ castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu"),],
 predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$FlowerA)
 
 aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=FlowerA,y=Yobs),size=.5,alpha=.5) + ggtitle("Abundance")
-aplot
+aplot + ylim(0,17)
 ggsave("Figures/AbundanceBothPlot.jpeg",height=4,width=7,dpi=300)
 ```
 

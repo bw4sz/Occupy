@@ -41,8 +41,7 @@ cat("
     
     for(x in 1:Birds){
     #For Cameras
-    logit(detect[x])<-dcam[x]
-    dcam[x] ~ dnorm(0,0.386)
+    detect[x]~dunif(0,1)
     }
     
     #Process Model
