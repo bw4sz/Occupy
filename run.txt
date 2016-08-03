@@ -452,16 +452,9 @@ label: unnamed-chunk-57
 
   |                                                                         |................................................................ |  98%
 label: unnamed-chunk-58
-Saving 10 x 7 in image
-  |                                                                         |................................................................ |  99%
-  ordinary text without R code
+Quitting from lines 1136-1160 (Observed.Rmd) 
+Error in web[rind, cind, drop = FALSE] : subscript out of bounds
+Calls: <Anonymous> ... sapply -> lapply -> FUN -> makeN -> networklevel -> empty
+In addition: There were 24 warnings (use warnings() to see them)
 
-  |                                                                         |.................................................................| 100%
-label: unnamed-chunk-59
-
-output file: Observed.knit.md
-
-/usr/bin/pandoc +RTS -K512m -RTS Observed.utf8.md --to html --from markdown+autolink_bare_uris+ascii_identifiers+tex_math_single_backslash --output Observed.html --smart --email-obfuscation none --self-contained --standalone --section-divs --table-of-contents --toc-depth 3 --template /home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/default.html --number-sections --variable 'theme:spacelab' --include-in-header /tmp/Rtmpd6JRJE/rmarkdown-str5ab16283352.html --mathjax --variable 'mathjax-url:https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --no-highlight --variable highlightjs=/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/highlight --variable navigationjs=/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.3/rmarkdown/rmd/h/navigation-1.0 
-
-Output created: Observed.html
-There were 25 warnings (use warnings() to see them)
+Execution halted
