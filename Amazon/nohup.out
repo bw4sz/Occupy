@@ -1,0 +1,4 @@
+Warning: Permanently added 'ec2-52-43-105-236.us-west-2.compute.amazonaws.com,52.43.105.236' (ECDSA) to the list of known hosts.
+fatal: destination path 'Occupy' already exists and is not an empty directory.
+Switched to a new branch 'i-9565ba01'
+Connection to ec2-52-43-105-236.us-west-2.compute.amazonaws.com closed by remote host.
