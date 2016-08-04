@@ -1496,3 +1496,5 @@ Fast-forward
  create mode 100644 run.txt
 Switched to a new branch 'i-b067ba24'
 Connection reset by 52.10.81.132
+Warning: Permanently added 'ec2-52-43-40-131.us-west-2.compute.amazonaws.com,52.43.40.131' (ECDSA) to the list of known hosts.
+nohup: failed to run command ‘./Job.bash’: No such file or directory
