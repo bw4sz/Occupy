@@ -528,7 +528,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 4   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
@@ -547,6 +547,8 @@ m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9,n.thin = 5)
 ```{r}
 pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant")
 pars_dniave$Model<-"Poisson GLMM"
+rm(m2_niave)
+gc()
 ```
 
 ##Assess Convergence
@@ -565,7 +567,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-110000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -596,7 +598,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 4   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
@@ -617,6 +619,9 @@ traits<-update(traits,n.iter=runs,n.burnin=runs*.9,n.thin=5)
 #extract par to data.frame
 pars_detect_traits<-extract_par(traits,data=indat,Bird="jBird",Plant="jPlant")
 
+rm(traits)
+gc()
+
 #name
 pars_detect_traits$Model<-"N-mixture"
 ```
@@ -635,7 +640,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -667,7 +672,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   #MCMC options
   ni <- runs  # number of draws from the posterior
   nt <- 4   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
@@ -679,13 +684,15 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 #recompile if needed
 load.module("dic")
 runs<-100000
-recompile(m2)
-m2<-update(m2,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage)
+recompile(abundance)
+abundance<-update(abundance,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage)
 ```
 
 ```{r}
 #extract par to data.frame
 pars_abundance<-extract_par(abundance,data=indat,Bird="jBird",Plant="jPlant")
+rm(abundance)
+gc()
 
 #name
 pars_abundance$Model<-"Abundance"
@@ -908,13 +915,6 @@ sampling<-indatraw %>% group_by(Hummingbird) %>% summarize(Obs=length(Hummingbir
 
 tabD<-merge(tab,sampling,by="Hummingbird")
 ggplot(tabD,aes(x=Obs,ymin=lower,ymax=upper,y=mean)) + geom_pointrange() + labs(y="Detectability",x="Detections") + geom_text(aes(label=Hummingbird),vjust=2) + theme_bw() + xlim(0,175)
-```
-
-##DIC Table
-
-```{r}
-m2_niave$BUGSoutput$DIC
-traits$BUGSoutput$DIC
 ```
 
 #Predicted versus Observed Data
@@ -1166,5 +1166,5 @@ ggsave("Figures/NetworkStats.jpeg",height = 5,width=6)
 
 ```{r}
 gc()
-save.image("Observed.RData")
+#save.image("Observed.RData")
 ```
