@@ -520,10 +520,10 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   Ninit<-array(dim=c(Nobs),1)
   
   #Inits
-  InitStage <- function() {list(beta1=rep(0.5,Birds),alpha=rep(0.5,Birds),alpha_mu=0,beta1_mu=0)}
+  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("alpha","beta1","alpha_mu","beta1_mu","ynew","fit","fitnew")
+  ParsStage <- c("alpha","beta1","alpha_mu","beta1_mu","ynew","fit","fitnew","E")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -531,7 +531,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","resources","nb","nt","nc","ni")
+  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
     
   system.time(m2_niave<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags", n.iter=ni,n.burnin=nb,n.chains=nc,n.thin=nt))
 ```
@@ -565,13 +565,13 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-100000
+runs<-110000
 
 #Source model
-source("Bayesian/NmixturePoissonRagged_traits.R")
+source("Bayesian/NmixturePoissonRagged.R")
 
 #print model
-print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
+print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
   #for parallel run
   Yobs=indat$Yobs
@@ -591,7 +591,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -601,7 +601,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_traits.R"))
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
 
-    system.time(traits<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged_traits.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
+    system.time(traits<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
   
 ```
 
@@ -821,6 +821,11 @@ ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=8,width=10)
 
 The goodness of fit is a measured as chi-squared. The expected value for each day is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
 Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. In addition, a model with 0 discrepancy would likely be seriously overfit and have little to no predictive power.
+
+
+```{r}
+dmat<-parsObs %>% filter(par=="E",Model=="N-mixture") %>% group_by(parameter) %>% summarize(mean(estimate))
+```
 
 ```{r,fig.height=4,fig.width=8,message=F,warning=F}
 fitstat<-parsObs[parsObs$par %in% c("fit","fitnew"),]
@@ -1155,8 +1160,8 @@ nstat<-lapply(nsplit,function(x){
 
 nstat<-melt(nstat,colnames(nstat[[1]]))
 
-ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2) + scale_fill_discrete("Model")
-ggsave("Figures/NetworkStats.jpeg")
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=1) + scale_fill_discrete("Model")
+ggsave("Figures/NetworkStats.jpeg",height = 5,width=6)
 ```
 
 ```{r}

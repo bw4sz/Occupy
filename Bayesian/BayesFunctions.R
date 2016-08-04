@@ -16,7 +16,7 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant",ynew=T){
   
   #correct N samples
   if(ynew){
-  i<-sp_pl$par %in% "ynew"
+  i<-sp_pl$par %in% c("ynew","E")
 
   #Species
   sp_pl[i,][,"species"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Bird]
