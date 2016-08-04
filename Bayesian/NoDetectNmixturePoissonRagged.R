@@ -16,16 +16,13 @@ cat("
     
     for (x in 1:Nobs){
       
-      #expected intensity
-      N[x]<-lambda[Bird[x],Plant[x],Camera[x]] * resources[Bird[x],Plant[x],Camera[x]]
-      
       # Observed State   
-      Yobs[x] ~ dpois(N[x]+0.00000001) 
+      Yobs[x] ~ dpois(lambda[Bird[x],Plant[x],Camera[x]]) 
       
       #Assess Model Fit
       
       #Fit discrepancy statistics
-      eval[x]<-lambda[Bird[x],Plant[x],Camera[x]] * resources[Bird[x],Plant[x],Camera[x]]
+      eval[x]<-lambda[Bird[x],Plant[x],Camera[x]]
       E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)
       
       ynew[x]~dpois(lambda[Bird[x],Plant[x],Camera[x]])
@@ -33,31 +30,33 @@ cat("
       
       }
       
-      for (i in 1:Birds){
-      alpha[i] ~ dnorm(alpha_mu,alpha_tau)
-      beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
-      }
-      
-    #Hyperpriors
+    #Process Model
+    #Species level priors
+    for (i in 1:Birds){
     
-    #Intercept grouping
-    alpha_mu~dnorm(0,0.0001)
+    #Intercept
+    alpha[i] ~ dnorm(alpha_mu,alpha_tau)
     
-    # Group intercept variance
-    alpha_sigma ~ dt(0,1,1)I(0,)
-    alpha_tau <- pow(alpha_sigma,-2)
+    #Traits slope 
+    beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
+    }
     
-    #Trait Slope
-    #Mean
-    beta1_mu~dnorm(0,0.0001)
+    #Group process priors
     
-    #Variance
-    beta1_sigma ~ dt(0,1,1)I(0,)
-    beta1_tau <- pow(beta1_sigma,-2)
+    #Intercept 
+    alpha_mu ~ dnorm(0,0.386)
+    alpha_tau ~ dt(0,1,1)I(0,)
+    alpha_sigma<-pow(1/alpha_tau,0.5) 
+    
+    #Trait
+    beta1_mu~dnorm(0,0.386)
+    beta1_tau ~ dt(0,1,1)I(0,)
+    beta1_sigma<-pow(1/beta1_tau,0.5)
     
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
+    
     
     }
     ",fill=TRUE)
