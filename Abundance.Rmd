@@ -609,9 +609,14 @@ fplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1)
 ```{r,fig.width=10,fig.height=6}
 grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
 
+#jpeg("Figures/SimPredictBoth.jpg",height=6,width=8,units="in",res=300)
+#grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
+#dev.off()
+
 jpeg("Figures/SimPredictBoth.jpg",height=6,width=8,units="in",res=300)
-grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
+grid.arrange(aplot,tplot)
 dev.off()
+
 ```
 
 Black line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The blue line is the same model, but assuming perfect detection rates.
@@ -645,11 +650,6 @@ dev.off()
 ```
 
 #By species
-
-```{r}
-
-```
-
 
 #Compare using true known interactions
 
