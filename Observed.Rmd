@@ -64,6 +64,7 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
+int[1:50,]
 
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
@@ -593,7 +594,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E","dprior")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior

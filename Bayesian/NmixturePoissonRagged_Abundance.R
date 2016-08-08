@@ -43,6 +43,8 @@ cat("
     #For Cameras
     logit(detect[x])<-dcam[x]
     dcam[x]~dnorm(dprior,tau_detect)
+
+    #
     }
     
     #Observation priors
