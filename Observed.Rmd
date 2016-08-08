@@ -65,6 +65,8 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
 
+int<-int[1:100,]
+
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
@@ -496,7 +498,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-20000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -567,7 +569,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-10
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -640,7 +642,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-300000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -830,7 +832,11 @@ The goodness of fit is a measured as chi-squared. The expected value for each da
 Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. In addition, a model with 0 discrepancy would likely be seriously overfit and have little to no predictive power.
 
 ```{r}
-dmat<-parsObs %>% filter(par=="E",Model=="N-mixture") %>% group_by(parameter) %>% summarize(mean(estimate))
+dmat<-pars_detect_traits %>% filter(par=="E",Model=="N-mixture") %>% group_by(species,plant,parameter) %>% summarize(E=mean(estimate))
+Emat<-data.frame(indat,E=dmat$E)
+
+ggplot(Emat,aes(x=Yobs,y=E)) + geom_point() + ylab("Mean Discrepancy") + xlab("Observed Interactions") + geom_abline() + theme_bw()
+ggsave("Figures/DiscrepancySpread.jpeg",height=4,width=6)
 ```
 
 ```{r,fig.height=4,fig.width=8,message=F,warning=F}

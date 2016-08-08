@@ -41,9 +41,14 @@ cat("
     
     for(x in 1:Birds){
     #For Cameras
-    detect[x]~dunif(0,1)
+    logit(detect[x])<-dcam[x]
+    dcam[x]~dnorm(dprior,tau_detect)
     }
     
+    #Observation priors
+    dprior ~ dnorm(0,0.386)
+    tau_detect ~ dunif(0,5)
+
     #Process Model
     #Species level priors
     for (i in 1:Birds){
@@ -58,12 +63,12 @@ cat("
     #Group process priors
     
     #Intercept 
-    alpha_mu ~ dnorm(0,0.386)
+    alpha_mu ~ dnorm(0,0.0001)
     alpha_tau ~ dt(0,1,1)I(0,)
     alpha_sigma<-pow(1/alpha_tau,0.5) 
     
     #SLope
-    beta1_mu~dnorm(0,0.386)
+    beta1_mu~dnorm(0,0.0001)
     beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
   
