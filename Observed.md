@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-08 11:35:42"
+## [1] "Run Completed at 2016-08-08 20:57:34"
 ```
 
 
@@ -41,9 +41,268 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
+int[1:50,]
+```
 
-int<-int[1:100,]
+```
+##     X     ID     Video       Date                   Flower     Time
+## 1   1  FH101  FH101_01 10/22/2013        Psammisia sodoroi 10:11:18
+## 2   2  FH102  FH202_02  11/6/2013       Meriania tomentosa 15:32:48
+## 3   3  FH102  FH202_02  11/6/2013       Meriania tomentosa 13:18:29
+## 4   4  FH102  FH202_02  11/6/2013       Meriania tomentosa 14:53:34
+## 5   5  FH102  FH202_02  11/6/2013       Meriania tomentosa 15:32:11
+## 6   6  FH102  FH202_02  11/6/2013       Meriania tomentosa 12:54:52
+## 7   7  FH102  FH202_02  11/6/2013       Meriania tomentosa 12:46:32
+## 8   8  FH102  FH102_01  11/6/2013       Meriania tomentosa  9:24:18
+## 9   9  FH102  FH202_02  11/6/2013       Meriania tomentosa 12:52:41
+## 10 10  FH102  FH202_02  11/6/2013       Meriania tomentosa 17:40:43
+## 11 11  FH102  FH102_01  11/6/2013       Meriania tomentosa 10:11:57
+## 12 12  FH102  FH102_01  11/6/2013       Meriania tomentosa  8:06:27
+## 13 13  FH104 FH104_BU1  12/5/2013      Guzmania amplectans  6:16:07
+## 14 14  FH104 FH104_BU1  12/5/2013      Guzmania amplectans  6:03:36
+## 15 15  FH104 FH104_BU1  12/5/2013      Guzmania amplectans  6:59:15
+## 16 16  FH105  FH105_02 12/15/2013 Centropogon solanifolius 11:50:41
+## 17 17  FH106  FH106_01 12/19/2013       Guzmania squarasso  9:44:53
+## 18 18  FH106  FH106_01 12/19/2013       Guzmania squarasso 11:47:47
+## 19 19  FH106  FH106_01 12/19/2013       Guzmania squarasso  6:36:57
+## 20 20  FH106  FH106_01 12/19/2013       Guzmania squarasso  6:51:07
+## 21 21  FH106  FH106_01 12/19/2013       Guzmania squarasso  6:21:04
+## 22 22  FH106  FH106_01 12/19/2013       Guzmania squarasso 10:49:59
+## 23 24  FH107  FH107_01   1/8/2014     Renealmia sessifolia 10:36:24
+## 24 30  FH108  FH108_01   1/8/2014         Columnea ciliata 11:09:29
+## 25 32  FH109  FH109_02  1/28/2014      Columnea kucinyakii 12:50:50
+## 26 33  FH110  FH110_01  2/12/2014          Drymonia tenuis 11:31:28
+## 27 34  FH110  FH110_01  2/12/2014          Drymonia tenuis  8:04:50
+## 28 35 FH1103            9/10/2014     Columnea mastersonii 17:19:26
+## 29 36 FH1103            9/10/2014     Columnea mastersonii 13:12:43
+## 30 37 FH1103            9/10/2014     Columnea mastersonii  8:20:34
+## 31 38 FH1103            9/10/2014     Columnea mastersonii  9:17:43
+## 32 39 FH1103            9/10/2014     Columnea mastersonii 10:32:48
+## 33 40 FH1105            10/7/2014        Macleania bullata  8:34:43
+## 34 41 FH1105            10/7/2014        Macleania bullata 11:27:49
+## 35 42 FH1105            10/7/2014        Macleania bullata  7:08:40
+## 36 43 FH1105            10/7/2014        Macleania bullata 10:43:45
+## 37 44 FH1105            10/7/2014        Macleania bullata 13:17:04
+## 38 45 FH1105            10/7/2014        Macleania bullata 14:45:39
+## 39 47 FH1108           11/19/2014        Psammisia sodoroi 15:23:02
+## 40 48 FH1108           11/19/2014        Psammisia sodoroi 10:59:02
+## 41 49 FH1108           11/19/2014        Psammisia sodoroi  6:03:34
+## 42 50 FH1108           11/19/2014        Psammisia sodoroi  7:56:20
+## 43 51 FH1108           11/19/2014        Psammisia sodoroi 13:29:06
+## 44 52  FH111  FH111_01  2/27/2014   Gasteranthus quitensis  7:43:48
+## 45 53 FH1111            1/13/2015      Fucshia macrostigma  8:27:01
+## 46 54 FH1111            1/13/2015      Fucshia macrostigma 16:42:42
+## 47 55 FH1112            1/19/2015       Drymonia tuescheri  9:39:07
+## 48 56 FH1112            1/19/2015       Drymonia tuescheri 12:43:33
+## 49 57 FH1112            1/19/2015       Drymonia tuescheri  3:39:25
+## 50 58 FH1112            1/19/2015       Drymonia tuescheri 10:20:57
+##             Hummingbird Sex Pierce Comments Temp PhotoID VideoClip
+## 1     Gorgeted Sunangel                <NA>   NA      NA        NA
+## 2  Speckled Hummingbird                <NA>   NA      NA        NA
+## 3  Speckled Hummingbird                <NA>   NA      NA        NA
+## 4  Speckled Hummingbird                <NA>   NA      NA        NA
+## 5   Violet-tailed Sylph   F            <NA>   NA      NA        NA
+## 6         Collared Inca                <NA>   NA      NA        NA
+## 7  Speckled Hummingbird                <NA>   NA      NA        NA
+## 8  Speckled Hummingbird                <NA>   NA      NA        NA
+## 9  Speckled Hummingbird                <NA>   NA      NA        NA
+## 10  Violet-tailed Sylph   F            <NA>   NA      NA        NA
+## 11  Violet-tailed Sylph                <NA>   NA      NA        NA
+## 12 Speckled Hummingbird                <NA>   NA      NA        NA
+## 13           Brown Inca                <NA>   NA      NA        NA
+## 14  Violet-tailed Sylph   F            <NA>   NA      NA        NA
+## 15  Violet-tailed Sylph   F            <NA>   NA      NA        NA
+## 16 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 17  Violet-tailed Sylph   F            <NA>   NA      NA        NA
+## 18    Gorgeted Sunangel                <NA>   NA      NA        NA
+## 19 Speckled Hummingbird                <NA>   NA      NA        NA
+## 20    Gorgeted Sunangel                <NA>   NA      NA        NA
+## 21    Gorgeted Sunangel                <NA>   NA      NA        NA
+## 22    Gorgeted Sunangel                <NA>   NA      NA        NA
+## 23 Speckled Hummingbird                <NA>   NA      NA        NA
+## 24 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 25  Violet-tailed Sylph                <NA>   NA      NA        NA
+## 26  Violet-tailed Sylph                <NA>   NA      NA        NA
+## 27    Gorgeted Sunangel                <NA>   NA      NA        NA
+## 28 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 29 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 30 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 31 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 32 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 33        Collared Inca                <NA>   NA      NA        NA
+## 34        Collared Inca                <NA>   NA      NA        NA
+## 35        Collared Inca                <NA>   NA      NA        NA
+## 36    Gorgeted Sunangel          Y     <NA>   NA      NA        NA
+## 37        Collared Inca                <NA>   NA      NA        NA
+## 38        Collared Inca                <NA>   NA      NA        NA
+## 39  Violet-tailed Sylph   F            <NA>   NA      NA        NA
+## 40    Gorgeted Sunangel                <NA>   NA      NA        NA
+## 41 Speckled Hummingbird                <NA>   NA      NA        NA
+## 42 Speckled Hummingbird                <NA>   NA      NA        NA
+## 43  Violet-tailed Sylph   F            <NA>   NA      NA        NA
+## 44 Speckled Hummingbird                <NA>   NA      NA        NA
+## 45 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 46 Tawny-bellied Hermit                <NA>   NA      NA        NA
+## 47        Collared Inca                <NA>   NA      NA        NA
+## 48 Speckled Hummingbird                <NA>   NA      NA        NA
+## 49        Collared Inca                <NA>   NA      NA        NA
+## 50        Collared Inca                <NA>   NA      NA        NA
+##          lon      lat  ele   name link        sym                 time
+## 1  -78.58655 0.130527 2290  FH101   NA Flag, Blue 2013-10-21T17:42:45Z
+## 2  -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 3  -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 4  -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 5  -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 6  -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 7  -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 8  -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 9  -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 10 -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 11 -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 12 -78.58172 0.128751 2450  FH102   NA Flag, Blue 2013-11-05T17:55:22Z
+## 13 -78.59831 0.118284 1960  FH104   NA Flag, Blue 2013-12-03T15:13:27Z
+## 14 -78.59831 0.118284 1960  FH104   NA Flag, Blue 2013-12-03T15:13:27Z
+## 15 -78.59831 0.118284 1960  FH104   NA Flag, Blue 2013-12-03T15:13:27Z
+## 16 -78.60901 0.118369 1900  FH105   NA Flag, Blue 2013-12-14T22:06:29Z
+## 17 -78.58330 0.128519 2430  FH106   NA Flag, Blue 2013-12-18T17:33:10Z
+## 18 -78.58330 0.128519 2430  FH106   NA Flag, Blue 2013-12-18T17:33:10Z
+## 19 -78.58330 0.128519 2430  FH106   NA Flag, Blue 2013-12-18T17:33:10Z
+## 20 -78.58330 0.128519 2430  FH106   NA Flag, Blue 2013-12-18T17:33:10Z
+## 21 -78.58330 0.128519 2430  FH106   NA Flag, Blue 2013-12-18T17:33:10Z
+## 22 -78.58330 0.128519 2430  FH106   NA Flag, Blue 2013-12-18T17:33:10Z
+## 23 -78.58264 0.128404 2440  FH107   NA Flag, Blue 2014-01-07T17:36:27Z
+## 24 -78.59385 0.114663 1750  FH108   NA Flag, Blue 2014-01-20T17:08:04Z
+## 25 -78.61016 0.115418 1880  FH109   NA Flag, Blue 2014-01-27T20:31:35Z
+## 26 -78.58568 0.129588 2350  FH110   NA Flag, Blue 2014-02-11T17:16:04Z
+## 27 -78.58568 0.129588 2350  FH110   NA Flag, Blue 2014-02-11T17:16:04Z
+## 28 -78.59608 0.126087 2110 FH1103   NA Flag, Blue 2014-09-09T15:46:04Z
+## 29 -78.59608 0.126087 2110 FH1103   NA Flag, Blue 2014-09-09T15:46:04Z
+## 30 -78.59608 0.126087 2110 FH1103   NA Flag, Blue 2014-09-09T15:46:04Z
+## 31 -78.59608 0.126087 2110 FH1103   NA Flag, Blue 2014-09-09T15:46:04Z
+## 32 -78.59608 0.126087 2110 FH1103   NA Flag, Blue 2014-09-09T15:46:04Z
+## 33 -78.58168 0.128821 2470 FH1105   NA Flag, Blue 2014-10-06T16:55:34Z
+## 34 -78.58168 0.128821 2470 FH1105   NA Flag, Blue 2014-10-06T16:55:34Z
+## 35 -78.58168 0.128821 2470 FH1105   NA Flag, Blue 2014-10-06T16:55:34Z
+## 36 -78.58168 0.128821 2470 FH1105   NA Flag, Blue 2014-10-06T16:55:34Z
+## 37 -78.58168 0.128821 2470 FH1105   NA Flag, Blue 2014-10-06T16:55:34Z
+## 38 -78.58168 0.128821 2470 FH1105   NA Flag, Blue 2014-10-06T16:55:34Z
+## 39 -78.58560 0.129440 2380 FH1108   NA Flag, Blue 2014-11-18T17:30:00Z
+## 40 -78.58560 0.129440 2380 FH1108   NA Flag, Blue 2014-11-18T17:30:00Z
+## 41 -78.58560 0.129440 2380 FH1108   NA Flag, Blue 2014-11-18T17:30:00Z
+## 42 -78.58560 0.129440 2380 FH1108   NA Flag, Blue 2014-11-18T17:30:00Z
+## 43 -78.58560 0.129440 2380 FH1108   NA Flag, Blue 2014-11-18T17:30:00Z
+## 44 -78.59630 0.122652 2030  FH111   NA Flag, Blue 2014-02-26T17:59:08Z
+## 45 -78.58997 0.131720 2330 FH1111   NA Flag, Blue 2015-01-12T16:39:59Z
+## 46 -78.58997 0.131720 2330 FH1111   NA Flag, Blue 2015-01-12T16:39:59Z
+## 47 -78.59314 0.129147 2170 FH1112   NA Flag, Blue 2015-01-18T17:17:19Z
+## 48 -78.59314 0.129147 2170 FH1112   NA Flag, Blue 2015-01-18T17:17:19Z
+## 49 -78.59314 0.129147 2170 FH1112   NA Flag, Blue 2015-01-18T17:17:19Z
+## 50 -78.59314 0.129147 2170 FH1112   NA Flag, Blue 2015-01-18T17:17:19Z
+##     cmt extensions MonthID     Date_F coords.x1 coords.x2 ele.nelly
+## 1  <NA>       <NA>      10 2013-10-21 -78.58655  0.130527        NA
+## 2  <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 3  <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 4  <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 5  <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 6  <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 7  <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 8  <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 9  <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 10 <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 11 <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 12 <NA>       <NA>      11 2013-11-05 -78.58172  0.128751        NA
+## 13 <NA>       <NA>      12 2013-12-03 -78.59831  0.118284        NA
+## 14 <NA>       <NA>      12 2013-12-03 -78.59831  0.118284        NA
+## 15 <NA>       <NA>      12 2013-12-03 -78.59831  0.118284        NA
+## 16 <NA>       <NA>      12 2013-12-14 -78.60901  0.118369        NA
+## 17 <NA>       <NA>      12 2013-12-18 -78.58330  0.128519        NA
+## 18 <NA>       <NA>      12 2013-12-18 -78.58330  0.128519        NA
+## 19 <NA>       <NA>      12 2013-12-18 -78.58330  0.128519        NA
+## 20 <NA>       <NA>      12 2013-12-18 -78.58330  0.128519        NA
+## 21 <NA>       <NA>      12 2013-12-18 -78.58330  0.128519        NA
+## 22 <NA>       <NA>      12 2013-12-18 -78.58330  0.128519        NA
+## 23 <NA>       <NA>       1 2014-01-07 -78.58264  0.128404        NA
+## 24 <NA>       <NA>       1 2014-01-20 -78.59385  0.114663        NA
+## 25 <NA>       <NA>       1 2014-01-27 -78.61016  0.115418        NA
+## 26 <NA>       <NA>       2 2014-02-11 -78.58568  0.129588        NA
+## 27 <NA>       <NA>       2 2014-02-11 -78.58568  0.129588        NA
+## 28 <NA>       <NA>       9 2014-09-09 -78.59608  0.126087        NA
+## 29 <NA>       <NA>       9 2014-09-09 -78.59608  0.126087        NA
+## 30 <NA>       <NA>       9 2014-09-09 -78.59608  0.126087        NA
+## 31 <NA>       <NA>       9 2014-09-09 -78.59608  0.126087        NA
+## 32 <NA>       <NA>       9 2014-09-09 -78.59608  0.126087        NA
+## 33 <NA>       <NA>      10 2014-10-06 -78.58168  0.128821        NA
+## 34 <NA>       <NA>      10 2014-10-06 -78.58168  0.128821        NA
+## 35 <NA>       <NA>      10 2014-10-06 -78.58168  0.128821        NA
+## 36 <NA>       <NA>      10 2014-10-06 -78.58168  0.128821        NA
+## 37 <NA>       <NA>      10 2014-10-06 -78.58168  0.128821        NA
+## 38 <NA>       <NA>      10 2014-10-06 -78.58168  0.128821        NA
+## 39 <NA>       <NA>      11 2014-11-18 -78.58560  0.129440        NA
+## 40 <NA>       <NA>      11 2014-11-18 -78.58560  0.129440        NA
+## 41 <NA>       <NA>      11 2014-11-18 -78.58560  0.129440        NA
+## 42 <NA>       <NA>      11 2014-11-18 -78.58560  0.129440        NA
+## 43 <NA>       <NA>      11 2014-11-18 -78.58560  0.129440        NA
+## 44 <NA>       <NA>       2 2014-02-26 -78.59630  0.122652        NA
+## 45 <NA>       <NA>       1 2015-01-12 -78.58997  0.131720        NA
+## 46 <NA>       <NA>       1 2015-01-12 -78.58997  0.131720        NA
+## 47 <NA>       <NA>       1 2015-01-18 -78.59314  0.129147        NA
+## 48 <NA>       <NA>       1 2015-01-18 -78.59314  0.129147        NA
+## 49 <NA>       <NA>       1 2015-01-18 -78.59314  0.129147        NA
+## 50 <NA>       <NA>       1 2015-01-18 -78.59314  0.129147        NA
+##               Iplant_Double Month GPS.ID TransectID Transect_R      DateP
+## 1         Psammisia sodiroi    10   <NA>       <NA>       <NA> 2013-10-22
+## 2        Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 3        Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 4        Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 5        Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 6        Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 7        Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 8        Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 9        Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 10       Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 11       Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 12       Meriania tomentosa    11   <NA>       <NA>       <NA> 2013-11-06
+## 13      Guzmania amplectens    12   <NA>       <NA>       <NA> 2013-12-05
+## 14      Guzmania amplectens    12   <NA>       <NA>       <NA> 2013-12-05
+## 15      Guzmania amplectens    12   <NA>       <NA>       <NA> 2013-12-05
+## 16 Centropogon solanifolius    12   <NA>       <NA>       <NA> 2013-12-15
+## 17       Guzmania squarrosa    12   <NA>       <NA>       <NA> 2013-12-19
+## 18       Guzmania squarrosa    12   <NA>       <NA>       <NA> 2013-12-19
+## 19       Guzmania squarrosa    12   <NA>       <NA>       <NA> 2013-12-19
+## 20       Guzmania squarrosa    12   <NA>       <NA>       <NA> 2013-12-19
+## 21       Guzmania squarrosa    12   <NA>       <NA>       <NA> 2013-12-19
+## 22       Guzmania squarrosa    12   <NA>       <NA>       <NA> 2013-12-19
+## 23   Renealmia sessilifolia     1   <NA>       <NA>       <NA> 2014-01-08
+## 24         Columnea ciliata     1   <NA>       <NA>       <NA> 2014-01-08
+## 25      Columnea kucyniakii     1   <NA>       <NA>       <NA> 2014-01-28
+## 26          Drymonia tenuis     2   <NA>       <NA>       <NA> 2014-02-12
+## 27          Drymonia tenuis     2   <NA>       <NA>       <NA> 2014-02-12
+## 28     Columnea mastersonii     9   <NA>       <NA>       <NA> 2014-09-10
+## 29     Columnea mastersonii     9   <NA>       <NA>       <NA> 2014-09-10
+## 30     Columnea mastersonii     9   <NA>       <NA>       <NA> 2014-09-10
+## 31     Columnea mastersonii     9   <NA>       <NA>       <NA> 2014-09-10
+## 32     Columnea mastersonii     9   <NA>       <NA>       <NA> 2014-09-10
+## 33        Macleania bullata    10   <NA>       <NA>       <NA> 2014-10-07
+## 34        Macleania bullata    10   <NA>       <NA>       <NA> 2014-10-07
+## 35        Macleania bullata    10   <NA>       <NA>       <NA> 2014-10-07
+## 36        Macleania bullata    10   <NA>       <NA>       <NA> 2014-10-07
+## 37        Macleania bullata    10   <NA>       <NA>       <NA> 2014-10-07
+## 38        Macleania bullata    10   <NA>       <NA>       <NA> 2014-10-07
+## 39        Psammisia sodiroi    11   <NA>       <NA>       <NA> 2014-11-19
+## 40        Psammisia sodiroi    11   <NA>       <NA>       <NA> 2014-11-19
+## 41        Psammisia sodiroi    11   <NA>       <NA>       <NA> 2014-11-19
+## 42        Psammisia sodiroi    11   <NA>       <NA>       <NA> 2014-11-19
+## 43        Psammisia sodiroi    11   <NA>       <NA>       <NA> 2014-11-19
+## 44   Gasteranthus quitensis     2   <NA>       <NA>       <NA> 2014-02-27
+## 45      Fuchsia macrostigma     1   <NA>       <NA>       <NA> 2015-01-13
+## 46      Fuchsia macrostigma     1   <NA>       <NA>       <NA> 2015-01-13
+## 47       Drymonia teuscheri     1   <NA>       <NA>       <NA> 2015-01-19
+## 48       Drymonia teuscheri     1   <NA>       <NA>       <NA> 2015-01-19
+## 49       Drymonia teuscheri     1   <NA>       <NA>       <NA> 2015-01-19
+## 50       Drymonia teuscheri     1   <NA>       <NA>       <NA> 2015-01-19
+```
 
+```r
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
@@ -332,7 +591,7 @@ levels(flower.month$PTransect_R)<-c("1300m - 1500m", "1500m - 1700m","1700m - 19
 ggplot(flower.month,aes(x=Month.a,log(Flowers),col=R,shape=as.factor(Year))) + geom_point(size=3) + theme_bw()  + geom_smooth(aes(group=1)) + ylab("Flowers") + xlab("Month") + facet_wrap(~PTransect_R) + labs(shape="Year", y= "Log Available Flowers") + scale_x_discrete(breaks=month.abb[seq(1,12,2)]) + scale_color_manual(labels=c("Low","Medium","High"),values=c("black","blue","red")) + labs(col="Resource Availability")
 ```
 
-<img src="figureObserved/unnamed-chunk-13-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/FlowerMonth.jpeg",dpi=600,height=5,width=9)
@@ -383,7 +642,7 @@ for (x in 1:nrow(indat)){
 ggplot(indat,aes(x=All_Flowers,y=Used_Flowers)) + geom_point() + facet_wrap(~Hummingbird,scales="free")
 ```
 
-<img src="figureObserved/unnamed-chunk-15-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
 
 ##Binary Measures of Resources
 
@@ -497,7 +756,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-50
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -608,7 +867,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 ```
 ##    user  system elapsed 
-##    0.12    0.02    2.79
+##   2.960   0.076 303.335
 ```
 
 
@@ -629,9 +888,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1657731 88.6    2637877 140.9  2637877 140.9
-## Vcells 2841222 21.7    5721718  43.7  5721260  43.7
+##            used  (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells  1654265  88.4    5684620 303.6  4818140 257.4
+## Vcells 16023546 122.3   44104814 336.5 54965201 419.4
 ```
 
 ##Assess Convergence
@@ -642,14 +901,14 @@ gc()
 ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-<img src="figureObserved/unnamed-chunk-23-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-23-1.png" style="display: block; margin: auto;" />
 
 
 ```r
 ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma","alpha_mu"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-<img src="figureObserved/unnamed-chunk-24-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-24-1.png" style="display: block; margin: auto;" />
 
 # Observed Data With Detection
 
@@ -657,7 +916,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 
 
 ```r
-runs<-50
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -771,7 +1030,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E","dprior")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -785,8 +1044,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 ```
-##    user  system elapsed 
-##    0.19    0.04    3.09
+##     user   system  elapsed 
+##    7.823    0.108 3235.294
 ```
 
 
@@ -808,9 +1067,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1662675 88.8    2637877 140.9  2637877 140.9
-## Vcells 2866082 21.9    5721718  43.7  5721260  43.7
+##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
+## Ncells  1662858  88.9    5295264 282.8   7967299  425.5
+## Vcells 35706368 272.5  108178141 825.4 133782185 1020.7
 ```
 
 ```r
@@ -826,20 +1085,20 @@ pars_detect_traits$Model<-"N-mixture"
 ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-<img src="figureObserved/unnamed-chunk-28-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-28-1.png" style="display: block; margin: auto;" />
 
 
 ```r
 ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-<img src="figureObserved/unnamed-chunk-29-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-29-1.png" style="display: block; margin: auto;" />
 
 ## Abundance
 
 
 ```r
-runs<-50
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -894,45 +1153,47 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 ## [43]     #For Cameras                                                   
 ## [44]     logit(detect[x])<-dcam[x]                                      
 ## [45]     dcam[x]~dnorm(dprior,tau_detect)                               
-## [46]     }                                                              
-## [47]                                                                    
-## [48]     #Observation priors                                            
-## [49]     dprior ~ dnorm(0,0.386)                                        
-## [50]     tau_detect ~ dunif(0,5)                                        
-## [51]                                                                    
-## [52]     #Process Model                                                 
-## [53]     #Species level priors                                          
-## [54]     for (i in 1:Birds){                                            
-## [55]                                                                    
-## [56]     #Intercept                                                     
-## [57]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                           
-## [58]                                                                    
-## [59]     #Traits slope                                                  
-## [60]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                           
-## [61]     }                                                              
-## [62]                                                                    
-## [63]     #Group process priors                                          
+## [46]                                                                    
+## [47]     #                                                              
+## [48]     }                                                              
+## [49]                                                                    
+## [50]     #Observation priors                                            
+## [51]     dprior ~ dnorm(0,0.386)                                        
+## [52]     tau_detect ~ dunif(0,5)                                        
+## [53]                                                                    
+## [54]     #Process Model                                                 
+## [55]     #Species level priors                                          
+## [56]     for (i in 1:Birds){                                            
+## [57]                                                                    
+## [58]     #Intercept                                                     
+## [59]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                           
+## [60]                                                                    
+## [61]     #Traits slope                                                  
+## [62]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                           
+## [63]     }                                                              
 ## [64]                                                                    
-## [65]     #Intercept                                                     
-## [66]     alpha_mu ~ dnorm(0,0.0001)                                     
-## [67]     alpha_tau ~ dt(0,1,1)I(0,)                                     
-## [68]     alpha_sigma<-pow(1/alpha_tau,0.5)                              
-## [69]                                                                    
-## [70]     #SLope                                                         
-## [71]     beta1_mu~dnorm(0,0.0001)                                       
-## [72]     beta1_tau ~ dt(0,1,1)I(0,)                                     
-## [73]     beta1_sigma<-pow(1/beta1_tau,0.5)                              
-## [74]                                                                    
-## [75]                                                                    
-## [76]     #derived posterior check                                       
-## [77]     fit<-sum(E[]) #Discrepancy for the observed data               
-## [78]     fitnew<-sum(E.new[])                                           
-## [79]                                                                    
-## [80]                                                                    
-## [81]     }                                                              
-## [82]     ",fill=TRUE)                                                   
-## [83]                                                                    
-## [84] sink()
+## [65]     #Group process priors                                          
+## [66]                                                                    
+## [67]     #Intercept                                                     
+## [68]     alpha_mu ~ dnorm(0,0.0001)                                     
+## [69]     alpha_tau ~ dt(0,1,1)I(0,)                                     
+## [70]     alpha_sigma<-pow(1/alpha_tau,0.5)                              
+## [71]                                                                    
+## [72]     #SLope                                                         
+## [73]     beta1_mu~dnorm(0,0.0001)                                       
+## [74]     beta1_tau ~ dt(0,1,1)I(0,)                                     
+## [75]     beta1_sigma<-pow(1/beta1_tau,0.5)                              
+## [76]                                                                    
+## [77]                                                                    
+## [78]     #derived posterior check                                       
+## [79]     fit<-sum(E[]) #Discrepancy for the observed data               
+## [80]     fitnew<-sum(E.new[])                                           
+## [81]                                                                    
+## [82]                                                                    
+## [83]     }                                                              
+## [84]     ",fill=TRUE)                                                   
+## [85]                                                                    
+## [86] sink()
 ```
 
 ```r
@@ -969,8 +1230,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 ```
 
 ```
-##    user  system elapsed 
-##    0.22    0.00    3.27
+##     user   system  elapsed 
+##    3.832    0.138 9913.571
 ```
 
 
@@ -991,9 +1252,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1662945 88.9    2637877 140.9  2637877 140.9
-## Vcells 2882522 22.0    5721718  43.7  5721260  43.7
+##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
+## Ncells  1663406  88.9    5295264 282.8   7967299  425.5
+## Vcells 47609892 363.3  108178141 825.4 133782185 1020.7
 ```
 
 ```r
@@ -1009,14 +1270,14 @@ pars_abundance$Model<-"Abundance"
 ggplot(pars_abundance[pars_abundance$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-<img src="figureObserved/unnamed-chunk-33-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-33-1.png" style="display: block; margin: auto;" />
 
 
 ```r
 ggplot(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","sigma_detect"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-<img src="figureObserved/unnamed-chunk-34-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-34-1.png" style="display: block; margin: auto;" />
 
 
 ```r
@@ -1032,7 +1293,7 @@ parsObs<-rbind(pars_detect_traits,pars_dniave)
 ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 ```
 
-<img src="figureObserved/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-36-1.png" style="display: block; margin: auto;" />
 
 
 ```r
@@ -1040,7 +1301,7 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fil
 ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
 ```
 
-<img src="figureObserved/unnamed-chunk-37-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-37-1.png" style="display: block; margin: auto;" />
 
 ```r
 pars_detect_traits<-merge(pars_detect_traits,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
@@ -1048,7 +1309,7 @@ pars_detect_traits<-merge(pars_detect_traits,jagsIndexBird,by.x="species",by.y="
 ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
 ```
 
-<img src="figureObserved/unnamed-chunk-37-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-37-2.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
@@ -1059,7 +1320,7 @@ ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ggplot(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sigma"),],aes(x=estimate,fill=Model)) + geom_histogram() + ggtitle("Trait matching regression parameters") + facet_wrap(~par,scale="free",nrow=2) + theme_bw() 
 ```
 
-<img src="figureObserved/unnamed-chunk-38-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-38-1.png" style="display: block; margin: auto;" />
 
 ### Predicted relationship 
 
@@ -1084,7 +1345,7 @@ fplot<-ggplot(data=predy[,],aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=uppe
 fplot + ylim(0,17)
 ```
 
-<img src="figureObserved/unnamed-chunk-40-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-40-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
@@ -1102,7 +1363,7 @@ tplot<-ggplot(data=predy_traits,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=
 tplot + ylim(0,17)
 ```
 
-<img src="figureObserved/unnamed-chunk-41-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-41-1.png" style="display: block; margin: auto;" />
 
 ##Abundance
 
@@ -1116,7 +1377,7 @@ aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ym
 aplot + ylim(0,17)
 ```
 
-<img src="figureObserved/unnamed-chunk-42-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-42-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/AbundanceBothPlot.jpeg",height=4,width=7,dpi=300)
@@ -1164,7 +1425,7 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 ggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.6)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length") + facet_wrap(~Hummingbird,scales="free",ncol=4)+ labs(fill="Model")  + ylab("Interactions per day") + scale_color_manual(values=c("grey70","black")) + scale_fill_manual(values=c("grey70","black"))
 ```
 
-<img src="figureObserved/unnamed-chunk-43-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-43-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=10,width=10)
@@ -1183,7 +1444,7 @@ Emat<-data.frame(indat,E=dmat$E)
 ggplot(Emat,aes(x=Yobs,y=E)) + geom_point() + ylab("Mean Discrepancy") + xlab("Observed Interactions") + geom_abline() + theme_bw()
 ```
 
-<img src="figureObserved/unnamed-chunk-44-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-44-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/DiscrepancySpread.jpeg",height=4,width=6)
@@ -1201,7 +1462,7 @@ disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + the
 disc_obs
 ```
 
-<img src="figureObserved/unnamed-chunk-45-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-45-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
@@ -1218,11 +1479,26 @@ tab[,c(4,1,2,3)]
 ```
 
 ```
-##            Hummingbird mean lower upper
-## 1        Collared Inca 61.9  41.6  84.4
-## 2 Speckled Hummingbird 51.6  31.5  77.8
-## 3 Tawny-bellied Hermit 55.6  28.8  74.9
-## 4  Violet-tailed Sylph 42.9  30.8  54.5
+##                  Hummingbird mean lower upper
+## 1             Andean Emerald 29.7  12.1  56.6
+## 2         Booted Racket-tail 19.4  10.8  28.5
+## 3                 Brown Inca 14.2   8.9  19.4
+## 4        Buff-tailed Coronet 23.2   9.8  38.3
+## 5              Collared Inca 39.2  21.4  64.7
+## 6          Crowned Woodnymph 27.8  12.5  45.3
+## 7    Fawn-breasted Brilliant 18.6   8.7  35.1
+## 8          Gorgeted Sunangel 53.5  33.4  77.0
+## 9    Green-crowned Brilliant 21.1   9.1  41.2
+## 10   Green-fronted Lancebill 28.8  18.0  42.2
+## 11             Hoary Puffleg 19.4   7.1  38.0
+## 12    Purple-bibbed Whitetip 22.5   6.8  44.9
+## 13 Rufous-tailed Hummingbird 24.2   7.2  54.0
+## 14      Speckled Hummingbird 11.9   6.3  19.0
+## 15    Stripe-throated Hermit 33.6  19.8  49.3
+## 16      Tawny-bellied Hermit 29.9  18.5  42.7
+## 17       Violet-tailed Sylph 28.8  19.7  39.9
+## 18  Wedge-billed Hummingbird 10.9   2.3  25.5
+## 19    White-whiskered Hermit 26.5  15.6  43.6
 ```
 
 ```r
@@ -1281,7 +1557,7 @@ daydf<-rbind_all(daydf)
 ggplot(md) + geom_ribbon(aes(x=Days,y=mean,ymin=lower,ymax=upper)) + geom_line(aes(x=Days,fill=L1,y=mean,ymin=lower,ymax=upper)) + facet_wrap(~L1,nrow=4,scale="free_x")  + ylab("Probability of detecting a interaction") + scale_fill_discrete(guide="none") + theme_bw() + scale_x_continuous(breaks=seq(0,8,2),limits=c(0,8))+ geom_rect(fill='grey',data=daydf,alpha=0.4,aes(xmax=upper,xmin=lower,ymin=0,ymax=Inf)) + ylim(0,1)
 ```
 
-<img src="figureObserved/unnamed-chunk-47-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-47-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/DetectionDays.jpeg",height=7,width=11,dpi=300) 
@@ -1297,7 +1573,7 @@ tabD<-merge(tab,sampling,by="Hummingbird")
 ggplot(tabD,aes(x=Obs,ymin=lower,ymax=upper,y=mean)) + geom_pointrange() + labs(y="Detectability",x="Detections") + geom_text(aes(label=Hummingbird),vjust=2) + theme_bw() + xlim(0,175)
 ```
 
-<img src="figureObserved/unnamed-chunk-48-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-48-1.png" style="display: block; margin: auto;" />
 
 #Predicted versus Observed Data
 
@@ -1332,9 +1608,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1691716 90.4    2637877 140.9  2637877 140.9
-## Vcells 2964196 22.7    5721718  43.7  5721715  43.7
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells  6428135 343.3   11194976  597.9  11194976  597.9
+## Vcells 92184983 703.4  187223026 1428.4 186940538 1426.3
 ```
 
 ```r
@@ -1373,9 +1649,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1692249 90.4    2637877 140.9  2637877 140.9
-## Vcells 2972865 22.7    5721718  43.7  5721715  43.7
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells  6435738 343.8   11194976  597.9  11194976  597.9
+## Vcells 93781882 715.5  187223026 1428.4 186940538 1426.3
 ```
 
 ```r
@@ -1426,7 +1702,7 @@ simdat<-melt(simdat,measure.vars = c("N-mixture","Poisson GLMM"))
 ggplot(simdat[simdat$variable=="N-mixture",],aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted Daily Visitation Rate") + xlab("Observed Daily Visitation Rate") + theme_bw() + scale_color_manual(values=c("grey50","black"))
 ```
 
-<img src="figureObserved/unnamed-chunk-52-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-52-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/DailyDiscrepancy.jpeg",height=4,width=6)
@@ -1446,7 +1722,7 @@ occ_disc<-sapply(occ,function(x) mean(x))
 ggplot() + xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-<img src="figureObserved/unnamed-chunk-53-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-53-1.png" style="display: block; margin: auto;" />
 
 ##Comparison of summary statistics for all three approaches
 
@@ -1464,8 +1740,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      0.79    0.36    63.55
-## 2 Poisson_GLM      2.02    0.45   161.51
+## 1    Nmixture      3.01    0.44  2342.56
+## 2 Poisson_GLM      7.01    0.80  5460.63
 ```
 
 Merge with morphological data.
@@ -1487,7 +1763,7 @@ simT<-simdat %>% group_by(variable,Traitmatch) %>% summarize(Lower=quantile(valu
 ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.6) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw() + facet_wrap(~variable,nrow=3) + geom_point(data=mmat,aes(y=True_State))
 ```
 
-<img src="figureObserved/unnamed-chunk-56-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-56-1.png" style="display: block; margin: auto;" />
 
 ##Generate Networks
 
@@ -1556,7 +1832,7 @@ species.mean<-merge(species.mean,hum.morph[,c("English","Total_Culmen")],by.x="H
 ggplot(species.mean) + geom_ribbon(alpha=0.4,aes(x=TotalCorolla,ymin=phi_low,ymax=phi_high,fill=as.factor(Model))) + theme_bw() + facet_wrap(~Hummingbird,scales="free",ncol=4)+ ggtitle("Niche Breadth") + geom_vline(aes(xintercept=Total_Culmen),linetype='dashed') + geom_line(aes(x=TotalCorolla,y=phi,fill=as.factor(Model))) + ylab("Daily Interaction Rate") + xlab("Corolla Length (mm)") + scale_fill_discrete("Resource Availability")
 ```
 
-<img src="figureObserved/unnamed-chunk-57-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-57-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/NicheBreadth.jpeg",height=6,width=9)
@@ -1593,7 +1869,7 @@ nstat<-melt(nstat,colnames(nstat[[1]]))
 ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2)  + scale_fill_manual("Model",values=c("black","grey70"))
 ```
 
-<img src="figureObserved/unnamed-chunk-58-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figureObserved/unnamed-chunk-58-1.png" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/NetworkStats.jpeg",height = 5,width=6) 
@@ -1605,9 +1881,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells 1697922 90.7    2637877 140.9  2637877 140.9
-## Vcells 3052112 23.3    5721718  43.7  5721715  43.7
+##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   6447719 344.4   11194976  597.9  11194976  597.9
+## Vcells 118416048 903.5  187223026 1428.4 187158402 1428.0
 ```
 
 ```r
