@@ -28,7 +28,6 @@ set.seed(3)
 #source functions
 source("Bayesian/BayesFunctions.R")
 
-
 ```
 
 ```{r,echo=F,cache=FALSE}
@@ -67,7 +66,7 @@ gc()
 #Number of hummingbird species
 h_species=10
 plant_species=20
-cameras<-4
+cameras<-20
 days<-3
 
 #Bill sizes
@@ -91,7 +90,7 @@ beta1_sigma<- 0.2
 alpha_mu<- 3
 alpha_sigma<- 0.2
 
-detection= runif(h_species,0.1,0.9)
+detection= runif(h_species,0.01,0.99)
 beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
 alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
 ```
