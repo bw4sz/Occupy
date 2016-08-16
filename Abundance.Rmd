@@ -20,7 +20,6 @@ library(R2jags)
 library(dplyr)
 library(stringr)
 library(gridExtra)
-library(GGally)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=5,fig.height=4,echo=TRUE,cache=F,fig.align='center',fig.path="figure/")
 
@@ -462,11 +461,11 @@ ggsave("Figures/StripPlots.svg",height=4,width=9)
 ```{r}
 castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw) %>% filter(par %in% c("beta1_mu","alpha_mu")) %>% dcast(Chain+Draw~par,value.var="estimate")
 head(castdf)
-ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
+#ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
 
 castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta1","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
 head(castdf)
-ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
+#ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
 ```
 
 ##Predicted Relationship 
