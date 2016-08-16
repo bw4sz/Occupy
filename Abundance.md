@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-05 11:47:47"
+## [1] "Run Completed at 2016-08-16 07:50:09"
 ```
 
 #Simulation   
@@ -24,7 +24,7 @@ $$\beta1 = N(-1,0.2)$$
 
 * Imperfect detection 
 * $$ p_i = U(0.1,0.9) $$ 
-* 20 camera
+* 10 camera
 * 3 days per camera
 
 **View simulated strength and form of trait matching **
@@ -36,9 +36,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  514021 27.5     940480 50.3   750400 40.1
-## Vcells 1600399 12.3    2849477 21.8  2307896 17.7
+##          used (Mb) gc trigger (Mb) max used (Mb)
+## Ncells 509824 27.3     940480 50.3   750400 40.1
+## Vcells 704516  5.4    1308461 10.0  1014609  7.8
 ```
 
 #Simulation Parameters
@@ -48,7 +48,7 @@ gc()
 #Number of hummingbird species
 h_species=10
 plant_species=20
-cameras<-20
+cameras<-10
 days<-3
 
 #Bill sizes
@@ -72,7 +72,7 @@ beta1_sigma<- 0.2
 alpha_mu<- 3
 alpha_sigma<- 0.2
 
-detection= runif(h_species,0.1,0.9)
+detection= runif(h_species,0.01,0.99)
 beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
 alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
 ```
@@ -260,12 +260,12 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ## [44]     #Group process priors                                    
 ## [45]                                                              
 ## [46]     #Intercept                                               
-## [47]     alpha_mu ~ dnorm(0,0.386)                                
+## [47]     alpha_mu ~ dnorm(0,0.0001)                               
 ## [48]     alpha_tau ~ dt(0,1,1)I(0,)                               
 ## [49]     alpha_sigma<-pow(1/alpha_tau,0.5)                        
 ## [50]                                                              
 ## [51]     #Trait                                                   
-## [52]     beta1_mu~dnorm(0,0.386)                                  
+## [52]     beta1_mu~dnorm(0,0.0001)                                 
 ## [53]     beta1_tau ~ dt(0,1,1)I(0,)                               
 ## [54]     beta1_sigma<-pow(1/beta1_tau,0.5)                        
 ## [55]                                                              
@@ -300,8 +300,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 4   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Cameras","Camera","resources")
@@ -325,8 +325,8 @@ gc()
 
 ```
 ##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  623727 33.4    1168576 62.5  1168576 62.5
-## Vcells 2557394 19.6    5215095 39.8  4219570 32.2
+## Ncells  607468 32.5    1168576 62.5  1168576 62.5
+## Vcells 1952701 14.9    5375444 41.1  4412868 33.7
 ```
 
 ```r
@@ -402,7 +402,7 @@ predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.nume
 
 
 ```r
-runs<-1000
+runs<-100
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -455,41 +455,46 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [41]                                                                    
 ## [42]     for(x in 1:Birds){                                             
 ## [43]     #For Cameras                                                   
-## [44]     detect[x]~dunif(0,1)                                           
-## [45]     }                                                              
-## [46]                                                                    
-## [47]     #Process Model                                                 
-## [48]     #Species level priors                                          
-## [49]     for (i in 1:Birds){                                            
-## [50]                                                                    
-## [51]     #Intercept                                                     
-## [52]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                           
-## [53]                                                                    
-## [54]     #Traits slope                                                  
-## [55]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                           
-## [56] }                                                                  
-## [57]                                                                    
-## [58]     #Group process priors                                          
-## [59]                                                                    
-## [60]     #Intercept                                                     
-## [61]     alpha_mu ~ dnorm(0,0.386)                                      
-## [62]     alpha_tau ~ dt(0,1,1)I(0,)                                     
-## [63]     alpha_sigma<-pow(1/alpha_tau,0.5)                              
+## [44]     logit(detect[x])<-dcam[x]                                      
+## [45]     dcam[x]~dnorm(dprior,tau_detect)                               
+## [46]     }                                                              
+## [47]                                                                    
+## [48]     #Observation priors                                            
+## [49]     dprior ~ dnorm(0,0.386)                                        
+## [50]     tau_detect ~ dunif(0,5)                                        
+## [51]                                                                    
+## [52]     #Process Model                                                 
+## [53]     #Species level priors                                          
+## [54]     for (i in 1:Birds){                                            
+## [55]                                                                    
+## [56]     #Intercept                                                     
+## [57]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                           
+## [58]                                                                    
+## [59]     #Traits slope                                                  
+## [60]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                           
+## [61] }                                                                  
+## [62]                                                                    
+## [63]     #Group process priors                                          
 ## [64]                                                                    
-## [65]     #Trait                                                         
-## [66]     beta1_mu~dnorm(0,0.386)                                        
-## [67]     beta1_tau ~ dt(0,1,1)I(0,)                                     
-## [68]     beta1_sigma<-pow(1/beta1_tau,0.5)                              
+## [65]     #Intercept                                                     
+## [66]     alpha_mu ~ dnorm(0,0.0001)                                     
+## [67]     alpha_tau ~ dt(0,1,1)I(0,)                                     
+## [68]     alpha_sigma<-pow(1/alpha_tau,0.5)                              
 ## [69]                                                                    
-## [70]     #derived posterior check                                       
-## [71]     fit<-sum(E[]) #Discrepancy for the observed data               
-## [72]     fitnew<-sum(E.new[])                                           
-## [73]                                                                    
+## [70]     #Trait                                                         
+## [71]     beta1_mu~dnorm(0,0.0001)                                       
+## [72]     beta1_tau ~ dt(0,1,1)I(0,)                                     
+## [73]     beta1_sigma<-pow(1/beta1_tau,0.5)                              
 ## [74]                                                                    
-## [75]     }                                                              
-## [76]     ",fill=TRUE)                                                   
-## [77]                                                                    
-## [78] sink()
+## [75]     #derived posterior check                                       
+## [76]     fit<-sum(E[]) #Discrepancy for the observed data               
+## [77]     fitnew<-sum(E.new[])                                           
+## [78]                                                                    
+## [79]                                                                    
+## [80]     }                                                              
+## [81]     ",fill=TRUE)                                                   
+## [82]                                                                    
+## [83] sink()
 ```
 
 ```r
@@ -516,8 +521,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1  #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 8  #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","resources","Birds","Nobs","Ninit","Time","Times")
@@ -527,7 +532,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##    user  system elapsed 
-##   16.98    0.73  373.33
+##    6.64    0.47   93.61
 ```
 
 
@@ -660,7 +665,7 @@ ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_lineran
 <img src="figure/unnamed-chunk-26-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
-ggsave("Figures/StripPlots.svg",height=4,width=9)
+#ggsave("Figures/StripPlots.svg",height=4,width=9)
 ```
 
 ##Correlation in posteriors for Nmixture Model
@@ -673,40 +678,34 @@ head(castdf)
 
 ```
 ##   Chain Draw alpha_mu   beta1_mu
-## 1     1    1 2.998932 -1.0571337
-## 2     1    2 3.051096 -1.1389905
-## 3     1    3 3.006413 -1.0159703
-## 4     1    4 2.975612 -1.0682239
-## 5     1    5 2.916681 -0.9314185
-## 6     1    6 3.048793 -0.9708471
+## 1     1    1 3.042170 -0.9871986
+## 2     1    2 2.836527 -1.0532047
+## 3     1    3 3.041432 -1.0281696
+## 4     1    4 2.896978 -1.0360269
+## 5     1    5 2.886709 -0.9511504
+## 6     1    6 2.907017 -0.9633272
 ```
 
 ```r
-ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
-```
+#ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
 
-<img src="figure/unnamed-chunk-27-1.png" title="" alt="" style="display: block; margin: auto;" />
-
-```r
 castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta1","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
 head(castdf)
 ```
 
 ```
 ##   species Chain Draw    alpha      beta1    detect
-## 1       1     1    1 3.163229 -0.7655020 0.5124472
-## 2       1     1    2 3.133674 -0.7415562 0.5173832
-## 3       1     1    3 3.134286 -0.7601471 0.5178882
-## 4       1     1    4 3.133272 -0.7741208 0.5159232
-## 5       1     1    5 3.138619 -0.7674214 0.5153950
-## 6       1     1    6 3.117028 -0.7359913 0.5116941
+## 1       1     1    1 3.047749 -0.6627292 0.5370251
+## 2       1     1    2 3.009747 -0.6110895 0.5606762
+## 3       1     1    3 2.947398 -0.6449275 0.5458403
+## 4       1     1    4 2.912530 -0.6577048 0.5722059
+## 5       1     1    5 2.953434 -0.6779955 0.5584197
+## 6       1     1    6 2.976008 -0.6439571 0.5619858
 ```
 
 ```r
-ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
+#ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
 ```
-
-<img src="figure/unnamed-chunk-27-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Predicted Relationship 
 
@@ -726,19 +725,26 @@ orig<-trajF(alpha=rnorm(2000,alpha_mu,alpha_sigma),beta1=rnorm(2000,beta1_mu,bet
 
 pm<-melt(list(Nmixture=predy_trait,'Poisson GLMM'=predyniave_trait),id.vars=colnames(predy_trait))
 
-tplot<-ggplot(data=pm,aes(x=x)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.5)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Simulation: Traits") + theme(legend.position='none')+ geom_line(data=orig,aes(y=mean),col='black',size=.8) + scale_fill_manual(values=c("grey70","Black"))+ scale_color_manual(values=c("grey70","Black"))
+tplot<-ggplot(data=pm,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.5)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Simulation: Traits") + geom_line(data=orig,aes(y=mean),col='black',size=.8) + scale_fill_manual(values=c("grey70","Black"))+ scale_color_manual(values=c("grey70","Black"))
+tplot
+```
+
+<img src="figure/unnamed-chunk-29-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+```r
+ggsave("Figures/SimPredictBoth.jpg",height=5,width=7)
 ```
 
 
 
 ```r
-predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources))
+predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(resources),resources=as.numeric(resources))
 
-orig<-trajF(alpha=rnorm(1000,alpha_mu,alpha_sigma),beta1=rnorm(1000,beta1_mu,beta1_sigma),trait=as.numeric(traitmatch),resources=as.numeric(resources))
+orig<-trajF(alpha=rnorm(1000,alpha_mu,alpha_sigma),beta1=rnorm(1000,beta1_mu,beta1_sigma),trait=as.numeric(resources),resources=as.numeric(resources))
 
 pm<-melt(list(Nmixture=predy,'Poisson GLMM'=predyniave_both),id.vars=colnames(predy))
 
-fplot<-ggplot(data=pm,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.5)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + geom_line(data=orig,aes(y=mean),col='black',size=.8) + scale_fill_manual(values=c("grey70","Black"))+ scale_color_manual(values=c("grey70","Black"))
+fplot<-ggplot(data=pm,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.5)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=mdat,aes(x=Abundance,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + geom_line(data=orig,aes(y=mean),col='black',size=.8) + scale_fill_manual(values=c("grey70","Black"))+ scale_color_manual(values=c("grey70","Black")) + ggtitle("Simulation: Abundance")
 ```
 
 
@@ -817,9 +823,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   691783  37.0    2051488 109.6  3061940 163.6
-## Vcells 16361500 124.9   43985672 335.6 43764016 333.9
+##           used (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells  653897   35    2051488 109.6  3205452 171.2
+## Vcells 8245661   63   25823987 197.1 40057924 305.7
 ```
 
 ```r
@@ -832,9 +838,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   691779  37.0    2051488 109.6  3061940 163.6
-## Vcells 15643794 119.4   43985672 335.6 43764016 333.9
+##           used (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells  653508 35.0    2051488 109.6  3205452 171.2
+## Vcells 6457219 49.3   20659189 157.7 40057924 305.7
 ```
 
 ```r
@@ -867,9 +873,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   693521  37.1    2051488 109.6  3061940 163.6
-## Vcells 22848834 174.4   43985672 335.6 43975501 335.6
+##           used (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells  654012 35.0    2051488 109.6  3205452 171.2
+## Vcells 7405534 56.5   20659189 157.7 40057924 305.7
 ```
 
 ```r
@@ -882,9 +888,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   692552  37.0    2051488 109.6  3061940 163.6
-## Vcells 15671976 119.6   43985672 335.6 43980299 335.6
+##           used (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells  653771 35.0    2051488 109.6  3205452 171.2
+## Vcells 6475561 49.5   20659189 157.7 40057924 305.7
 ```
 
 ```r
@@ -1028,8 +1034,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.07    0.12   214.05
-## 2 Poisson_GLM      3.19    0.16   637.59
+## 1    Nmixture      1.21    0.14   242.20
+## 2 Poisson_GLM      3.11    0.29   621.94
 ```
 
 #DIC
@@ -1040,7 +1046,7 @@ sim_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 51242.84
+## [1] 24302.06
 ```
 
 ```r
@@ -1048,7 +1054,7 @@ sim_detect$BUGSoutput$DIC
 ```
 
 ```
-## [1] 45533.42
+## [1] 21540.1
 ```
 
 

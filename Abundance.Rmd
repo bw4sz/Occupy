@@ -49,7 +49,7 @@ $$\beta1 = N(-1,0.2)$$
 
 * Imperfect detection 
 * $$ p_i = U(0.1,0.9) $$ 
-* 20 camera
+* 10 camera
 * 3 days per camera
 
 **View simulated strength and form of trait matching **
@@ -65,7 +65,7 @@ gc()
 #Number of hummingbird species
 h_species=10
 plant_species=20
-cameras<-20
+cameras<-10
 days<-3
 
 #Bill sizes
@@ -238,8 +238,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 4   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Cameras","Camera","resources")
@@ -346,8 +346,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1  #thinning rate
-  nb <- runs*.95 # number to discard for burn-in
+  nt <- 8  #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","resources","Birds","Nobs","Ninit","Time","Times")
