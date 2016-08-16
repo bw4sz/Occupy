@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-16 07:50:09"
+## [1] "Run Completed at 2016-08-16 07:55:44"
 ```
 
 #Simulation   
@@ -37,8 +37,8 @@ gc()
 
 ```
 ##          used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells 509824 27.3     940480 50.3   750400 40.1
-## Vcells 704516  5.4    1308461 10.0  1014609  7.8
+## Ncells 509823 27.3     940480 50.3   750400 40.1
+## Vcells 704514  5.4    1308461 10.0  1014606  7.8
 ```
 
 #Simulation Parameters
@@ -204,7 +204,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -324,9 +324,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  607468 32.5    1168576 62.5  1168576 62.5
-## Vcells 1952701 14.9    5375444 41.1  4412868 33.7
+##            used  (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells   607467  32.5    1168576  62.5  1168576  62.5
+## Vcells 19129649 146.0   59332788 452.7 55662281 424.7
 ```
 
 ```r
@@ -402,7 +402,7 @@ predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.nume
 
 
 ```r
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -461,7 +461,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [47]                                                                    
 ## [48]     #Observation priors                                            
 ## [49]     dprior ~ dnorm(0,0.386)                                        
-## [50]     tau_detect ~ dunif(0,5)                                        
+## [50]     tau_detect ~ dunif(0,4)                                        
 ## [51]                                                                    
 ## [52]     #Process Model                                                 
 ## [53]     #Species level priors                                          
@@ -532,7 +532,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##    user  system elapsed 
-##    6.64    0.47   93.61
+##    8.85    4.20 1552.92
 ```
 
 
@@ -678,12 +678,12 @@ head(castdf)
 
 ```
 ##   Chain Draw alpha_mu   beta1_mu
-## 1     1    1 3.042170 -0.9871986
-## 2     1    2 2.836527 -1.0532047
-## 3     1    3 3.041432 -1.0281696
-## 4     1    4 2.896978 -1.0360269
-## 5     1    5 2.886709 -0.9511504
-## 6     1    6 2.907017 -0.9633272
+## 1     1    1 2.930944 -0.9394849
+## 2     1    2 2.897696 -0.9965815
+## 3     1    3 3.030486 -0.9947212
+## 4     1    4 2.980018 -0.8573158
+## 5     1    5 2.961693 -1.0505029
+## 6     1    6 3.012187 -0.9926250
 ```
 
 ```r
@@ -695,12 +695,12 @@ head(castdf)
 
 ```
 ##   species Chain Draw    alpha      beta1    detect
-## 1       1     1    1 3.047749 -0.6627292 0.5370251
-## 2       1     1    2 3.009747 -0.6110895 0.5606762
-## 3       1     1    3 2.947398 -0.6449275 0.5458403
-## 4       1     1    4 2.912530 -0.6577048 0.5722059
-## 5       1     1    5 2.953434 -0.6779955 0.5584197
-## 6       1     1    6 2.976008 -0.6439571 0.5619858
+## 1       1     1    1 3.073736 -0.5927995 0.4739255
+## 2       1     1    2 3.153681 -0.7162279 0.4870255
+## 3       1     1    3 2.972469 -0.5774215 0.5210879
+## 4       1     1    4 3.099363 -0.6739248 0.4992649
+## 5       1     1    5 3.080405 -0.6502230 0.5101266
+## 6       1     1    6 3.054626 -0.6228834 0.4862403
 ```
 
 ```r
@@ -823,9 +823,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  653897   35    2051488 109.6  3205452 171.2
-## Vcells 8245661   63   25823987 197.1 40057924 305.7
+##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells    712734  38.1    4732620  252.8  12657123  676.0
+## Vcells 127604608 973.6  209855505 1601.1 218273713 1665.3
 ```
 
 ```r
@@ -838,9 +838,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  653508 35.0    2051488 109.6  3205452 171.2
-## Vcells 6457219 49.3   20659189 157.7 40057924 305.7
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   702869  37.6    3786096  202.2  12657123  676.0
+## Vcells 91835658 700.7  209855505 1601.1 218273713 1665.3
 ```
 
 ```r
@@ -873,9 +873,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  654012 35.0    2051488 109.6  3205452 171.2
-## Vcells 7405534 56.5   20659189 157.7 40057924 305.7
+##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells    713796  38.2    3028876  161.8  12657123  676.0
+## Vcells 110045074 839.6  209855505 1601.1 218273713 1665.3
 ```
 
 ```r
@@ -888,9 +888,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  653771 35.0    2051488 109.6  3205452 171.2
-## Vcells 6475561 49.5   20659189 157.7 40057924 305.7
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   708824  37.9    2423100  129.5  12657123  676.0
+## Vcells 92160612 703.2  209855505 1601.1 218273713 1665.3
 ```
 
 ```r
@@ -1034,8 +1034,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.21    0.14   242.20
-## 2 Poisson_GLM      3.11    0.29   621.94
+## 1    Nmixture      1.22    0.19   243.58
+## 2 Poisson_GLM      3.18    0.28   636.24
 ```
 
 #DIC
@@ -1046,7 +1046,7 @@ sim_niave$BUGSoutput$DIC
 ```
 
 ```
-## [1] 24302.06
+## [1] 24312.28
 ```
 
 ```r
@@ -1054,7 +1054,7 @@ sim_detect$BUGSoutput$DIC
 ```
 
 ```
-## [1] 21540.1
+## [1] 22307.14
 ```
 
 
