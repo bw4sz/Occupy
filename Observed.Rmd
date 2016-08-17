@@ -449,7 +449,7 @@ indat$jTime<-as.numeric(as.factor(indat$Time))
 indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
-indat$scaledR<-scale(indat$FlowerA)
+indat$scaledR<-as.numeric(scale(indat$FlowerA))
 resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 ```
 
@@ -496,7 +496,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-200000
+runs<-100000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -527,8 +527,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- max(0,runs-1000) # number to discard for burn-in
+  nt <- 8   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
@@ -567,7 +567,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-400000
+runs<-300000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -597,8 +597,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- max(0,runs-1000) # number to discard for burn-in
+  nt <- 8   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
@@ -671,8 +671,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- max(0,runs-1000) # number to discard for burn-in
+  nt <- 8   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
@@ -793,7 +793,7 @@ castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha"),], species +Chain +Mod
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
 
-species.split<-split(castdf,list(castdf$species,castdf$Model))
+species.split<-split(castdf,list(castdf$species,castdf$Model),drop=T)
 
 species.traj<-list()
 
