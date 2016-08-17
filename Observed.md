@@ -1,11 +1,11 @@
-# Hierarchical Nmixture Models for species interactions: Empirical Data
+# Hierarchical N-mixture Models for species interactions: Empirical Data
 Ben Weinstein - Stony Brook University  
 
 
 
 
 ```
-## [1] "Run Completed at 2016-08-15 18:03:30"
+## [1] "Run Completed at 2016-08-17 14:56:55"
 ```
 
 
@@ -27,7 +27,7 @@ fl.morph$Corolla<-fl.morph$EffectiveCorolla
 fl.morph[is.na(fl.morph$Corolla),"Corolla"]<-fl.morph[is.na(fl.morph$Corolla),"TotalCorolla"]
 
 #fuchsia macrostigma has an undue influence on this analysis, being 3x longer than other flowers, its not clear that birds really have to reach down the full corolla lenghth, use effective corolla length.
-fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
+#fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
 
 #First row is empty
 fl.morph<-fl.morph[-1,]
@@ -89,7 +89,7 @@ missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
-dath<-dath[!dath$Pierce %in% c("y","Y"),]
+#dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
 ##Match Species to Morphology
@@ -447,8 +447,8 @@ indat$jTime<-as.numeric(as.factor(indat$Time))
 indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
-indat$scaledR<-(indat$FlowerA>0)*1
-resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(FlowerA))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
+indat$scaledR<-as.numeric(scale(indat$FlowerA))
+resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 ```
 
 # Hierarcichal Nmixture Model
@@ -595,8 +595,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- max(0,runs-1000) # number to discard for burn-in
+  nt <- 8   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
@@ -606,7 +606,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 ```
 ##    user  system elapsed 
-##   2.762   0.084 550.646
+##   2.989   0.080 628.405
 ```
 
 
@@ -628,8 +628,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  1653784  88.4    5684620 303.6  4817925 257.4
-## Vcells 16020508 122.3   45672380 348.5 57060356 435.4
+## Ncells  1658552  88.6    5684620 303.6  5024703 268.4
+## Vcells 16757277 127.9   50651680 386.5 63248852 482.6
 ```
 
 ##Assess Convergence
@@ -714,7 +714,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [47]                                                                    
 ## [48]     #Observation priors                                            
 ## [49]     dprior ~ dnorm(0,0.386)                                        
-## [50]     tau_detect ~ dunif(0,5)                                        
+## [50]     tau_detect ~ dunif(0,4)                                        
 ## [51]                                                                    
 ## [52]     #Process Model                                                 
 ## [53]     #Species level priors                                          
@@ -773,8 +773,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- max(0,runs-1000) # number to discard for burn-in
+  nt <- 8   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
@@ -784,7 +784,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    8.221    0.159 7074.603
+##    7.448    0.177 9532.813
 ```
 
 
@@ -806,9 +806,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
-## Ncells  1662380  88.8    6619081 353.5   7979105  426.2
-## Vcells 35703332 272.4  109880469 838.4 135885799 1036.8
+##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
+## Ncells  1667350  89.1    6379917 340.8   8375623 447.4
+## Vcells 37563805 286.6  101487524 774.3 126578549 965.8
 ```
 
 ```r
@@ -837,7 +837,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 
 
 ```r
-runs<-300000
+runs<-400000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -896,7 +896,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 ## [47]                                                                    
 ## [48]     #Observation priors                                            
 ## [49]     dprior ~ dnorm(0,0.386)                                        
-## [50]     tau_detect ~ dunif(0,5)                                        
+## [50]     tau_detect ~ dunif(0,4)                                        
 ## [51]                                                                    
 ## [52]     #Process Model                                                 
 ## [53]     #Species level priors                                          
@@ -957,8 +957,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 4   #thinning rate
-  nb <- max(0,runs-1000) # number to discard for burn-in
+  nt <- 8   #thinning rate
+  nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
@@ -968,7 +968,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 
 ```
 ##      user    system   elapsed 
-##     3.613     0.120 13598.127
+##     4.373     0.147 20686.939
 ```
 
 
@@ -989,9 +989,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
-## Ncells  1662928  88.9    5295264 282.8   7979105  426.2
-## Vcells 47606838 363.3  109880469 838.4 135885799 1036.8
+##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
+## Ncells  1667895  89.1    5103933 272.6   8375623 447.4
+## Vcells 50225008 383.2  101487524 774.3 126578549 965.8
 ```
 
 ```r
@@ -1115,9 +1115,9 @@ tplot + ylim(0,17)
 ```r
 castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
-predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$FlowerA)
+predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$scaledR)
 
-aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=FlowerA,y=Yobs),size=.5,alpha=.9) + ggtitle("Abundance")
+aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=scaledR,y=Yobs),size=.5,alpha=.9) + ggtitle("Abundance")
 aplot + ylim(0,17)
 ```
 
@@ -1136,7 +1136,7 @@ castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha"),], species +Chain +Mod
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
 
-species.split<-split(castdf,list(castdf$species,castdf$Model))
+species.split<-split(castdf,list(castdf$species,castdf$Model),drop=T)
 
 species.traj<-list()
 
@@ -1149,7 +1149,7 @@ for(d in 1:length(species.split)){
   tsp<-indat %>% filter(Hummingbird==index) %>% .$Traitmatch
   
   #Range of abundances
-    fsp<-indat %>% filter(Hummingbird==index) %>% .$FlowerA
+    fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
     
   species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,trait=tsp,resources=fsp)
 }
@@ -1194,10 +1194,10 @@ for(d in 1:length(species.split)){
   index<-jagsIndexBird[unique(x$species),"Hummingbird"]
   
   #range of trait distances
-  tsp<-indat %>% filter(Hummingbird==index) %>% .$FlowerA
+  tsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
   
   #Range of abundances
-    fsp<-indat %>% filter(Hummingbird==index) %>% .$FlowerA
+    fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
     
   species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,trait=tsp,resources=fsp)
 }
@@ -1214,7 +1214,7 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 #match colnames
 
 #plot and compare to original data
-ggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=FlowerA,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.6)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Flower Abundance") + facet_wrap(~Hummingbird,scales="free",ncol=4)+ labs(fill="Model")  + ylab("Interactions per day") + scale_color_manual(values=c("grey70","black")) + scale_fill_manual(values=c("grey70","black"))
+ggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=scaledR,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.6)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Flower Abundance") + facet_wrap(~Hummingbird,scales="free",ncol=4)+ labs(fill="Model")  + ylab("Interactions per day") + scale_color_manual(values=c("grey70","black")) + scale_fill_manual(values=c("grey70","black"))
 ```
 
 <img src="figureObserved/unnamed-chunk-45-1.png" style="display: block; margin: auto;" />
@@ -1279,25 +1279,25 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                  Hummingbird mean lower upper
-## 1             Andean Emerald 31.5  13.0  55.3
-## 2         Booted Racket-tail 23.8  12.7  36.2
-## 3                 Brown Inca 18.8  11.4  28.6
-## 4        Buff-tailed Coronet 23.4  12.2  38.4
-## 5              Collared Inca 30.5  17.2  49.4
-## 6          Crowned Woodnymph 28.3  12.9  43.1
-## 7    Fawn-breasted Brilliant 22.4   9.5  43.0
-## 8          Gorgeted Sunangel 49.3  30.1  68.4
-## 9    Green-crowned Brilliant 18.4   7.4  39.1
-## 10   Green-fronted Lancebill 33.4  20.2  52.1
-## 11             Hoary Puffleg 23.3  10.9  42.1
-## 12    Purple-bibbed Whitetip 28.2  13.0  48.7
-## 13 Rufous-tailed Hummingbird 26.1   8.8  52.4
-## 14      Speckled Hummingbird 13.7   7.2  26.5
-## 15    Stripe-throated Hermit 32.4  13.9  50.1
-## 16      Tawny-bellied Hermit 34.2  20.9  46.2
-## 17       Violet-tailed Sylph 25.4  18.0  37.3
-## 18  Wedge-billed Hummingbird 18.3   9.3  32.9
-## 19    White-whiskered Hermit 28.6  18.7  38.1
+## 1             Andean Emerald 32.5   8.1  62.6
+## 2         Booted Racket-tail 25.2  12.0  41.3
+## 3                 Brown Inca 13.9   9.1  20.4
+## 4        Buff-tailed Coronet 18.3   8.1  32.2
+## 5              Collared Inca 27.1   9.9  50.8
+## 6          Crowned Woodnymph 27.0  10.6  47.1
+## 7    Fawn-breasted Brilliant 16.8   2.8  47.8
+## 8          Gorgeted Sunangel 57.8  32.6  80.7
+## 9    Green-crowned Brilliant 14.5   3.9  42.5
+## 10   Green-fronted Lancebill 28.9   9.3  48.7
+## 11             Hoary Puffleg 15.4   4.2  35.4
+## 12    Purple-bibbed Whitetip 23.1   5.6  48.5
+## 13 Rufous-tailed Hummingbird 20.8   3.8  56.3
+## 14      Speckled Hummingbird 10.4   3.5  20.6
+## 15    Stripe-throated Hermit 25.3  14.7  37.4
+## 16      Tawny-bellied Hermit 31.6  19.5  49.0
+## 17       Violet-tailed Sylph 21.5  11.0  35.1
+## 18  Wedge-billed Hummingbird  7.6   0.7  19.9
+## 19    White-whiskered Hermit 25.5  11.9  40.6
 ```
 
 ```r
@@ -1408,8 +1408,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6429102 343.4   11194976  597.9  11194976  597.9
-## Vcells 92105134 702.8  228277577 1741.7 227531959 1736.0
+## Ncells  6736474 359.8   12997878  694.2  12997878  694.2
+## Vcells 97373016 742.9  210873966 1608.9 209011386 1594.7
 ```
 
 ```r
@@ -1449,8 +1449,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6436690 343.8   11194976  597.9  11194976  597.9
-## Vcells 93702008 714.9  228277577 1741.7 227531959 1736.0
+## Ncells  6744068 360.2   12997878  694.2  12997878  694.2
+## Vcells 99020198 755.5  210873966 1608.9 209011386 1594.7
 ```
 
 ```r
@@ -1490,8 +1490,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6441216 344.0   11194976  597.9  11194976  597.9
-## Vcells 93732149 715.2  228277577 1741.7 227531959 1736.0
+## Ncells  6748585 360.5   12997878  694.2  12997878  694.2
+## Vcells 98999824 755.4  210873966 1608.9 209011386 1594.7
 ```
 
 ```r
@@ -1580,9 +1580,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1   Abundance      3.73    0.46  2904.75
-## 2    Nmixture      2.87    0.43  2239.45
-## 3 Poisson_GLM      6.98    0.82  5437.21
+## 1   Abundance      4.09    0.47  3182.51
+## 2    Nmixture      3.42    0.52  2667.99
+## 3 Poisson_GLM      7.85    0.88  6113.14
 ```
 
 Merge with morphological data.
@@ -1723,8 +1723,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   6453275 344.7   11194976  597.9  11194976  597.9
-## Vcells 120006946 915.6  228277577 1741.7 228241024 1741.4
+## Ncells   6760647 361.1   12997878  694.2  12997878  694.2
+## Vcells 126295475 963.6  210873966 1608.9 210861249 1608.8
 ```
 
 ```r
