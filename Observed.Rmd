@@ -1,5 +1,5 @@
 ---
-title: "Hierarchical Nmixture Models for species interactions: Empirical Data"
+title: "Hierarchical N-mixture Models for species interactions: Empirical Data"
 author: "Ben Weinstein - Stony Brook University"
 output:
   html_document:
@@ -23,9 +23,6 @@ library(boot)
 library(bipartite)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
-
-set.seed(3)
-
 source("Bayesian/BayesFunctions.R")
 ```
 
@@ -50,7 +47,7 @@ fl.morph$Corolla<-fl.morph$EffectiveCorolla
 fl.morph[is.na(fl.morph$Corolla),"Corolla"]<-fl.morph[is.na(fl.morph$Corolla),"TotalCorolla"]
 
 #fuchsia macrostigma has an undue influence on this analysis, being 3x longer than other flowers, its not clear that birds really have to reach down the full corolla lenghth, use effective corolla length.
-fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
+#fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
 
 #First row is empty
 fl.morph<-fl.morph[-1,]
@@ -112,7 +109,7 @@ missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
-dath<-dath[!dath$Pierce %in% c("y","Y"),]
+#dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
 ##Match Species to Morphology
