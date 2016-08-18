@@ -47,7 +47,7 @@ cat("
     
     #Observation priors
     dprior ~ dnorm(0,0.386)
-    tau_detect ~ dunif(0,4)
+    tau_detect ~ dunif(0,10)
     
     #Process Model
     #Species level priors
