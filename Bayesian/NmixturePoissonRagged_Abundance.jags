@@ -39,12 +39,12 @@
     for(x in 1:Birds){
     #For Cameras
     logit(detect[x])<-dcam[x]
-    dcam[x]~dnorm(dprior,tau_detect)
+    dcam[x]~dunif(0,1)
     }
     
     #Observation priors
-    dprior ~ dnorm(0,0.386)
-    tau_detect ~ dunif(0,4)
+    #dprior ~ dnorm(0,0.386)
+    #tau_detect ~ dunif(0,4)
 
     #Process Model
     #Species level priors

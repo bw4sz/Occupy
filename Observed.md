@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-18 15:43:33"
+## [1] "Run Completed at 2016-08-19 16:35:40"
 ```
 
 
@@ -606,7 +606,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    2.974    0.063 1225.916
+##    2.965    0.107 1236.749
 ```
 
 
@@ -628,8 +628,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  1658553  88.6    5684620 303.6  5024704 268.4
-## Vcells 16757280 127.9   50651683 386.5 63248855 482.6
+## Ncells  1658551  88.6    5684620 303.6  5024702 268.4
+## Vcells 16757277 127.9   50651680 386.5 63248852 482.6
 ```
 
 ##Assess Convergence
@@ -655,7 +655,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 
 
 ```r
-runs<-400000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -709,12 +709,12 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [42]     for(x in 1:Birds){                                             
 ## [43]     #For Cameras                                                   
 ## [44]     logit(detect[x])<-dcam[x]                                      
-## [45]     dcam[x]~dnorm(dprior,tau_detect)                               
+## [45]     dcam[x]~dunif(0,1)                                             
 ## [46]     }                                                              
 ## [47]                                                                    
 ## [48]     #Observation priors                                            
-## [49]     dprior ~ dnorm(0,0.386)                                        
-## [50]     tau_detect ~ dunif(0,10)                                       
+## [49]     #dprior ~ dnorm(0,0.386)                                       
+## [50]     #tau_detect ~ dgamma                                           
 ## [51]                                                                    
 ## [52]     #Process Model                                                 
 ## [53]     #Species level priors                                          
@@ -769,7 +769,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E","dprior")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -783,8 +783,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 ```
-##      user    system   elapsed 
-##     7.348     0.152 16178.544
+##     user   system  elapsed 
+##    7.793    0.163 4501.679
 ```
 
 
@@ -807,8 +807,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1667351  89.1    6379917 340.8   8375624 447.4
-## Vcells 37563809 286.6  101487529 774.3 126578553 965.8
+## Ncells  1667347  89.1    6379917 340.8   8374597 447.3
+## Vcells 37561032 286.6  101487524 774.3 126563335 965.7
 ```
 
 ```r
@@ -837,7 +837,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 
 
 ```r
-runs<-500000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -891,12 +891,12 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 ## [42]     for(x in 1:Birds){                                             
 ## [43]     #For Cameras                                                   
 ## [44]     logit(detect[x])<-dcam[x]                                      
-## [45]     dcam[x]~dnorm(dprior,tau_detect)                               
+## [45]     dcam[x]~dunif(0,1)                                             
 ## [46]     }                                                              
 ## [47]                                                                    
 ## [48]     #Observation priors                                            
-## [49]     dprior ~ dnorm(0,0.386)                                        
-## [50]     tau_detect ~ dunif(0,4)                                        
+## [49]     #dprior ~ dnorm(0,0.386)                                       
+## [50]     #tau_detect ~ dunif(0,4)                                       
 ## [51]                                                                    
 ## [52]     #Process Model                                                 
 ## [53]     #Species level priors                                          
@@ -967,8 +967,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 ```
 
 ```
-##      user    system   elapsed 
-##     4.310     0.101 27584.681
+##     user   system  elapsed 
+##    4.337    0.080 8402.663
 ```
 
 
@@ -990,8 +990,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1667896  89.1    5103933 272.6   8375624 447.4
-## Vcells 50225012 383.2  101487529 774.3 126578553 965.8
+## Ncells  1667893  89.1    5103933 272.6   8374597 447.3
+## Vcells 50221754 383.2  101487524 774.3 126563335 965.7
 ```
 
 ```r
@@ -1279,25 +1279,25 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                  Hummingbird mean lower upper
-## 1             Andean Emerald 24.7  11.7  47.2
-## 2         Booted Racket-tail 21.2  11.9  33.5
-## 3                 Brown Inca 16.3   7.0  24.4
-## 4        Buff-tailed Coronet 20.4   9.6  35.7
-## 5              Collared Inca 24.9   8.0  43.0
-## 6          Crowned Woodnymph 22.8   7.9  39.3
-## 7    Fawn-breasted Brilliant 21.3   7.8  39.1
-## 8          Gorgeted Sunangel 35.5  14.6  62.6
-## 9    Green-crowned Brilliant 19.8   8.9  35.1
-## 10   Green-fronted Lancebill 28.1  13.3  46.4
-## 11             Hoary Puffleg 19.6   6.8  37.4
-## 12    Purple-bibbed Whitetip 26.0   6.7  52.0
-## 13 Rufous-tailed Hummingbird 22.8   8.8  44.3
-## 14      Speckled Hummingbird 15.9   6.4  28.1
-## 15    Stripe-throated Hermit 22.1  12.6  35.9
-## 16      Tawny-bellied Hermit 28.9  15.5  41.6
-## 17       Violet-tailed Sylph 22.8  11.3  35.4
-## 18  Wedge-billed Hummingbird 14.6   4.6  28.1
-## 19    White-whiskered Hermit 25.1  15.7  39.0
+## 1             Andean Emerald 59.7  50.3  72.2
+## 2         Booted Racket-tail 52.4  50.1  57.7
+## 3                 Brown Inca 52.6  50.1  58.7
+## 4        Buff-tailed Coronet 55.3  50.2  67.7
+## 5              Collared Inca 58.4  50.4  71.9
+## 6          Crowned Woodnymph 56.2  50.2  67.9
+## 7    Fawn-breasted Brilliant 60.6  50.6  72.4
+## 8          Gorgeted Sunangel 65.4  51.8  72.9
+## 9    Green-crowned Brilliant 59.4  50.5  72.3
+## 10   Green-fronted Lancebill 57.1  50.2  68.8
+## 11             Hoary Puffleg 59.0  50.2  72.1
+## 12    Purple-bibbed Whitetip 60.3  50.4  72.2
+## 13 Rufous-tailed Hummingbird 61.9  50.6  72.7
+## 14      Speckled Hummingbird 56.7  50.2  70.9
+## 15    Stripe-throated Hermit 52.3  50.1  57.9
+## 16      Tawny-bellied Hermit 54.0  50.1  62.0
+## 17       Violet-tailed Sylph 52.4  50.1  57.7
+## 18  Wedge-billed Hummingbird 56.3  50.2  68.5
+## 19    White-whiskered Hermit 52.2  50.1  57.6
 ```
 
 ```r
@@ -1408,8 +1408,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6736499 359.8   12997878  694.2  12997878  694.2
-## Vcells 97373082 742.9  210873977 1608.9 210499570 1606.0
+## Ncells  6735971 359.8   12997878  694.2  12997878  694.2
+## Vcells 97365719 742.9  210873966 1608.9 210511548 1606.1
 ```
 
 ```r
@@ -1449,8 +1449,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6744072 360.2   12997878  694.2  12997878  694.2
-## Vcells 99020229 755.5  210873977 1608.9 210499570 1606.0
+## Ncells  6743565 360.2   12997878  694.2  12997878  694.2
+## Vcells 99012901 755.5  210873966 1608.9 210511548 1606.1
 ```
 
 ```r
@@ -1490,8 +1490,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6748583 360.5   12997878  694.2  12997878  694.2
-## Vcells 98999845 755.4  210873977 1608.9 210499570 1606.0
+## Ncells  6748082 360.4   12997878  694.2  12997878  694.2
+## Vcells 98992527 755.3  210873966 1608.9 210511548 1606.1
 ```
 
 ```r
@@ -1580,8 +1580,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1   Abundance      3.89    0.51  3028.55
-## 2    Nmixture      3.57    0.62  2781.65
+## 1   Abundance      1.56    0.23  1216.73
+## 2    Nmixture      1.44    0.24  1119.40
 ## 3 Poisson_GLM      7.91    0.91  6161.68
 ```
 
@@ -1707,7 +1707,7 @@ nstat<-lapply(nsplit,function(x){
 
 nstat<-melt(nstat,colnames(nstat[[1]]))
 
-ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2)  + scale_fill_manual("Model",values=c("black","grey70"))
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2)  + scale_fill_manual("Model",values=c("black","grey70")) + theme_bw()
 ```
 
 <img src="figureObserved/unnamed-chunk-62-1.png" style="display: block; margin: auto;" />
@@ -1723,10 +1723,10 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   6760645 361.1   12997878  694.2  12997878  694.2
-## Vcells 126295496 963.6  210873977 1608.9 210860336 1608.8
+## Ncells   6760399 361.1   12997878  694.2  12997878  694.2
+## Vcells 126289076 963.6  210873966 1608.9 210853518 1608.7
 ```
 
 ```r
-#save.image("Observed.RData")
+save.image("Observed.RData")
 ```
