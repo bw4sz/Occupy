@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-17 14:56:55"
+## [1] "Run Completed at 2016-08-18 15:43:33"
 ```
 
 
@@ -495,7 +495,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -595,8 +595,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 8   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nt <- 16   #thinning rate
+  nb <- max(0,runs-4000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
@@ -605,8 +605,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```
 
 ```
-##    user  system elapsed 
-##   2.989   0.080 628.405
+##     user   system  elapsed 
+##    2.974    0.063 1225.916
 ```
 
 
@@ -628,8 +628,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  1658552  88.6    5684620 303.6  5024703 268.4
-## Vcells 16757277 127.9   50651680 386.5 63248852 482.6
+## Ncells  1658553  88.6    5684620 303.6  5024704 268.4
+## Vcells 16757280 127.9   50651683 386.5 63248855 482.6
 ```
 
 ##Assess Convergence
@@ -655,7 +655,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 
 
 ```r
-runs<-300000
+runs<-400000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -714,7 +714,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [47]                                                                    
 ## [48]     #Observation priors                                            
 ## [49]     dprior ~ dnorm(0,0.386)                                        
-## [50]     tau_detect ~ dunif(0,4)                                        
+## [50]     tau_detect ~ dunif(0,10)                                       
 ## [51]                                                                    
 ## [52]     #Process Model                                                 
 ## [53]     #Species level priors                                          
@@ -773,8 +773,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 8   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nt <- 16   #thinning rate
+  nb <- max(0,runs-4000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
@@ -783,8 +783,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 ```
-##     user   system  elapsed 
-##    7.448    0.177 9532.813
+##      user    system   elapsed 
+##     7.348     0.152 16178.544
 ```
 
 
@@ -807,8 +807,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1667350  89.1    6379917 340.8   8375623 447.4
-## Vcells 37563805 286.6  101487524 774.3 126578549 965.8
+## Ncells  1667351  89.1    6379917 340.8   8375624 447.4
+## Vcells 37563809 286.6  101487529 774.3 126578553 965.8
 ```
 
 ```r
@@ -837,7 +837,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 
 
 ```r
-runs<-400000
+runs<-500000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -957,8 +957,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 8   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nt <- 16   #thinning rate
+  nb <- max(0,runs-4000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
@@ -968,7 +968,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 
 ```
 ##      user    system   elapsed 
-##     4.373     0.147 20686.939
+##     4.310     0.101 27584.681
 ```
 
 
@@ -990,8 +990,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1667895  89.1    5103933 272.6   8375623 447.4
-## Vcells 50225008 383.2  101487524 774.3 126578549 965.8
+## Ncells  1667896  89.1    5103933 272.6   8375624 447.4
+## Vcells 50225012 383.2  101487529 774.3 126578553 965.8
 ```
 
 ```r
@@ -1279,25 +1279,25 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                  Hummingbird mean lower upper
-## 1             Andean Emerald 32.5   8.1  62.6
-## 2         Booted Racket-tail 25.2  12.0  41.3
-## 3                 Brown Inca 13.9   9.1  20.4
-## 4        Buff-tailed Coronet 18.3   8.1  32.2
-## 5              Collared Inca 27.1   9.9  50.8
-## 6          Crowned Woodnymph 27.0  10.6  47.1
-## 7    Fawn-breasted Brilliant 16.8   2.8  47.8
-## 8          Gorgeted Sunangel 57.8  32.6  80.7
-## 9    Green-crowned Brilliant 14.5   3.9  42.5
-## 10   Green-fronted Lancebill 28.9   9.3  48.7
-## 11             Hoary Puffleg 15.4   4.2  35.4
-## 12    Purple-bibbed Whitetip 23.1   5.6  48.5
-## 13 Rufous-tailed Hummingbird 20.8   3.8  56.3
-## 14      Speckled Hummingbird 10.4   3.5  20.6
-## 15    Stripe-throated Hermit 25.3  14.7  37.4
-## 16      Tawny-bellied Hermit 31.6  19.5  49.0
-## 17       Violet-tailed Sylph 21.5  11.0  35.1
-## 18  Wedge-billed Hummingbird  7.6   0.7  19.9
-## 19    White-whiskered Hermit 25.5  11.9  40.6
+## 1             Andean Emerald 24.7  11.7  47.2
+## 2         Booted Racket-tail 21.2  11.9  33.5
+## 3                 Brown Inca 16.3   7.0  24.4
+## 4        Buff-tailed Coronet 20.4   9.6  35.7
+## 5              Collared Inca 24.9   8.0  43.0
+## 6          Crowned Woodnymph 22.8   7.9  39.3
+## 7    Fawn-breasted Brilliant 21.3   7.8  39.1
+## 8          Gorgeted Sunangel 35.5  14.6  62.6
+## 9    Green-crowned Brilliant 19.8   8.9  35.1
+## 10   Green-fronted Lancebill 28.1  13.3  46.4
+## 11             Hoary Puffleg 19.6   6.8  37.4
+## 12    Purple-bibbed Whitetip 26.0   6.7  52.0
+## 13 Rufous-tailed Hummingbird 22.8   8.8  44.3
+## 14      Speckled Hummingbird 15.9   6.4  28.1
+## 15    Stripe-throated Hermit 22.1  12.6  35.9
+## 16      Tawny-bellied Hermit 28.9  15.5  41.6
+## 17       Violet-tailed Sylph 22.8  11.3  35.4
+## 18  Wedge-billed Hummingbird 14.6   4.6  28.1
+## 19    White-whiskered Hermit 25.1  15.7  39.0
 ```
 
 ```r
@@ -1408,8 +1408,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6736474 359.8   12997878  694.2  12997878  694.2
-## Vcells 97373016 742.9  210873966 1608.9 209011386 1594.7
+## Ncells  6736499 359.8   12997878  694.2  12997878  694.2
+## Vcells 97373082 742.9  210873977 1608.9 210499570 1606.0
 ```
 
 ```r
@@ -1449,8 +1449,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6744068 360.2   12997878  694.2  12997878  694.2
-## Vcells 99020198 755.5  210873966 1608.9 209011386 1594.7
+## Ncells  6744072 360.2   12997878  694.2  12997878  694.2
+## Vcells 99020229 755.5  210873977 1608.9 210499570 1606.0
 ```
 
 ```r
@@ -1490,8 +1490,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6748585 360.5   12997878  694.2  12997878  694.2
-## Vcells 98999824 755.4  210873966 1608.9 209011386 1594.7
+## Ncells  6748583 360.5   12997878  694.2  12997878  694.2
+## Vcells 98999845 755.4  210873977 1608.9 210499570 1606.0
 ```
 
 ```r
@@ -1580,9 +1580,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1   Abundance      4.09    0.47  3182.51
-## 2    Nmixture      3.42    0.52  2667.99
-## 3 Poisson_GLM      7.85    0.88  6113.14
+## 1   Abundance      3.89    0.51  3028.55
+## 2    Nmixture      3.57    0.62  2781.65
+## 3 Poisson_GLM      7.91    0.91  6161.68
 ```
 
 Merge with morphological data.
@@ -1723,8 +1723,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   6760647 361.1   12997878  694.2  12997878  694.2
-## Vcells 126295475 963.6  210873966 1608.9 210861249 1608.8
+## Ncells   6760645 361.1   12997878  694.2  12997878  694.2
+## Vcells 126295496 963.6  210873977 1608.9 210860336 1608.8
 ```
 
 ```r
