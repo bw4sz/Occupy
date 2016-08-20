@@ -62,6 +62,8 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
 
+int<-int[1:100,]
+
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
 
@@ -493,7 +495,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-300000
+runs<-100
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -564,7 +566,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-300000
+runs<-100
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -637,7 +639,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-300000
+runs<-100
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -664,7 +666,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew","E")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -874,18 +876,10 @@ castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha"),], speci
 ggplot(castdf,aes(x=beta1)) + geom_histogram() + facet_wrap(~species,scales="free") + geom_vline(xintercept=0)
 ```
 
-##Discrepancy 
+#Discrepancy: N-mixture v Poisson GLM
 
 The goodness of fit is a measured as chi-squared. The expected value for each day is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
 Better fitting models are smaller values and closer to the 1:1 line. A perfect model would be 0 discrepancy. This is unrealsitic given the stochasticity in the sampling processes. Rather, its better to focus on relative discrepancy. In addition, a model with 0 discrepancy would likely be seriously overfit and have little to no predictive power.
-
-```{r}
-dmat<-pars_detect_traits %>% filter(par=="E",Model=="N-mixture") %>% group_by(species,plant,parameter) %>% summarize(E=mean(estimate))
-Emat<-data.frame(indat,E=dmat$E)
-
-ggplot(Emat,aes(x=Yobs,y=E)) + geom_point() + ylab("Mean Discrepancy") + xlab("Observed Interactions") + geom_abline() + theme_bw()
-ggsave("Figures/DiscrepancySpread.jpeg",height=4,width=6)
-```
 
 ```{r,fig.height=4,fig.width=8,message=F,warning=F}
 fitstat<-parsObs[parsObs$par %in% c("fit","fitnew"),]
@@ -897,6 +891,62 @@ ab<-data.frame(x=0:ymax,y=0:ymax)
 disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
 disc_obs
 ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
+```
+
+#Discrepancy: Abundance v Traits
+
+
+```{r,fig.height=4,fig.width=8,message=F,warning=F}
+par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("fit","fitnew")),trait=pars_detect_traits %>% filter(par %in% c("fit","fitnew")))
+par_at<-melt(par_at,id.vars=colnames(pars_abundance))
+
+fitstat<-dcast(par_at,Model+Draw+Chain~par,value.var="estimate")
+
+ymin<-round(min(fitstat$fit))
+ymax<-round(max(fitstat$fit))
+ab<-data.frame(x=0:ymax,y=0:ymax)
+disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
+disc_obs
+ggsave("Figures/ATDiscrepancy.jpeg",width = 5,height=10)
+```
+
+## Which species did we predict well?
+
+### By Bird
+
+```{r}
+par_at<-list(Abundance=pars_abundance %>% filter(par=="E"),trait=pars_detect_traits %>% filter(par=="E"))
+par_at<-melt(par_at,id.vars=colnames(pars_abundance))
+dmat<-par_at %>% group_by(species,L1) %>% summarize(E=mean(estimate))
+dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
+
+ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4)
+```
+
+###By plant
+
+```{r}
+dmat<-par_at %>% group_by(plant,L1) %>% summarize(E=mean(estimate))
+dmat<-merge(dmat,jagsIndexPlants,by.x="plant",by.y="jPlant")
+ggplot(dmat,aes(x=Iplant_Double,y=E,col=L1)) + geom_point(size=4) + coord_flip()
+```
+
+### By Interaction
+
+```{r}
+dmat<-par_at %>% group_by(species,plant,L1) %>% summarize(E=mean(estimate))
+dmat<-merge(dmat,jagsIndexPlants,by.x="plant",by.y="jPlant")
+dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
+ggplot(dmat,aes(x=Iplant_Double,y=Hummingbird,fill=E)) + geom_tile(size=4) + scale_fill_continuous("Discrepancy",low='blue',high='red') + facet_wrap(~L1,nrow=2) + theme_bw()
+print("Worst 20")
+head(dmat %>% arrange(desc(E),L1),20)
+```
+
+###By Intensity
+
+```{r}
+dmat<-par_at %>% group_by(Yobs,L1) %>% summarize(E=mean(estimate))
+ggplot(data=dmat,aes(x=as.factor(Yobs),y=E)) + geom_line(aes(col=L1,group=L1)) + labs("Observed",col="Mo")
 ```
 
 ##Detection table
