@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-19 16:35:40"
+## [1] "Run Completed at 2016-08-19 21:31:13"
 ```
 
 
@@ -606,7 +606,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    2.965    0.107 1236.749
+##    2.934    0.079 1252.950
 ```
 
 
@@ -702,52 +702,48 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [35]                                                                    
 ## [36]     }                                                              
 ## [37]                                                                    
-## [38]        #Priors                                                     
+## [38]     ###Priors###                                                   
 ## [39]     #Observation model                                             
 ## [40]     #Detect priors, logit transformed - Following lunn 2012 p85    
 ## [41]                                                                    
 ## [42]     for(x in 1:Birds){                                             
 ## [43]     #For Cameras                                                   
 ## [44]     logit(detect[x])<-dcam[x]                                      
-## [45]     dcam[x]~dunif(0,1)                                             
+## [45]     dcam[x]~dnorm(0,0.386)                                         
 ## [46]     }                                                              
 ## [47]                                                                    
-## [48]     #Observation priors                                            
-## [49]     #dprior ~ dnorm(0,0.386)                                       
-## [50]     #tau_detect ~ dgamma                                           
+## [48]     #Process Model                                                 
+## [49]     #Species level priors                                          
+## [50]     for (i in 1:Birds){                                            
 ## [51]                                                                    
-## [52]     #Process Model                                                 
-## [53]     #Species level priors                                          
-## [54]     for (i in 1:Birds){                                            
-## [55]                                                                    
-## [56]     #Intercept                                                     
-## [57]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                           
+## [52]     #Intercept                                                     
+## [53]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                           
+## [54]                                                                    
+## [55]     #Traits slope                                                  
+## [56]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                           
+## [57] }                                                                  
 ## [58]                                                                    
-## [59]     #Traits slope                                                  
-## [60]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                           
-## [61] }                                                                  
-## [62]                                                                    
-## [63]     #Group process priors                                          
-## [64]                                                                    
-## [65]     #Intercept                                                     
-## [66]     alpha_mu ~ dnorm(0,0.0001)                                     
-## [67]     alpha_tau ~ dt(0,1,1)I(0,)                                     
-## [68]     alpha_sigma<-pow(1/alpha_tau,0.5)                              
-## [69]                                                                    
-## [70]     #Trait                                                         
-## [71]     beta1_mu~dnorm(0,0.0001)                                       
-## [72]     beta1_tau ~ dt(0,1,1)I(0,)                                     
-## [73]     beta1_sigma<-pow(1/beta1_tau,0.5)                              
+## [59]     #Group process priors                                          
+## [60]                                                                    
+## [61]     #Intercept                                                     
+## [62]     alpha_mu ~ dnorm(0,0.0001)                                     
+## [63]     alpha_tau ~ dt(0,1,1)I(0,)                                     
+## [64]     alpha_sigma<-pow(1/alpha_tau,0.5)                              
+## [65]                                                                    
+## [66]     #Trait                                                         
+## [67]     beta1_mu~dnorm(0,0.0001)                                       
+## [68]     beta1_tau ~ dt(0,1,1)I(0,)                                     
+## [69]     beta1_sigma<-pow(1/beta1_tau,0.5)                              
+## [70]                                                                    
+## [71]     #derived posterior check                                       
+## [72]     fit<-sum(E[]) #Discrepancy for the observed data               
+## [73]     fitnew<-sum(E.new[])                                           
 ## [74]                                                                    
-## [75]     #derived posterior check                                       
-## [76]     fit<-sum(E[]) #Discrepancy for the observed data               
-## [77]     fitnew<-sum(E.new[])                                           
+## [75]                                                                    
+## [76]     }                                                              
+## [77]     ",fill=TRUE)                                                   
 ## [78]                                                                    
-## [79]                                                                    
-## [80]     }                                                              
-## [81]     ",fill=TRUE)                                                   
-## [82]                                                                    
-## [83] sink()
+## [79] sink()
 ```
 
 ```r
@@ -784,7 +780,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    7.793    0.163 4501.679
+##    7.717    0.195 6642.398
 ```
 
 
@@ -807,8 +803,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1667347  89.1    6379917 340.8   8374597 447.3
-## Vcells 37561032 286.6  101487524 774.3 126563335 965.7
+## Ncells  1667347  89.1    6379917 340.8   8374594 447.3
+## Vcells 37560994 286.6  101487524 774.3 126563279 965.7
 ```
 
 ```r
@@ -968,7 +964,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 
 ```
 ##     user   system  elapsed 
-##    4.337    0.080 8402.663
+##    4.421    0.139 9224.399
 ```
 
 
@@ -990,8 +986,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1667893  89.1    5103933 272.6   8374597 447.3
-## Vcells 50221754 383.2  101487524 774.3 126563335 965.7
+## Ncells  1667893  89.1    5103933 272.6   8374594 447.3
+## Vcells 50221716 383.2  101487524 774.3 126563279 965.7
 ```
 
 ```r
@@ -1279,25 +1275,25 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                  Hummingbird mean lower upper
-## 1             Andean Emerald 59.7  50.3  72.2
-## 2         Booted Racket-tail 52.4  50.1  57.7
-## 3                 Brown Inca 52.6  50.1  58.7
-## 4        Buff-tailed Coronet 55.3  50.2  67.7
-## 5              Collared Inca 58.4  50.4  71.9
-## 6          Crowned Woodnymph 56.2  50.2  67.9
-## 7    Fawn-breasted Brilliant 60.6  50.6  72.4
-## 8          Gorgeted Sunangel 65.4  51.8  72.9
-## 9    Green-crowned Brilliant 59.4  50.5  72.3
-## 10   Green-fronted Lancebill 57.1  50.2  68.8
-## 11             Hoary Puffleg 59.0  50.2  72.1
-## 12    Purple-bibbed Whitetip 60.3  50.4  72.2
-## 13 Rufous-tailed Hummingbird 61.9  50.6  72.7
-## 14      Speckled Hummingbird 56.7  50.2  70.9
-## 15    Stripe-throated Hermit 52.3  50.1  57.9
-## 16      Tawny-bellied Hermit 54.0  50.1  62.0
-## 17       Violet-tailed Sylph 52.4  50.1  57.7
-## 18  Wedge-billed Hummingbird 56.3  50.2  68.5
-## 19    White-whiskered Hermit 52.2  50.1  57.6
+## 1             Andean Emerald 42.6  10.0  79.0
+## 2         Booted Racket-tail 27.2  13.7  43.3
+## 3                 Brown Inca 13.7   8.4  21.7
+## 4        Buff-tailed Coronet 25.8  11.6  45.8
+## 5              Collared Inca 37.8  15.3  69.3
+## 6          Crowned Woodnymph 31.9  11.6  57.6
+## 7    Fawn-breasted Brilliant 17.9   2.1  51.2
+## 8          Gorgeted Sunangel 74.5  44.7  91.0
+## 9    Green-crowned Brilliant 20.8   2.8  70.2
+## 10   Green-fronted Lancebill 32.1  15.2  54.8
+## 11             Hoary Puffleg 21.7   2.9  67.1
+## 12    Purple-bibbed Whitetip 39.2   9.6  76.9
+## 13 Rufous-tailed Hummingbird 47.1   4.5  95.1
+## 14      Speckled Hummingbird 11.5   5.7  20.0
+## 15    Stripe-throated Hermit 24.9  11.9  41.6
+## 16      Tawny-bellied Hermit 37.9  23.3  53.1
+## 17       Violet-tailed Sylph 19.5   8.5  39.1
+## 18  Wedge-billed Hummingbird  6.3   2.0  17.1
+## 19    White-whiskered Hermit 27.3   9.7  44.4
 ```
 
 ```r
@@ -1408,8 +1404,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6735971 359.8   12997878  694.2  12997878  694.2
-## Vcells 97365719 742.9  210873966 1608.9 210511548 1606.1
+## Ncells  6735972 359.8   12997878  694.2  12997878  694.2
+## Vcells 97365689 742.9  210873966 1608.9 208991027 1594.5
 ```
 
 ```r
@@ -1449,8 +1445,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6743565 360.2   12997878  694.2  12997878  694.2
-## Vcells 99012901 755.5  210873966 1608.9 210511548 1606.1
+## Ncells  6743566 360.2   12997878  694.2  12997878  694.2
+## Vcells 99012871 755.5  210873966 1608.9 208991027 1594.5
 ```
 
 ```r
@@ -1490,8 +1486,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6748082 360.4   12997878  694.2  12997878  694.2
-## Vcells 98992527 755.3  210873966 1608.9 210511548 1606.1
+## Ncells  6748083 360.4   12997878  694.2  12997878  694.2
+## Vcells 98992497 755.3  210873966 1608.9 208991027 1594.5
 ```
 
 ```r
@@ -1581,7 +1577,7 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
 ## 1   Abundance      1.56    0.23  1216.73
-## 2    Nmixture      1.44    0.24  1119.40
+## 2    Nmixture      3.16    0.49  2464.41
 ## 3 Poisson_GLM      7.91    0.91  6161.68
 ```
 
@@ -1723,8 +1719,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   6760399 361.1   12997878  694.2  12997878  694.2
-## Vcells 126289076 963.6  210873966 1608.9 210853518 1608.7
+## Ncells   6760400 361.1   12997878  694.2  12997878  694.2
+## Vcells 126289046 963.6  210873966 1608.9 210853030 1608.7
 ```
 
 ```r
