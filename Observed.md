@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-19 21:31:13"
+## [1] "Run Completed at 2016-08-20 04:44:04"
 ```
 
 
@@ -89,7 +89,7 @@ missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
-#dath<-dath[!dath$Pierce %in% c("y","Y"),]
+dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
 ##Match Species to Morphology
@@ -495,7 +495,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-200000
+runs<-300000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -606,7 +606,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    2.934    0.079 1252.950
+##    2.956    0.083 1717.838
 ```
 
 
@@ -628,8 +628,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  1658551  88.6    5684620 303.6  5024702 268.4
-## Vcells 16757277 127.9   50651680 386.5 63248852 482.6
+## Ncells  1654383  88.4    5684620 303.6  4818257 257.4
+## Vcells 16021593 122.3   44100925 336.5 54690436 417.3
 ```
 
 ##Assess Convergence
@@ -655,7 +655,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 
 
 ```r
-runs<-200000
+runs<-300000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -779,8 +779,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 ```
-##     user   system  elapsed 
-##    7.717    0.195 6642.398
+##      user    system   elapsed 
+##     7.644     0.149 11423.578
 ```
 
 
@@ -802,9 +802,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1667347  89.1    6379917 340.8   8374594 447.3
-## Vcells 37560994 286.6  101487524 774.3 126563279 965.7
+##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
+## Ncells  1662977  88.9    5295264 282.8   7966391  425.5
+## Vcells 35701606 272.4  108164062 825.3 133762713 1020.6
 ```
 
 ```r
@@ -833,7 +833,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 
 
 ```r
-runs<-200000
+runs<-300000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -963,8 +963,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 ```
 
 ```
-##     user   system  elapsed 
-##    4.421    0.139 9224.399
+##      user    system   elapsed 
+##     4.021     0.093 12034.323
 ```
 
 
@@ -985,9 +985,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1667893  89.1    5103933 272.6   8374594 447.3
-## Vcells 50221716 383.2  101487524 774.3 126563279 965.7
+##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
+## Ncells  1663526  88.9    5295264 282.8   7966391  425.5
+## Vcells 47604632 363.2  108164062 825.3 133762713 1020.6
 ```
 
 ```r
@@ -1275,25 +1275,25 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                  Hummingbird mean lower upper
-## 1             Andean Emerald 42.6  10.0  79.0
-## 2         Booted Racket-tail 27.2  13.7  43.3
-## 3                 Brown Inca 13.7   8.4  21.7
-## 4        Buff-tailed Coronet 25.8  11.6  45.8
-## 5              Collared Inca 37.8  15.3  69.3
-## 6          Crowned Woodnymph 31.9  11.6  57.6
-## 7    Fawn-breasted Brilliant 17.9   2.1  51.2
-## 8          Gorgeted Sunangel 74.5  44.7  91.0
-## 9    Green-crowned Brilliant 20.8   2.8  70.2
-## 10   Green-fronted Lancebill 32.1  15.2  54.8
-## 11             Hoary Puffleg 21.7   2.9  67.1
-## 12    Purple-bibbed Whitetip 39.2   9.6  76.9
-## 13 Rufous-tailed Hummingbird 47.1   4.5  95.1
-## 14      Speckled Hummingbird 11.5   5.7  20.0
-## 15    Stripe-throated Hermit 24.9  11.9  41.6
-## 16      Tawny-bellied Hermit 37.9  23.3  53.1
-## 17       Violet-tailed Sylph 19.5   8.5  39.1
-## 18  Wedge-billed Hummingbird  6.3   2.0  17.1
-## 19    White-whiskered Hermit 27.3   9.7  44.4
+## 1             Andean Emerald 42.2  13.1  78.0
+## 2         Booted Racket-tail 27.6  15.1  43.0
+## 3                 Brown Inca 20.0  11.9  30.8
+## 4        Buff-tailed Coronet 22.6   9.4  47.1
+## 5              Collared Inca 59.5  32.2  85.0
+## 6          Crowned Woodnymph 31.2  10.2  57.9
+## 7    Fawn-breasted Brilliant 11.8   1.9  46.2
+## 8          Gorgeted Sunangel 74.7  52.1  92.0
+## 9    Green-crowned Brilliant 22.1   5.4  71.7
+## 10   Green-fronted Lancebill 38.9  21.0  64.4
+## 11             Hoary Puffleg 21.4   6.2  57.4
+## 12    Purple-bibbed Whitetip 34.6  10.2  78.2
+## 13 Rufous-tailed Hummingbird 39.8   3.9  93.8
+## 14      Speckled Hummingbird 11.3   5.2  24.1
+## 15    Stripe-throated Hermit 36.2  16.2  57.7
+## 16      Tawny-bellied Hermit 31.0  18.8  46.8
+## 17       Violet-tailed Sylph 29.3  13.7  45.5
+## 18  Wedge-billed Hummingbird  4.4   1.5  10.2
+## 19    White-whiskered Hermit 27.0  12.6  44.5
 ```
 
 ```r
@@ -1404,8 +1404,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6735972 359.8   12997878  694.2  12997878  694.2
-## Vcells 97365689 742.9  210873966 1608.9 208991027 1594.5
+## Ncells  6428596 343.4   11194976  597.9  11194976  597.9
+## Vcells 92097870 702.7  224718436 1714.5 224338971 1711.6
 ```
 
 ```r
@@ -1445,8 +1445,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6743566 360.2   12997878  694.2  12997878  694.2
-## Vcells 99012871 755.5  210873966 1608.9 208991027 1594.5
+## Ncells  6436184 343.8   11194976  597.9  11194976  597.9
+## Vcells 93694744 714.9  224718436 1714.5 224338971 1711.6
 ```
 
 ```r
@@ -1486,8 +1486,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  6748083 360.4   12997878  694.2  12997878  694.2
-## Vcells 98992497 755.3  210873966 1608.9 208991027 1594.5
+## Ncells  6440713 344.0   11194976  597.9  11194976  597.9
+## Vcells 93724890 715.1  224718436 1714.5 224338971 1711.6
 ```
 
 ```r
@@ -1576,9 +1576,9 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1   Abundance      1.56    0.23  1216.73
-## 2    Nmixture      3.16    0.49  2464.41
-## 3 Poisson_GLM      7.91    0.91  6161.68
+## 1   Abundance      1.57    0.22  1222.19
+## 2    Nmixture      2.68    0.42  2089.02
+## 3 Poisson_GLM      7.25    0.82  5649.85
 ```
 
 Merge with morphological data.
@@ -1719,8 +1719,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   6760400 361.1   12997878  694.2  12997878  694.2
-## Vcells 126289046 963.6  210873966 1608.9 210853030 1608.7
+## Ncells   6453015 344.7   11194976  597.9  11194976  597.9
+## Vcells 120000592 915.6  224718436 1714.5 224535418 1713.1
 ```
 
 ```r
