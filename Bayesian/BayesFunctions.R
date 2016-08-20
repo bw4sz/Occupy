@@ -1,6 +1,6 @@
 #extract and create a dataframe of posteriors
 
-extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant",ynew=T){
+extract_par<-function(x,data=indat,Bird="Bird",Plant="Plant",ynew=T){
   #extract desired info from the models
   parsO<-melt(x$BUGSoutput$sims.array)
   colnames(parsO)<-c("Draw","Chain","parameter","estimate")
@@ -25,6 +25,10 @@ extract_par<-function(x,data=obs,Bird="Bird",Plant="Plant",ynew=T){
   #add a NA plant columns
   sp_pl$plant<-NA
   sp_pl[i,][,"plant"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),Plant]
+
+  sp_pl$Yobs<-NA
+  sp_pl[i,][,"Yobs"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),"Yobs"]
+  
   }
   
   #merge levels
