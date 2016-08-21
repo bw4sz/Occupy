@@ -62,7 +62,7 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
 
-int<-int[1:100,]
+#int<-int[1:100,]
 
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
@@ -111,7 +111,7 @@ missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
-dath<-dath[!dath$Pierce %in% c("y","Y"),]
+#dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
 ##Match Species to Morphology
@@ -495,7 +495,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-100
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -526,8 +526,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 16   #thinning rate
-  nb <- max(0,runs-4000) # number to discard for burn-in
+  nt <- 5   #thinning rate
+  nb <- max(0,runs-500) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
@@ -548,6 +548,9 @@ pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant")
 pars_dniave$Model<-"Poisson GLMM"
 rm(m2_niave)
 gc()
+
+#write to file
+write.csv(pars_dniave,"OutData/GLMM.csv")
 ```
 
 ##Assess Convergence
@@ -566,7 +569,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-100
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -596,8 +599,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 16   #thinning rate
-  nb <- max(0,runs-4000) # number to discard for burn-in
+  nt <- 5   #thinning rate
+  nb <- max(0,runs-500) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
@@ -623,6 +626,7 @@ gc()
 
 #name
 pars_detect_traits$Model<-"N-mixture"
+write.csv(pars_detect_traits,"OutData/Traits.csv")
 ```
 
 ###Assess Convergence
@@ -639,7 +643,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-100
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -670,8 +674,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 16   #thinning rate
-  nb <- max(0,runs-4000) # number to discard for burn-in
+  nt <- 5   #thinning rate
+  nb <- max(0,runs-500) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
@@ -695,6 +699,7 @@ gc()
 
 #name
 pars_abundance$Model<-"Abundance"
+write.csv(pars_abundance,"OutData/Abundance.csv")
 ```
 
 ###Assess Convergence
@@ -894,7 +899,6 @@ ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
 ```
 
 #Discrepancy: Abundance v Traits
-
 
 ```{r,fig.height=4,fig.width=8,message=F,warning=F}
 par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("fit","fitnew")),trait=pars_detect_traits %>% filter(par %in% c("fit","fitnew")))
