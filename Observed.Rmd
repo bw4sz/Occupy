@@ -448,11 +448,11 @@ indat$jTime<-as.numeric(as.factor(indat$Time))
 indat$jID<-as.numeric(as.factor(indat$ID))
 
 #index resources
-indat$scaledR<-as.numeric(scale(indat$FlowerA))
+indat$scaledR<-as.numeric(indat$FlowerA)
 resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
 ```
 
-# Hierarcichal Nmixture Model
+# Hierarcichal N-mixture Model
 
 ##Traits
 For hummingbird i visiting plant j recorded by camera k on day d:
@@ -462,10 +462,10 @@ $$N_{i,j,k} \sim Pois(\lambda_{i,j,k}) $$
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
 
 ##Abundance
-Replace 
+Replace:
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * |Bill_i - Corolla_j|$$ 
 
-with
+with:
 
 $$log(\lambda_{i,j})<-\alpha_i + \beta_{1,i} * Resources_{i,j,k} $$ 
 
@@ -495,7 +495,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-50000
+runs<-200000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -543,7 +543,7 @@ recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9,n.thin = 5)
 ```
 
-```{r}
+```{r,eval=T}
 pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant")
 pars_dniave$Model<-"Poisson GLMM"
 rm(m2_niave)
@@ -551,6 +551,11 @@ gc()
 
 #write to file
 write.csv(pars_dniave,"OutData/GLMM.csv")
+```
+
+```{r,eval=F}
+#read from file is needed
+pars_dniave<-read.csv("OutData/GLMM.csv",row.names = 1)
 ```
 
 ##Assess Convergence
@@ -564,12 +569,12 @@ ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1"),],aes(x=Draw,y=estima
 ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma","alpha_mu"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-# Observed Data With Detection
+# N-mixture
 
 ## Traits
 
 ```{r,eval=T}
-runs<-50000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -617,7 +622,7 @@ recompile(traits)
 traits<-update(traits,n.iter=runs,n.burnin=runs*.9,n.thin=5)
 ```
 
-```{r}
+```{r,eval=T}
 #extract par to data.frame
 pars_detect_traits<-extract_par(traits,data=indat,Bird="jBird",Plant="jPlant")
 
@@ -627,6 +632,11 @@ gc()
 #name
 pars_detect_traits$Model<-"N-mixture"
 write.csv(pars_detect_traits,"OutData/Traits.csv")
+```
+
+```{r,eval=F}
+#read from file if needed
+pars_detect_traits<-read.csv("OutData/Traits.csv",row.names=1)
 ```
 
 ###Assess Convergence
@@ -643,7 +653,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-50000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -691,7 +701,7 @@ recompile(abundance)
 abundance<-update(abundance,n.iter=runs,n.burnin=runs*.8,n.thin=5,parameters.to.save=ParsStage)
 ```
 
-```{r}
+```{r,eval=T}
 #extract par to data.frame
 pars_abundance<-extract_par(abundance,data=indat,Bird="jBird",Plant="jPlant")
 rm(abundance)
@@ -700,6 +710,10 @@ gc()
 #name
 pars_abundance$Model<-"Abundance"
 write.csv(pars_abundance,"OutData/Abundance.csv")
+```
+
+```{r,eval=F}
+pars_abundance<-read.csv("OutData/Abundance.csv",row.names=1)
 ```
 
 ###Assess Convergence
@@ -731,11 +745,15 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fil
 
 ```{r,cache=FALSE,fig.width=10,fig.height=5}
 #Detection figure
-ggplot(parsObs[parsObs$par %in% c("detect"),],aes(x=as.factor(species),y=estimate,fill=Model)) + geom_violin() + ggtitle("Estimate of parameters") + theme_bw() + ggtitle("Detection Probability") +facet_wrap(~Model,scales="free") 
+#trait models
+parsObs<-rbind(pars_detect_traits,pars_dniave)
 
-pars_detect_traits<-merge(pars_detect_traits,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
+#N-mixture models
+par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("detect")),trait=pars_detect_traits %>% filter(par %in% c("detect")))
+par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
+par_at<-merge(par_at,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
 
-ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect"),],aes(x=estimate)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
+ggplot(par_at,aes(x=estimate,fill=L1)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
 ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
 ```
 
@@ -902,7 +920,7 @@ ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
 
 ```{r,fig.height=4,fig.width=8,message=F,warning=F}
 par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("fit","fitnew")),trait=pars_detect_traits %>% filter(par %in% c("fit","fitnew")))
-par_at<-melt(par_at,id.vars=colnames(pars_abundance))
+par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
 
 fitstat<-dcast(par_at,Model+Draw+Chain~par,value.var="estimate")
 
@@ -914,17 +932,25 @@ disc_obs
 ggsave("Figures/ATDiscrepancy.jpeg",width = 5,height=10)
 ```
 
+### Correlation in prediction
+
+```{r,eval=F}
+par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("ynew")),trait=pars_detect_traits %>% filter(par %in% c("ynew")))
+par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
+ynewstat<-dcast(par_at,Model+Index+Draw+Chain~par,value.var="estimate")
+```
+
 ## Which species did we predict well?
 
 ### By Bird
 
 ```{r}
 par_at<-list(Abundance=pars_abundance %>% filter(par=="E"),trait=pars_detect_traits %>% filter(par=="E"))
-par_at<-melt(par_at,id.vars=colnames(pars_abundance))
+par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
 dmat<-par_at %>% group_by(species,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
 
-ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4)
+ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip()
 ```
 
 ###By plant

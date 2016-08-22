@@ -29,6 +29,9 @@ extract_par<-function(x,data=indat,Bird="Bird",Plant="Plant",ynew=T){
   sp_pl$Yobs<-NA
   sp_pl[i,][,"Yobs"]<-data[as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2]),"Yobs"]
   
+  sp_pl$Index<-NA
+  sp_pl[i,][,"Index"]<-as.numeric(str_match(sp_pl[i,][,"parameter"],pattern="\\[(\\d+)]")[,2])
+  
   }
   
   #merge levels
