@@ -46,9 +46,6 @@ fl.morph$Corolla<-fl.morph$EffectiveCorolla
 
 fl.morph[is.na(fl.morph$Corolla),"Corolla"]<-fl.morph[is.na(fl.morph$Corolla),"TotalCorolla"]
 
-#fuchsia macrostigma has an undue influence on this analysis, being 3x longer than other flowers, its not clear that birds really have to reach down the full corolla lenghth, use effective corolla length.
-#fl.morph[fl.morph$Group.1 %in% "Fuchsia macrostigma","Corolla"]<-50
-
 #First row is empty
 fl.morph<-fl.morph[-1,]
 
@@ -63,6 +60,8 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 int<-read.csv("InputData/HummingbirdInteractions.csv")
 
 #int<-int[1:100,]
+
+int$timestamp<-as.POSIXct(paste(int$Time,int$DateP),format="%H:%M:%S %Y-%m-%d")
 
 #one date error
 int[int$DateP %in% '2013-07-25',"Month"]<-7
@@ -82,7 +81,7 @@ keep<-names(which(table(int$Hummingbird) > 10))
 
 int<-int[int$Hummingbird %in% keep & !int$Hummingbird %in% c("Sparkling Violetear"),]
 
-m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
+m.dat<-droplevels(int[colnames(int) %in% c("ID","Video","Time","timestamp","Hummingbird","Sex","TransectID","Transect_R","Iplant_Double","Pierce","DateP","Month","ele","Type")])
 
 #Does the data come from camera or transect?
 m.dat$Type<-(is.na(m.dat$TransectID))*1
@@ -198,8 +197,29 @@ datph$Survey_Type<-NA
 mt<-!is.na(datph$TransectID)*1
 datph$Survey_Type[mt==1]<-"Transect"
 datph$Survey_Type[!datph$Survey_Type %in% "Transect"]<-"Camera"
-
 datph<-datph[datph$Survey_Type=="Camera",]
+
+#time filter
+
+#sort by timestamp
+datph<-datph[order(datph$timestamp),]
+
+dotime<-function(d){
+  d$Timediff<-NA
+  if(nrow(d)>1){
+  for (x in 2:nrow(d)){
+  d$Timediff[x]<-difftime(d$timestamp[x],d$timestamp[x-1],units="mins")  
+  }
+  }
+  return(d)
+}
+
+datph<-datph %>% group_by(ID,Hummingbird) %>% do(dotime(.))
+
+#eliminate interaction by the same species within five minutes
+paste("Removing ",length(which(datph$Timediff<5))," observations, not enough time since last observation of the same species",sep="")
+
+datph<-datph[!1:nrow(datph) %in% which(datph$Timediff<5),]
 
 #Day level
 #add day ID
