@@ -39,7 +39,7 @@
     for(x in 1:Birds){
     #For Cameras
     logit(detect[x])<-dcam[x]
-    dcam[x]~dunif(0,1)
+    dcam[x]~dnorm(0,0.386)
     }
     
     #Observation priors
