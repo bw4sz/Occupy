@@ -515,7 +515,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-200000
+runs<-400000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -594,7 +594,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-200000
+runs<-400000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -673,7 +673,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-200000
+runs<-400000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -913,7 +913,7 @@ ggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=scaledR,y=Yobs)) 
 
 ##Abundance posteriors
 
-```{r}
+```{r,fig.height=12}
 castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 ggplot(castdf,aes(x=beta1)) + geom_histogram() + facet_wrap(~species,scales="free") + geom_vline(xintercept=0)
