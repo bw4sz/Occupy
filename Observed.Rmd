@@ -909,6 +909,8 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 
 #plot and compare to original data
 ggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=scaledR,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.6)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Flower Abundance") + facet_wrap(~Hummingbird,scales="free",ncol=4)+ labs(fill="Model")  + ylab("Interactions per day") + scale_color_manual(values=c("grey70","black")) + scale_fill_manual(values=c("grey70","black"))
+ggsave("Figures/SpeciesPredictions_Abundance.jpg",dpi=300,height=10,width=10)
+
 ```
 
 ##Abundance posteriors
