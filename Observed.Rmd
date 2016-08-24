@@ -546,8 +546,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- max(0,runs-500) # number to discard for burn-in
+  nt <- 10   #thinning rate
+  nb <- max(0,runs-5000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
@@ -570,7 +570,7 @@ rm(m2_niave)
 gc()
 
 #write to file
-write.csv(pars_dniave,"OutData/GLMM.csv")
+#write.csv(pars_dniave,"OutData/GLMM.csv")
 ```
 
 ```{r,eval=F}
@@ -624,8 +624,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- max(0,runs-500) # number to discard for burn-in
+  nt <- 10   #thinning rate
+  nb <- max(0,runs-5000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
@@ -651,7 +651,7 @@ gc()
 
 #name
 pars_detect_traits$Model<-"N-mixture"
-write.csv(pars_detect_traits,"OutData/Traits.csv")
+#write.csv(pars_detect_traits,"OutData/Traits.csv")
 ```
 
 ```{r,eval=F}
@@ -704,8 +704,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- max(0,runs-500) # number to discard for burn-in
+  nt <- 10   #thinning rate
+  nb <- max(0,runs-5000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
@@ -729,7 +729,7 @@ gc()
 
 #name
 pars_abundance$Model<-"Abundance"
-write.csv(pars_abundance,"OutData/Abundance.csv")
+#write.csv(pars_abundance,"OutData/Abundance.csv")
 ```
 
 ```{r,eval=F}
