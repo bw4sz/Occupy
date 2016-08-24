@@ -1,7 +1,7 @@
 #!/bin/bash
 #cd into occupy, if directory doesn't exist, kill the run.
 
-git clone git@github.com:bw4sz/Occupy.git --depth 1
+git clone git@github.com:bw4sz/Occupy.git --branch extra --single-branch --depth 1
 
 cd Occupy||sudo halt
 

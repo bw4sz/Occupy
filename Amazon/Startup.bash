@@ -7,7 +7,7 @@ instance_id=$(aws ec2 run-instances --image-id ami-ee6da48e --security-group-ids
 aws ec2 wait instance-running --instance-ids $instance_id
 
 #add name tag
-aws ec2 create-tags --resources $instance_id --tags Key=Name,Value=Occupy
+aws ec2 create-tags --resources $instance_id --tags Key=Name,Value=ExtraOccupy
 
 #monitor usage
 aws cloudwatch put-metric-alarm --alarm-name cpu-mon --alarm-description "Alarm when CPU drops below 2 over 10 minutes%" --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 300 --threshold 2 --comparison-operator LessThanThreshold  --dimensions Name=InstanceId,Value=$instance_id --evaluation-periods 2 --alarm-actions arn:aws:sns:us-west-2:477056371121:Instance_is_idle --unit Percent

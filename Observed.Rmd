@@ -515,7 +515,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-400000
+runs<-100000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -550,7 +550,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   nb <- max(0,runs-5000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
+  Dat<-list("Yobs","Bird","extra","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
     
   system.time(m2_niave<-jags.parallel(Dat,InitStage,ParsStage,model.file="Bayesian/NoDetectNmixturePoissonRagged.jags", n.iter=ni,n.burnin=nb,n.chains=nc,n.thin=nt))
 ```
@@ -594,7 +594,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-400000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -620,7 +620,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E")
+  ParsStage <- c("detect","extra","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -673,7 +673,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-400000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -708,7 +708,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   nb <- max(0,runs-5000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
+  Dat<-list("Yobs","Bird","extra","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
 
     system.time(abundance<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged_Abundance.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
