@@ -8,11 +8,13 @@ cat("
     for (j in 1:Plants){
     for (k in 1:Times){
     
-    #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * resources[i,j,k] + extra[i,j,k]
-    extra[i,j,k] ~ dnorm(0,tauE[i])
+    #Process Model with log normal overdispersion
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + epsilon[i,j,k]
     
-    #For each Time - there is a latent count
+    #variance
+    epsilon[i,j,k] ~ dnorm(0,tauE[i])
+
+    #For each Time - there is a latent count, log transformed.
     N[i,j,k] ~ dpois(lambda[i,j,k])
     }
     }

@@ -445,6 +445,9 @@ Reformat index for jags.
 Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
+#Subset if model testing here
+indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
+
 #Easiest to work with jags as numeric ordinal values
 indat$Hummingbird<-as.factor(indat$Hummingbird)
 indat$Iplant_Double<-as.factor(indat$Iplant_Double)
@@ -513,7 +516,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-50000
+runs<-3000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -534,18 +537,18 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   resources=resourcemat
 
   #A blank Y matrix - all present
-  Ninit<-array(dim=c(Nobs),1)
+  Ninit<-array(dim=c(Birds,Plants,Cameras),data=max(indat$Yobs)+1)
   
   #Inits
-  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,beta1_mu=0)}
+  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,beta1_mu=0,exp_lambda=Ninit)}
   
   #Parameters to track
-  ParsStage <- c("alpha","beta1","alpha_mu","beta1_mu","ynew","fit","fitnew","extra","tauE")
+  ParsStage <- c("alpha","beta1","alpha_mu","beta1_mu","ynew","fit","fitnew","tauE")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 10   #thinning rate
-  nb <- max(0,runs-5000) # number to discard for burn-in
+  nt <- 1   #thinning rate
+  nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
@@ -592,7 +595,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-50000
+runs<-3000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -615,15 +618,15 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   Ninit<-array(dim=c(Birds,Plants,Times),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
+  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0,exp_lambda=Ninit)}
   
   #Parameters to track
-  ParsStage <- c("detect","extra","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E","tauE")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E","tauE")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 10   #thinning rate
-  nb <- max(0,runs-5000) # number to discard for burn-in
+  nt <- 1   #thinning rate
+  nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
@@ -671,7 +674,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-50000
+runs<-3000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -695,15 +698,15 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   Ninit<-array(dim=c(Birds,Plants,Times),data=max(indat$Yobs)+1)
 
   #Inits
-  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
+  InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0,exp_lambda=Ninit)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","extra","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew","E","tauE")
+  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew","E","tauE")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 10   #thinning rate
-  nb <- max(0,runs-5000) # number to discard for burn-in
+  nt <- 1   #thinning rate
+  nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
@@ -791,13 +794,13 @@ castdf<-split(castdf,castdf$Model)
 ```{r}
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$alpha_mu,beta1=i$beta1_mu,tauE=10000,trait=indat$Traitmatch,resources=indat$scaledR)
+  pr<-trajF(alpha=i$alpha_mu,beta1=i$beta1_mu,tauE=100,trait=indat$Traitmatch,resources=indat$scaledR)
   pr$Model<-unique(i$Model)
   return(pr)
   }))
 
 fplot<-ggplot(data=predy[,],aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.5)  + geom_line(aes(y=mean,col=Model),size=.4) + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=1) + labs(fill="Model",col="Model")  + scale_fill_manual(values=c("grey70","black"))+ scale_color_manual(values=c("grey70","black"))
-fplot + ylim(0,17)
+fplot 
 
 ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 ```
@@ -821,11 +824,31 @@ castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu"),],
 predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=10000,trait=indat$scaledR)
 
 aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=scaledR,y=Yobs),size=.5,alpha=.9) + ggtitle("Abundance")
-aplot + ylim(0,17)
+aplot 
 ggsave("Figures/AbundanceBothPlot.jpeg",height=4,width=7,dpi=300)
 ```
 
-##Species Predictions
+#Species Predictions
+
+## Credible intervals
+
+### Traits
+
+```{r}
+par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("ynew")),trait=pars_detect_traits %>% filter(par %in% c("ynew")))
+par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
+ynewstat<-dcast(par_at,Model+Index+Draw+Chain~par,value.var="estimate")
+
+#By species
+ynewstat$Hummingbird<-indat[ynewstat$Index,"Hummingbird"]
+ynewstat$Traitmatch<-indat[ynewstat$Index,"Traitmatch"]
+
+mean_ynewstat<-ynewstat %>% group_by(Hummingbird,Model,Traitmatch) %>% summarize(mean=mean(ynew),lower=quantile(ynew,0.05),upper=quantile(ynew,0.95))
+  
+ggplot(mean_ynewstat,aes(x=Traitmatch,col=Model)) + geom_pointrange(aes(y=mean,ymin=lower,ymax=upper)) + labs(x="Difference between bill and Corolla Length",y="Predicted Count") + ggtitle("Predicted Counts") + theme_bw() + facet_wrap(~Hummingbird,scales="free") + geom_line(aes(y=mean))
+```
+
+## Prediction intervals
 
 ```{r,fig.height=10,fig.width=11}
 castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha","tauE"),], species +Chain +Model+ Draw~par,value.var="estimate")
@@ -846,7 +869,7 @@ for(d in 1:length(species.split)){
   tsp<-indat %>% filter(Hummingbird==index) %>% .$Traitmatch
   
   #Range of abundances
-    fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
+  fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
     
   species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,tauE=x$tauE,trait=tsp,resources=fsp)
 }
@@ -1345,7 +1368,7 @@ makeN<-function(x){
 }
 
 nstat<-lapply(nsplit,function(x){
-  netstat<-melt(t(sapply(1:500,function(k) makeN(x)))) 
+  netstat<-melt(t(sapply(1:50,function(k) makeN(x)))) 
   colnames(netstat)<-c("Iteration","Metric","value")
   return(netstat)
 })

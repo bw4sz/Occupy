@@ -5,18 +5,18 @@
     for (j in 1:Plants){
     for (k in 1:Times){
     
-    #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + extra[i,j,k]
+    #Process Model with log normal overdispersion
+    #mean intensity
     
-    #Overdispersion
-    extra[i,j,k] ~ dnorm(0,tauE[i])
-    
-    #For each Time - there is a latent count
+    #log transformed variance
+    log(lambda[i,j,k]) <- alpha[i] + beta1[i] * Traitmatch[i,j] + epsilon[i,j,k]
+    epsilon[i,j,k] ~ dnorm(0,tauE[i])
+
+    #For each Time - there is a latent count, log transformed intensity
     N[i,j,k] ~ dpois(lambda[i,j,k])
     }
     }
     }
-    
     
     #Observed counts for each day of sampling at that Time
     for (x in 1:Nobs){
