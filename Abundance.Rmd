@@ -86,7 +86,7 @@ beta1_mu<- -1
 #species variance in slopes
 beta1_sigma<- 0.2
 
-#Species alpha_mu
+#Species alpha_mu 
 alpha_mu<- 3
 alpha_sigma<- 0.2
 
