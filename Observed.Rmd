@@ -59,8 +59,6 @@ hum.morph$English[hum.morph$English %in% "Green-crowned Woodnymph"]<-"Crowned Wo
 #Bring in Interaction Matrix
 int<-read.csv("InputData/HummingbirdInteractions.csv")
 
-#int<-int[1:100,]
-
 int$timestamp<-as.POSIXct(paste(int$Time,int$DateP),format="%H:%M:%S %Y-%m-%d")
 
 #one date error
@@ -515,7 +513,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-100000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -542,7 +540,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("alpha","beta1","alpha_mu","beta1_mu","ynew","fit","fitnew","extra")
+  ParsStage <- c("alpha","beta1","alpha_mu","beta1_mu","ynew","fit","fitnew","extra","tauE")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -582,7 +580,7 @@ pars_dniave<-read.csv("OutData/GLMM.csv",row.names = 1)
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_dniave[pars_dniave$par %in% c("alpha","beta1","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
@@ -594,7 +592,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-100000
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -620,7 +618,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","extra","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E")
+  ParsStage <- c("detect","extra","alpha","beta1","alpha_mu","beta1_sigma","beta1_mu","ynew","fit","fitnew","E","tauE")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -663,7 +661,7 @@ pars_detect_traits<-read.csv("OutData/Traits.csv",row.names=1)
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_detect_traits[pars_detect_traits$par %in% c("detect","alpha","beta1","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
@@ -673,7 +671,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-100000
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -700,7 +698,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","extra","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew","E")
+  ParsStage <- c("detect","alpha","extra","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew","E","tauE")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -740,7 +738,7 @@ pars_abundance<-read.csv("OutData/Abundance.csv",row.names=1)
 
 ```{r,cache=FALSE,fig.width=13,fig.height=5}
 ###Chains
-ggplot(pars_abundance[pars_abundance$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_abundance[pars_abundance$par %in% c("detect","alpha","beta1","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
@@ -760,7 +758,7 @@ parsObs<-rbind(pars_detect_traits,pars_dniave)
 
 ```{r,cache=FALSE,fig.width=11,fig.height=14}
 ###Posterior Distributions
-ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
+ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1","tauE"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 ```
 
 ```{r,cache=FALSE,fig.width=10,fig.height=5}
@@ -793,7 +791,7 @@ castdf<-split(castdf,castdf$Model)
 ```{r}
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$alpha_mu,beta1=i$beta1_mu,trait=indat$Traitmatch,resources=indat$scaledR)
+  pr<-trajF(alpha=i$alpha_mu,beta1=i$beta1_mu,tauE=10000,trait=indat$Traitmatch,resources=indat$scaledR)
   pr$Model<-unique(i$Model)
   return(pr)
   }))
@@ -809,7 +807,7 @@ ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 ```{r}
 castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
-predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$Traitmatch,resources=indat$scaledR)
+predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=10000,trait=indat$Traitmatch,resources=indat$scaledR)
 
 tplot<-ggplot(data=predy_traits,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=1) + ggtitle("Traits")
 tplot + ylim(0,17)
@@ -820,7 +818,7 @@ tplot + ylim(0,17)
 ```{r}
 castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
-predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=indat$scaledR)
+predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=10000,trait=indat$scaledR)
 
 aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=scaledR,y=Yobs),size=.5,alpha=.9) + ggtitle("Abundance")
 aplot + ylim(0,17)
@@ -830,7 +828,7 @@ ggsave("Figures/AbundanceBothPlot.jpeg",height=4,width=7,dpi=300)
 ##Species Predictions
 
 ```{r,fig.height=10,fig.width=11}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha","tauE"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -850,7 +848,7 @@ for(d in 1:length(species.split)){
   #Range of abundances
     fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
     
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,trait=tsp,resources=fsp)
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,tauE=x$tauE,trait=tsp,resources=fsp)
 }
 
 names(species.traj)<-names(species.split)
@@ -873,7 +871,7 @@ ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=10,width=10)
 ### Abundance Species predictions 
 
 ```{r,fig.height=10,fig.width=11}
-castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
+castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha","tauE"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -893,7 +891,7 @@ for(d in 1:length(species.split)){
   #Range of abundances
     fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
     
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,trait=tsp,resources=fsp)
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,tauE=x$tauE,trait=tsp,resources=fsp)
 }
 
 names(species.traj)<-names(species.split)
@@ -956,10 +954,16 @@ ggsave("Figures/ATDiscrepancy.jpeg",width = 5,height=10)
 
 ### Correlation in prediction
 
-```{r,eval=F}
+```{r,eval=T}
 par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("ynew")),trait=pars_detect_traits %>% filter(par %in% c("ynew")))
 par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
-ynewstat<-dcast(par_at,Model+Index+Draw+Chain~par,value.var="estimate")
+ynewstat<-dcast(par_at,Index+Draw+Chain~par+Model,value.var="estimate")
+ggplot(ynewstat,aes(x=`ynew_N-mixture`,y=ynew_Abundance)) + geom_point() + geom_abline() + labs(x="Traits",y="Abundance") + ggtitle("Predicted Counts") + theme_bw()
+
+#By species
+ynewstat$Hummingbird<-indat[ynewstat$Index,"Hummingbird"]
+ggplot(ynewstat,aes(x=`ynew_N-mixture`,y=ynew_Abundance)) + geom_point() + geom_abline() + labs(x="Traits",y="Abundance") + ggtitle("Predicted Counts") + theme_bw() + facet_wrap(~Hummingbird,scales="free") + coord_fixed()
+
 ```
 
 ## Which species did we predict well?
@@ -1257,7 +1261,7 @@ ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=vari
 ##Generate Networks
 
 ```{r}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha"),], species +Model+Chain + Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha","tauE"),], species +Model+Chain + Draw~par,value.var="estimate")
 
 #Turn to 
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -1270,13 +1274,13 @@ species.traj<-lapply(species.split,function(dat){
   #get data for those species
   billd<-indat[indat$jBird %in% index,]
   
-  d<-data.frame(alpha=dat$alpha,beta1=dat$beta1)
+  d<-data.frame(alpha=dat$alpha,beta1=dat$beta1,tauE=dat$tauE)
   
   #fit regression for each input estimate
   sampletraj<-list()
   
   for (y in 1:nrow(d)){
-    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch)
+    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch + rnorm(1,0,1/sqrt(d$tauE[y])))
     
     sampletraj[[y]]<-data.frame(x=as.numeric(billd$Traitmatch),y=as.numeric(v),jBird=billd$jBird,jPlant=billd$jPlant,Model=unique(dat$Model))
   }

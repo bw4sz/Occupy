@@ -9,7 +9,10 @@ cat("
     for (k in 1:Times){
     
     #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + extra[i]
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + extra[i,j,k]
+    
+    #Overdispersion
+    extra[i,j,k] ~ dnorm(0,tauE[i])
     
     #For each Time - there is a latent count
     N[i,j,k] ~ dpois(lambda[i,j,k])
@@ -52,7 +55,7 @@ cat("
     #Intercept
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
 
-    extra[i] ~ dnorm(0,0.0001)
+    tauE[i] ~ dunif(0,100)
     
     #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
