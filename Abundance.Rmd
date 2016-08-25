@@ -441,7 +441,7 @@ psim2
 
 ##Strip plots
 Plot the posterior mean density
-```{r,fig.width=12,fig.height=15}
+```{r,fig.width=15,fig.height=13}
 spars<-parsall %>% filter(par %in% c("alpha","beta1","detect","tauE")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 
 tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,tauE=tauE),id.var='species')

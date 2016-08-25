@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-25 15:02:14"
+## [1] "Run Completed at 2016-08-25 15:10:47"
 ```
 
 #Simulation   
@@ -38,7 +38,7 @@ gc()
 ```
 ##          used (Mb) gc trigger (Mb) max used (Mb)
 ## Ncells 509856 27.3     940480 50.3   750400 40.1
-## Vcells 704168  5.4    1308461 10.0  1015381  7.8
+## Vcells 704177  5.4    1308461 10.0  1015390  7.8
 ```
 
 #Simulation Parameters
@@ -207,7 +207,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -335,9 +335,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  601555 32.2    1168576 62.5  1168576 62.5
-## Vcells 1380457 10.6    2773912 21.2  2773904 21.2
+##            used (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells   601555 32.2    1168576  62.5  1168576  62.5
+## Vcells 10035916 76.6   33612267 256.5 27943223 213.2
 ```
 
 ```r
@@ -413,7 +413,7 @@ predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.nume
 
 
 ```r
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -544,7 +544,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##    user  system elapsed 
-##    3.88    0.49   61.87
+##    5.03    1.57  852.67
 ```
 
 
@@ -690,12 +690,12 @@ head(castdf)
 
 ```
 ##   Chain Draw alpha_mu   beta1_mu
-## 1     1    1 4.911544 -0.9656391
-## 2     1    2 5.859440 -0.9608403
-## 3     1    3 5.628575 -0.8746162
-## 4     1    4 5.717259 -0.8423332
-## 5     1    5 5.140355 -1.0263784
-## 6     1    6 5.437557 -0.8305922
+## 1     1    1 3.380076 -1.0668216
+## 2     1    2 3.459349 -0.9177732
+## 3     1    3 3.473060 -0.8133372
+## 4     1    4 3.417327 -1.1048970
+## 5     1    5 3.527207 -0.9638287
+## 6     1    6 3.213739 -0.8650961
 ```
 
 ```r
@@ -706,13 +706,13 @@ head(castdf)
 ```
 
 ```
-##   species Chain Draw    alpha      beta1     detect      tauE
-## 1       1     1    1 6.349043 -1.1251282 0.03021855  8.208330
-## 2       1     1    2 6.345648 -1.0161889 0.03108612 11.478094
-## 3       1     1    3 6.204184 -0.9163375 0.03130857 12.902190
-## 4       1     1    4 6.203265 -0.8594047 0.03116103 14.642055
-## 5       1     1    5 6.176812 -0.8892535 0.03266477  9.762696
-## 6       1     1    6 5.929899 -0.6658930 0.03119172  7.625194
+##   species Chain Draw    alpha      beta1    detect     tauE
+## 1       1     1    1 2.896969 -0.7906413 0.8471853 62.58963
+## 2       1     1    2 2.823061 -0.8133948 0.8365985 94.49895
+## 3       1     1    3 2.897754 -0.8650391 0.8440921 91.99363
+## 4       1     1    4 3.146918 -1.1519491 0.8514499 82.44435
+## 5       1     1    5 3.138335 -1.1015204 0.8309911 80.48596
+## 6       1     1    6 3.134904 -1.0793460 0.8129895 92.12160
 ```
 
 ```r
@@ -805,9 +805,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  645223 34.5    1442291 77.1  1442291 77.1
-## Vcells 4868851 37.2    7965537 60.8  7964291 60.8
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   720219  38.5    2248390  120.1   6674143  356.5
+## Vcells 76523993 583.9  134230052 1024.1 134207837 1024.0
 ```
 
 ```r
@@ -820,9 +820,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  644752 34.5    1442291 77.1  1442291 77.1
-## Vcells 3755038 28.7    7965537 60.8  7964291 60.8
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   708354  37.9    2248390  120.1   6674143  356.5
+## Vcells 54247043 413.9  134230052 1024.1 134207837 1024.0
 ```
 
 ```r
@@ -855,9 +855,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  645296 34.5    1442291 77.1  1442291 77.1
-## Vcells 4352541 33.3    7965537 60.8  7964291 60.8
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   720281  38.5    2248390  120.1   6674143  356.5
+## Vcells 65710459 501.4  134230052 1024.1 134207837 1024.0
 ```
 
 ```r
@@ -870,9 +870,9 @@ gc()
 ```
 
 ```
-##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  645015 34.5    1442291 77.1  1442291 77.1
-## Vcells 3773379 28.8    7965537 60.8  7964291 60.8
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells   714309  38.2    2248390  120.1   6674143  356.5
+## Vcells 54571997 416.4  134230052 1024.1 134207837 1024.0
 ```
 
 ```r
@@ -1016,8 +1016,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.87    0.22   374.43
-## 2 Poisson_GLM      2.04    0.19   407.66
+## 1    Nmixture      1.13    0.15   225.42
+## 2 Poisson_GLM      2.02    0.21   404.63
 ```
 
 
