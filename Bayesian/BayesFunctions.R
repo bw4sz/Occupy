@@ -86,8 +86,8 @@ trajF<-function(alpha,beta1,tauE,trait,resources){
 traj<-function(alpha,beta1,tauE,trait,resources){
 
     #fit regression for each input estimate
-    
-    v=exp(alpha + beta1 * trait + rnorm(1,0,1/sqrt(tauE)))
+    epsilon<-rnorm(1,0,1/sqrt(tauE))
+    v=exp(alpha + beta1 * trait + epsilon)
     
     sampletraj<-data.frame(trait=trait,y=as.numeric(v))
   

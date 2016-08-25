@@ -5,19 +5,19 @@
     for (j in 1:Plants){
     for (k in 1:Cameras){
     
-    #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + extra[i,j,k]
-    
-    #dispersion
-    extra[i,j,k] ~ dnorm(0,tauE[i])
+    #Process Model with log normal overdispersion
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + epsilon[i,j,k]
 
+    #Log transformed variance in counts
+    epsilon[i,j,k] ~ dnorm(0,tauE[i])
+    
     }
     }
     }
     
     for (x in 1:Nobs){
       
-      # Observed State   
+      # Observed State
       Yobs[x] ~ dpois(lambda[Bird[x],Plant[x],Camera[x]]) 
       
       #Assess Model Fit
