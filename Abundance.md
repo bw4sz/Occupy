@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-16 07:55:44"
+## [1] "Run Completed at 2016-08-25 15:02:14"
 ```
 
 #Simulation   
@@ -37,8 +37,8 @@ gc()
 
 ```
 ##          used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells 509823 27.3     940480 50.3   750400 40.1
-## Vcells 704514  5.4    1308461 10.0  1014606  7.8
+## Ncells 509856 27.3     940480 50.3   750400 40.1
+## Vcells 704168  5.4    1308461 10.0  1015381  7.8
 ```
 
 #Simulation Parameters
@@ -48,7 +48,7 @@ gc()
 #Number of hummingbird species
 h_species=10
 plant_species=20
-cameras<-10
+cameras<-5
 days<-3
 
 #Bill sizes
@@ -63,6 +63,7 @@ traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
 #regression slopes
 #traits
 beta1_mu<- -1
+
 #abundance
 
 #species variance in slopes
@@ -72,6 +73,8 @@ beta1_sigma<- 0.2
 alpha_mu<- 3
 alpha_sigma<- 0.2
 
+#overdipersion
+tauE<-abs(rnorm(h_species,0,1))
 detection= runif(h_species,0.01,0.99)
 beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
 alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
@@ -103,7 +106,7 @@ N<-array(dim=c(h_species,plant_species,cameras))
 for(x in 1:h_species){
   for (y in 1:plant_species){
     for (z in 1:cameras){
-      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y])
+      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y] + rnorm(1,0,tauE[x]))
   }
   }
 }
@@ -204,7 +207,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-10000
+runs<-100
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -214,70 +217,78 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 ```
 
 ```
-##  [1]                                                              
-##  [2] sink("Bayesian/NoDetectNmixturePoissonRagged.jags")          
-##  [3]                                                              
-##  [4] cat("                                                        
-##  [5]     model {                                                  
-##  [6]     #Compute intensity for each pair of birds and plants     
-##  [7]     for (i in 1:Birds){                                      
-##  [8]     for (j in 1:Plants){                                     
-##  [9]     for (k in 1:Cameras){                                    
-## [10]                                                              
-## [11]     #Process Model                                           
-## [12]     log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j]
-## [13]     }                                                        
-## [14]     }                                                        
-## [15]     }                                                        
-## [16]                                                              
-## [17]     for (x in 1:Nobs){                                       
-## [18]                                                              
-## [19]       # Observed State                                       
-## [20]       Yobs[x] ~ dpois(lambda[Bird[x],Plant[x],Camera[x]])    
-## [21]                                                              
-## [22]       #Assess Model Fit                                      
-## [23]                                                              
-## [24]       #Fit discrepancy statistics                            
-## [25]       eval[x]<-lambda[Bird[x],Plant[x],Camera[x]]            
-## [26]       E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)           
-## [27]                                                              
-## [28]       ynew[x]~dpois(lambda[Bird[x],Plant[x],Camera[x]])      
-## [29]       E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)       
-## [30]                                                              
-## [31]       }                                                      
-## [32]                                                              
-## [33]     #Process Model                                           
-## [34]     #Species level priors                                    
-## [35]     for (i in 1:Birds){                                      
-## [36]                                                              
-## [37]     #Intercept                                               
-## [38]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                     
-## [39]                                                              
-## [40]     #Traits slope                                            
-## [41]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                     
-## [42]     }                                                        
-## [43]                                                              
-## [44]     #Group process priors                                    
-## [45]                                                              
-## [46]     #Intercept                                               
-## [47]     alpha_mu ~ dnorm(0,0.0001)                               
-## [48]     alpha_tau ~ dt(0,1,1)I(0,)                               
-## [49]     alpha_sigma<-pow(1/alpha_tau,0.5)                        
-## [50]                                                              
-## [51]     #Trait                                                   
-## [52]     beta1_mu~dnorm(0,0.0001)                                 
-## [53]     beta1_tau ~ dt(0,1,1)I(0,)                               
-## [54]     beta1_sigma<-pow(1/beta1_tau,0.5)                        
-## [55]                                                              
-## [56]     #derived posterior check                                 
-## [57]     fit<-sum(E[]) #Discrepancy for the observed data         
-## [58]     fitnew<-sum(E.new[])                                     
-## [59]                                                              
-## [60]                                                              
-## [61]     }                                                        
-## [62]     ",fill=TRUE)                                             
-## [63]                                                              
-## [64] sink()
+##  [1]                                                                               
+##  [2] sink("Bayesian/NoDetectNmixturePoissonRagged.jags")                           
+##  [3]                                                                               
+##  [4] cat("                                                                         
+##  [5]     model {                                                                   
+##  [6]     #Compute intensity for each pair of birds and plants                      
+##  [7]     for (i in 1:Birds){                                                       
+##  [8]     for (j in 1:Plants){                                                      
+##  [9]     for (k in 1:Cameras){                                                     
+## [10]                                                                               
+## [11]     #Process Model with log normal overdispersion                             
+## [12]     log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + epsilon[i,j,k]
+## [13]                                                                               
+## [14]     #Log transformed variance in counts                                       
+## [15]     epsilon[i,j,k] ~ dnorm(0,tauE[i])                                         
+## [16]                                                                               
+## [17]     }                                                                         
+## [18]     }                                                                         
+## [19]     }                                                                         
+## [20]                                                                               
+## [21]     for (x in 1:Nobs){                                                        
+## [22]                                                                               
+## [23]       # Observed State                                                        
+## [24]       Yobs[x] ~ dpois(lambda[Bird[x],Plant[x],Camera[x]])                     
+## [25]                                                                               
+## [26]       #Assess Model Fit                                                       
+## [27]                                                                               
+## [28]       #Fit discrepancy statistics                                             
+## [29]       eval[x]<-lambda[Bird[x],Plant[x],Camera[x]]                             
+## [30]       E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)                            
+## [31]                                                                               
+## [32]       ynew[x]~dpois(lambda[Bird[x],Plant[x],Camera[x]])                       
+## [33]       E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)                        
+## [34]                                                                               
+## [35]       }                                                                       
+## [36]                                                                               
+## [37]     #Process Model                                                            
+## [38]     #Species level priors                                                     
+## [39]     for (i in 1:Birds){                                                       
+## [40]                                                                               
+## [41]     #Intercept                                                                
+## [42]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                                      
+## [43]                                                                               
+## [44]     #Poisson variation                                                        
+## [45]     tauE[i] ~ dunif(0,100)                                                    
+## [46]     sigmaE[i]<-pow(1/tauE[i],0.5)                                             
+## [47]                                                                               
+## [48]     #Traits slope                                                             
+## [49]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                                      
+## [50]     }                                                                         
+## [51]                                                                               
+## [52]     #Group process priors                                                     
+## [53]                                                                               
+## [54]     #Intercept                                                                
+## [55]     alpha_mu ~ dnorm(0,0.0001)                                                
+## [56]     alpha_tau ~ dt(0,1,1)I(0,)                                                
+## [57]     alpha_sigma<-pow(1/alpha_tau,0.5)                                         
+## [58]                                                                               
+## [59]     #Trait                                                                    
+## [60]     beta1_mu~dnorm(0,0.0001)                                                  
+## [61]     beta1_tau ~ dt(0,1,1)I(0,)                                                
+## [62]     beta1_sigma<-pow(1/beta1_tau,0.5)                                         
+## [63]                                                                               
+## [64]     #derived posterior check                                                  
+## [65]     fit<-sum(E[]) #Discrepancy for the observed data                          
+## [66]     fitnew<-sum(E.new[])                                                      
+## [67]                                                                               
+## [68]                                                                               
+## [69]     }                                                                         
+## [70]     ",fill=TRUE)                                                              
+## [71]                                                                               
+## [72] sink()
 ```
 
 ```r
@@ -296,7 +307,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   #Inits
   
   #Parameters to track
-  ParsStage <- c("alpha","beta1","alpha_mu","beta1_sigma","alpha_sigma","ynew","beta1_mu","fit","fitnew")
+  ParsStage <- c("alpha","beta1","alpha_mu","beta1_sigma","alpha_sigma","ynew","beta1_mu","fit","fitnew","tauE")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -324,9 +335,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   607467  32.5    1168576  62.5  1168576  62.5
-## Vcells 19129649 146.0   59332788 452.7 55662281 424.7
+##           used (Mb) gc trigger (Mb) max used (Mb)
+## Ncells  601555 32.2    1168576 62.5  1168576 62.5
+## Vcells 1380457 10.6    2773912 21.2  2773904 21.2
 ```
 
 ```r
@@ -338,7 +349,7 @@ pars_niave$Model<-c("Poisson GLMM")
 
 
 ```r
-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 <img src="figure/unnamed-chunk-12-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -355,7 +366,7 @@ ggplot(pars_niave[pars_niave$par %in% c("beta1_mu","beta1_sigma"),],aes(x=Draw,y
 
 ```r
 ###Posterior Distributions
-p<-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1","tauE"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
 tr<-melt(data.frame(species=1:length(detection),alpha=alpha,beta1=beta1),id.var='species')
@@ -393,16 +404,16 @@ castdf<-group_by(pars_niave,Chain) %>% select(par,estimate) %>% filter(par %in% 
 castdf<-dcast(pars_niave[pars_niave$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
 #calculated predicted y
-predyniave_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
+predyniave_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]),tauE=1)
 
-predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
+predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]),tauE=1)
 ```
 
 # Simulated data with detection
 
 
 ```r
-runs<-10000
+runs<-100
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -412,89 +423,90 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ```
 
 ```
-##  [1]                                                                    
-##  [2] sink("Bayesian/NmixturePoissonRagged.jags")                        
-##  [3]                                                                    
-##  [4] cat("                                                              
-##  [5]     model {                                                        
-##  [6]     #Compute intensity for each pair of birds and plants           
-##  [7]     for (i in 1:Birds){                                            
-##  [8]     for (j in 1:Plants){                                           
-##  [9]     for (k in 1:Times){                                            
-## [10]                                                                    
-## [11]     #Process Model                                                 
-## [12]     log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j]      
-## [13]                                                                    
-## [14]     #For each Time - there is a latent count                       
-## [15]     N[i,j,k] ~ dpois(lambda[i,j,k])                                
-## [16]     }                                                              
-## [17]     }                                                              
-## [18]     }                                                              
-## [19]                                                                    
-## [20]                                                                    
-## [21]     #Observed counts for each day of sampling at that Time         
-## [22]     for (x in 1:Nobs){                                             
-## [23]                                                                    
-## [24]     #Observation Process                                           
-## [25]     Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])    
-## [26]                                                                    
-## [27]     #Assess Model Fit                                              
-## [28]                                                                    
-## [29]     #Fit discrepancy statistics                                    
-## [30]     eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]]           
-## [31]     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)                   
-## [32]                                                                    
-## [33]     ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])      
-## [34]     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)               
-## [35]                                                                    
-## [36]     }                                                              
-## [37]                                                                    
-## [38]        #Priors                                                     
-## [39]     #Observation model                                             
-## [40]     #Detect priors, logit transformed - Following lunn 2012 p85    
-## [41]                                                                    
-## [42]     for(x in 1:Birds){                                             
-## [43]     #For Cameras                                                   
-## [44]     logit(detect[x])<-dcam[x]                                      
-## [45]     dcam[x]~dnorm(dprior,tau_detect)                               
-## [46]     }                                                              
-## [47]                                                                    
-## [48]     #Observation priors                                            
-## [49]     dprior ~ dnorm(0,0.386)                                        
-## [50]     tau_detect ~ dunif(0,4)                                        
-## [51]                                                                    
-## [52]     #Process Model                                                 
-## [53]     #Species level priors                                          
-## [54]     for (i in 1:Birds){                                            
-## [55]                                                                    
-## [56]     #Intercept                                                     
-## [57]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                           
-## [58]                                                                    
-## [59]     #Traits slope                                                  
-## [60]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                           
-## [61] }                                                                  
-## [62]                                                                    
-## [63]     #Group process priors                                          
-## [64]                                                                    
-## [65]     #Intercept                                                     
-## [66]     alpha_mu ~ dnorm(0,0.0001)                                     
-## [67]     alpha_tau ~ dt(0,1,1)I(0,)                                     
-## [68]     alpha_sigma<-pow(1/alpha_tau,0.5)                              
-## [69]                                                                    
-## [70]     #Trait                                                         
-## [71]     beta1_mu~dnorm(0,0.0001)                                       
-## [72]     beta1_tau ~ dt(0,1,1)I(0,)                                     
-## [73]     beta1_sigma<-pow(1/beta1_tau,0.5)                              
-## [74]                                                                    
-## [75]     #derived posterior check                                       
-## [76]     fit<-sum(E[]) #Discrepancy for the observed data               
-## [77]     fitnew<-sum(E.new[])                                           
-## [78]                                                                    
-## [79]                                                                    
-## [80]     }                                                              
-## [81]     ",fill=TRUE)                                                   
-## [82]                                                                    
-## [83] sink()
+##  [1]                                                                                 
+##  [2] sink("Bayesian/NmixturePoissonRagged.jags")                                     
+##  [3]                                                                                 
+##  [4] cat("                                                                           
+##  [5]     model {                                                                     
+##  [6]     #Compute intensity for each pair of birds and plants                        
+##  [7]     for (i in 1:Birds){                                                         
+##  [8]     for (j in 1:Plants){                                                        
+##  [9]     for (k in 1:Times){                                                         
+## [10]                                                                                 
+## [11]     #Process Model with log normal overdispersion                               
+## [12]     #mean intensity                                                             
+## [13]                                                                                 
+## [14]     #log transformed variance                                                   
+## [15]     log(lambda[i,j,k]) <- alpha[i] + beta1[i] * Traitmatch[i,j] + epsilon[i,j,k]
+## [16]     epsilon[i,j,k] ~ dnorm(0,tauE[i])                                           
+## [17]                                                                                 
+## [18]     #For each Time - there is a latent count, log transformed intensity         
+## [19]     N[i,j,k] ~ dpois(lambda[i,j,k])                                             
+## [20]     }                                                                           
+## [21]     }                                                                           
+## [22]     }                                                                           
+## [23]                                                                                 
+## [24]     #Observed counts for each day of sampling at that Time                      
+## [25]     for (x in 1:Nobs){                                                          
+## [26]                                                                                 
+## [27]     #Observation Process                                                        
+## [28]     Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])                 
+## [29]                                                                                 
+## [30]     #Assess Model Fit                                                           
+## [31]                                                                                 
+## [32]     #Fit discrepancy statistics                                                 
+## [33]     eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]]                        
+## [34]     E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)                                
+## [35]                                                                                 
+## [36]     ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])                   
+## [37]     E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)                            
+## [38]                                                                                 
+## [39]     }                                                                           
+## [40]                                                                                 
+## [41]     ###Priors###                                                                
+## [42]     #Observation model                                                          
+## [43]     #Detect priors, logit transformed - Following lunn 2012 p85                 
+## [44]                                                                                 
+## [45]     for(x in 1:Birds){                                                          
+## [46]     #For Cameras                                                                
+## [47]     logit(detect[x])<-dcam[x]                                                   
+## [48]     dcam[x]~dnorm(0,0.386)                                                      
+## [49]     }                                                                           
+## [50]                                                                                 
+## [51]     #Process Model                                                              
+## [52]     #Species level priors                                                       
+## [53]     for (i in 1:Birds){                                                         
+## [54]                                                                                 
+## [55]     #Intercept                                                                  
+## [56]     alpha[i] ~ dnorm(alpha_mu,alpha_tau)                                        
+## [57]                                                                                 
+## [58]     tauE[i] ~ dunif(0,100)                                                      
+## [59]                                                                                 
+## [60]     #Traits slope                                                               
+## [61]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                                        
+## [62] }                                                                               
+## [63]                                                                                 
+## [64]     #Group process priors                                                       
+## [65]                                                                                 
+## [66]     #Intercept                                                                  
+## [67]     alpha_mu ~ dnorm(0,0.0001)                                                  
+## [68]     alpha_tau ~ dt(0,1,1)I(0,)                                                  
+## [69]     alpha_sigma<-pow(1/alpha_tau,0.5)                                           
+## [70]                                                                                 
+## [71]     #Trait                                                                      
+## [72]     beta1_mu~dnorm(0,0.0001)                                                    
+## [73]     beta1_tau ~ dt(0,1,1)I(0,)                                                  
+## [74]     beta1_sigma<-pow(1/beta1_tau,0.5)                                           
+## [75]                                                                                 
+## [76]     #derived posterior check                                                    
+## [77]     fit<-sum(E[]) #Discrepancy for the observed data                            
+## [78]     fitnew<-sum(E.new[])                                                        
+## [79]                                                                                 
+## [80]                                                                                 
+## [81]     }                                                                           
+## [82]     ",fill=TRUE)                                                                
+## [83]                                                                                 
+## [84] sink()
 ```
 
 ```r
@@ -517,7 +529,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(N=Ninit)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","alpha_sigma","beta1_sigma","ynew","beta1_mu","fit","fitnew")
+  ParsStage <- c("detect","tauE","alpha","beta1","alpha_mu","alpha_sigma","beta1_sigma","ynew","beta1_mu","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -532,7 +544,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##    user  system elapsed 
-##    8.85    4.20 1552.92
+##    3.88    0.49   61.87
 ```
 
 
@@ -554,7 +566,7 @@ pars$Model<-"Nmixture"
 
 
 ```r
-ggplot(pars[pars$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars[pars$par %in% c("detect","alpha","beta1","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 <img src="figure/unnamed-chunk-20-1.png" title="" alt="" style="display: block; margin: auto;" />
@@ -571,7 +583,7 @@ ggplot(pars[pars$par %in% c("beta1_mu","alpha_sigma","beta1_sigma"),],aes(x=Draw
 
 ```r
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect","alpha","beta1"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars[pars$par %in% c("detect","alpha","beta1","tauE"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
 tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1),id.var='species')
@@ -604,10 +616,10 @@ parsall<-rbind.data.frame(pars[!pars$par %in% "ynew",],pars_niave[!pars_niave$pa
 parsall$Model<-as.factor(parsall$Model)
 
 ###Posterior Distributions
-p<-ggplot(parsall[parsall$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fill=Model)) + geom_histogram(position="identity") + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
+p<-ggplot(parsall[parsall$par %in% c("detect","alpha","beta1","tauE"),],aes(x=estimate,fill=Model)) + geom_histogram(position="identity") + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,tauE=tauE),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='black',linetype='dashed',size=1)
 psim
@@ -642,9 +654,9 @@ psim2
 Plot the posterior mean density
 
 ```r
-spars<-parsall %>% filter(par %in% c("alpha","beta1","detect")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+spars<-parsall %>% filter(par %in% c("alpha","beta1","detect","tauE")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,tauE=tauE),id.var='species')
 colnames(tr)<-c("species","par","value")
 
 ggplot(spars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_grid(par~species,scales="free") + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
@@ -678,29 +690,29 @@ head(castdf)
 
 ```
 ##   Chain Draw alpha_mu   beta1_mu
-## 1     1    1 2.930944 -0.9394849
-## 2     1    2 2.897696 -0.9965815
-## 3     1    3 3.030486 -0.9947212
-## 4     1    4 2.980018 -0.8573158
-## 5     1    5 2.961693 -1.0505029
-## 6     1    6 3.012187 -0.9926250
+## 1     1    1 4.911544 -0.9656391
+## 2     1    2 5.859440 -0.9608403
+## 3     1    3 5.628575 -0.8746162
+## 4     1    4 5.717259 -0.8423332
+## 5     1    5 5.140355 -1.0263784
+## 6     1    6 5.437557 -0.8305922
 ```
 
 ```r
 #ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
 
-castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta1","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
+castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta1","detect","tauE")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
 head(castdf)
 ```
 
 ```
-##   species Chain Draw    alpha      beta1    detect
-## 1       1     1    1 3.073736 -0.5927995 0.4739255
-## 2       1     1    2 3.153681 -0.7162279 0.4870255
-## 3       1     1    3 2.972469 -0.5774215 0.5210879
-## 4       1     1    4 3.099363 -0.6739248 0.4992649
-## 5       1     1    5 3.080405 -0.6502230 0.5101266
-## 6       1     1    6 3.054626 -0.6228834 0.4862403
+##   species Chain Draw    alpha      beta1     detect      tauE
+## 1       1     1    1 6.349043 -1.1251282 0.03021855  8.208330
+## 2       1     1    2 6.345648 -1.0161889 0.03108612 11.478094
+## 3       1     1    3 6.204184 -0.9163375 0.03130857 12.902190
+## 4       1     1    4 6.203265 -0.8594047 0.03116103 14.642055
+## 5       1     1    5 6.176812 -0.8892535 0.03266477  9.762696
+## 6       1     1    6 5.929899 -0.6658930 0.03119172  7.625194
 ```
 
 ```r
@@ -720,8 +732,8 @@ castdf<-dcast(pars[pars$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,va
 
 
 ```r
-predy_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources))
-orig<-trajF(alpha=rnorm(2000,alpha_mu,alpha_sigma),beta1=rnorm(2000,beta1_mu,beta1_sigma),trait=as.numeric(traitmatch),resources=as.numeric(resources))
+predy_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=100,trait=as.numeric(traitmatch),resources=as.numeric(resources))
+orig<-trajF(alpha=rnorm(1000,alpha_mu,alpha_sigma),beta1=rnorm(1000,beta1_mu,beta1_sigma),trait=as.numeric(traitmatch),resources=as.numeric(resources),tauE=tauE)
 
 pm<-melt(list(Nmixture=predy_trait,'Poisson GLMM'=predyniave_trait),id.vars=colnames(predy_trait))
 
@@ -733,36 +745,6 @@ tplot
 
 ```r
 ggsave("Figures/SimPredictBoth.jpg",height=5,width=7)
-```
-
-
-
-```r
-predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(resources),resources=as.numeric(resources))
-
-orig<-trajF(alpha=rnorm(1000,alpha_mu,alpha_sigma),beta1=rnorm(1000,beta1_mu,beta1_sigma),trait=as.numeric(resources),resources=as.numeric(resources))
-
-pm<-melt(list(Nmixture=predy,'Poisson GLMM'=predyniave_both),id.vars=colnames(predy))
-
-fplot<-ggplot(data=pm,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.5)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=mdat,aes(x=Abundance,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + geom_line(data=orig,aes(y=mean),col='black',size=.8) + scale_fill_manual(values=c("grey70","Black"))+ scale_color_manual(values=c("grey70","Black")) + ggtitle("Simulation: Abundance")
-```
-
-
-```r
-#grid.arrange(fplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
-
-#jpeg("Figures/SimPredictBoth.jpg",height=6,width=8,units="in",res=300)
-#grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
-#dev.off()
-
-jpeg("Figures/SimPredictBoth.jpg",height=6,width=8,units="in",res=300)
-grid.arrange(fplot,tplot)
-dev.off()
-```
-
-```
-## png 
-##   2
 ```
 
 Black line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The blue line is the same model, but assuming perfect detection rates.
@@ -787,7 +769,7 @@ psim4<-p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated d
 psim4
 ```
 
-<img src="figure/unnamed-chunk-32-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-30-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/SimulationDisc.jpeg",height=5,width=5)
@@ -823,9 +805,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    712734  38.1    4732620  252.8  12657123  676.0
-## Vcells 127604608 973.6  209855505 1601.1 218273713 1665.3
+##           used (Mb) gc trigger (Mb) max used (Mb)
+## Ncells  645223 34.5    1442291 77.1  1442291 77.1
+## Vcells 4868851 37.2    7965537 60.8  7964291 60.8
 ```
 
 ```r
@@ -838,9 +820,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   702869  37.6    3786096  202.2  12657123  676.0
-## Vcells 91835658 700.7  209855505 1601.1 218273713 1665.3
+##           used (Mb) gc trigger (Mb) max used (Mb)
+## Ncells  644752 34.5    1442291 77.1  1442291 77.1
+## Vcells 3755038 28.7    7965537 60.8  7964291 60.8
 ```
 
 ```r
@@ -873,9 +855,9 @@ gc()
 ```
 
 ```
-##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells    713796  38.2    3028876  161.8  12657123  676.0
-## Vcells 110045074 839.6  209855505 1601.1 218273713 1665.3
+##           used (Mb) gc trigger (Mb) max used (Mb)
+## Ncells  645296 34.5    1442291 77.1  1442291 77.1
+## Vcells 4352541 33.3    7965537 60.8  7964291 60.8
 ```
 
 ```r
@@ -888,9 +870,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   708824  37.9    2423100  129.5  12657123  676.0
-## Vcells 92160612 703.2  209855505 1601.1 218273713 1665.3
+##           used (Mb) gc trigger (Mb) max used (Mb)
+## Ncells  645015 34.5    1442291 77.1  1442291 77.1
+## Vcells 3773379 28.8    7965537 60.8  7964291 60.8
 ```
 
 ```r
@@ -937,7 +919,7 @@ simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM"))
 ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=1) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 ```
 
-<img src="figure/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-34-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
@@ -945,7 +927,7 @@ ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable)) + geom_point(alpha=.3) + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
 ```
 
-<img src="figure/unnamed-chunk-36-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-34-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
@@ -957,7 +939,7 @@ simd$Diff<-simd$Nmixture-simd$`Poisson GLMM`
 ggplot(simd,aes(x=True_State,y=abs(Diff))) + geom_point() + ylab("|Nmixture - Poisson GLMM|") + theme_bw() + labs(x="True State")
 ```
 
-<img src="figure/unnamed-chunk-36-3.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-34-3.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/Difference_Pred.jpeg",height=4,width=6)
@@ -979,7 +961,7 @@ simT<-simdat %>% group_by(variable,traitmatch) %>% summarize(Lower=quantile(valu
 ggplot(simT,aes(x=traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.4) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw()  + geom_point(data=mmat,aes(y=True_State)) + labs(x="Difference in Bill and Corolla Length",y="Total Predicted Visits",fill="Model",col='Model')
 ```
 
-<img src="figure/unnamed-chunk-38-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 View a couple example data points from across the type of interactions.
 
@@ -991,7 +973,7 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("High Visitation Example")
 ```
 
-<img src="figure/unnamed-chunk-39-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-37-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
@@ -1000,7 +982,7 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
 ```
 
-<img src="figure/unnamed-chunk-39-2.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-37-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Summary of discrepancy of predicted matrices
 
@@ -1016,7 +998,7 @@ occ_disc<-sapply(occ,function(x) median(x))
 ggplot() + xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-<img src="figure/unnamed-chunk-40-1.png" title="" alt="" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-38-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Comparison of summary statistics
 
@@ -1034,27 +1016,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.22    0.19   243.58
-## 2 Poisson_GLM      3.18    0.28   636.24
-```
-
-#DIC
-
-
-```r
-sim_niave$BUGSoutput$DIC
-```
-
-```
-## [1] 24312.28
-```
-
-```r
-sim_detect$BUGSoutput$DIC
-```
-
-```
-## [1] 22307.14
+## 1    Nmixture      1.87    0.22   374.43
+## 2 Poisson_GLM      2.04    0.19   407.66
 ```
 
 
