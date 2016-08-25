@@ -9,7 +9,7 @@ cat("
     for (k in 1:Times){
     
     #Process Model with log normal overdispersion
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + epsilon[i,j,k]
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * resources[i,j,k] + epsilon[i,j,k]
     
     #variance
     epsilon[i,j,k] ~ dnorm(0,tauE[i])

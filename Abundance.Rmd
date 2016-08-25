@@ -65,7 +65,7 @@ gc()
 #Number of hummingbird species
 h_species=10
 plant_species=20
-cameras<-10
+cameras<-5
 days<-3
 
 #Bill sizes
@@ -80,6 +80,7 @@ traitmatch<-abs(sapply(Corolla,function(x) x - Bill)/10)
 #regression slopes
 #traits
 beta1_mu<- -1
+
 #abundance
 
 #species variance in slopes
@@ -89,6 +90,8 @@ beta1_sigma<- 0.2
 alpha_mu<- 3
 alpha_sigma<- 0.2
 
+#overdipersion
+tauE<-1 + abs(rnorm(h_species,0,1))
 detection= runif(h_species,0.01,0.99)
 beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
 alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
@@ -118,7 +121,7 @@ N<-array(dim=c(h_species,plant_species,cameras))
 for(x in 1:h_species){
   for (y in 1:plant_species){
     for (z in 1:cameras){
-      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y])
+      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y] + rnorm(1,0,tauE[x]))
   }
   }
 }
@@ -210,7 +213,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-10000
+runs<-100
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -234,7 +237,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   #Inits
   
   #Parameters to track
-  ParsStage <- c("alpha","beta1","alpha_mu","beta1_sigma","alpha_sigma","ynew","beta1_mu","fit","fitnew")
+  ParsStage <- c("alpha","beta1","alpha_mu","beta1_sigma","alpha_sigma","ynew","beta1_mu","fit","fitnew","tauE")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -265,7 +268,7 @@ pars_niave$Model<-c("Poisson GLMM")
 ##Assess Convergence
 
 ```{r,cache=FALSE,fig.width=11,fig.height=5}
-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
@@ -276,7 +279,7 @@ ggplot(pars_niave[pars_niave$par %in% c("beta1_mu","beta1_sigma"),],aes(x=Draw,y
 
 ```{r,cache=FALSE,fig.width=7,fig.height=5}
 ###Posterior Distributions
-p<-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1","tauE"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
 tr<-melt(data.frame(species=1:length(detection),alpha=alpha,beta1=beta1),id.var='species')
@@ -307,15 +310,15 @@ castdf<-group_by(pars_niave,Chain) %>% select(par,estimate) %>% filter(par %in% 
 castdf<-dcast(pars_niave[pars_niave$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
 #calculated predicted y
-predyniave_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
+predyniave_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]),tauE=1)
 
-predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]))
+predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]),tauE=1)
 ```
 
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-10000
+runs<-100
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -342,7 +345,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   InitStage <- function() {list(N=Ninit)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","alpha_sigma","beta1_sigma","ynew","beta1_mu","fit","fitnew")
+  ParsStage <- c("detect","tauE","alpha","beta1","alpha_mu","alpha_sigma","beta1_sigma","ynew","beta1_mu","fit","fitnew")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -371,7 +374,7 @@ pars$Model<-"Nmixture"
 ##Assess Convergence
 
 ```{r,cache=FALSE,fig.width=11,fig.height=5}
-ggplot(pars[pars$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
+ggplot(pars[pars$par %in% c("detect","alpha","beta1","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
 ```{r,fig.height=5,fig.width=11}
@@ -382,7 +385,7 @@ ggplot(pars[pars$par %in% c("beta1_mu","alpha_sigma","beta1_sigma"),],aes(x=Draw
 
 ```{r,cache=FALSE,fig.width=7,fig.height=5}
 ###Posterior Distributions
-p<-ggplot(pars[pars$par %in% c("detect","alpha","beta1"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
+p<-ggplot(pars[pars$par %in% c("detect","alpha","beta1","tauE"),],aes(x=estimate)) + geom_histogram() + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() + ggtitle("Species Posteriors")
 
 #Add true values
 tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1),id.var='species')
@@ -413,10 +416,10 @@ parsall<-rbind.data.frame(pars[!pars$par %in% "ynew",],pars_niave[!pars_niave$pa
 parsall$Model<-as.factor(parsall$Model)
 
 ###Posterior Distributions
-p<-ggplot(parsall[parsall$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fill=Model)) + geom_histogram(position="identity") + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
+p<-ggplot(parsall[parsall$par %in% c("detect","alpha","beta1","tauE"),],aes(x=estimate,fill=Model)) + geom_histogram(position="identity") + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 
 #Add true values
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,tauE=tauE),id.var='species')
 colnames(tr)<-c("species","par","value")
 psim<-p + geom_vline(data=tr,aes(xintercept=value),col='black',linetype='dashed',size=1)
 psim
@@ -439,9 +442,9 @@ psim2
 ##Strip plots
 Plot the posterior mean density
 ```{r,fig.width=12}
-spars<-parsall %>% filter(par %in% c("alpha","beta1","detect")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
+spars<-parsall %>% filter(par %in% c("alpha","beta1","detect","tauE")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 
-tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1),id.var='species')
+tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,tauE=tauE),id.var='species')
 colnames(tr)<-c("species","par","value")
 
 ggplot(spars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_grid(par~species,scales="free") + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
@@ -463,7 +466,7 @@ castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,
 head(castdf)
 #ggpairs(castdf[,3:4],title="Correlation in Group-Level Posteriors")
 
-castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta1","detect")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
+castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta1","detect","tauE")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
 head(castdf)
 #ggpairs(castdf[,4:6],title="Correlation in Species-Level Posteriors")
 ```
