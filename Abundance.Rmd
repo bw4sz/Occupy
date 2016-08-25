@@ -91,7 +91,7 @@ alpha_mu<- 3
 alpha_sigma<- 0.2
 
 #overdipersion
-tauE<-1 + abs(rnorm(h_species,0,1))
+tauE<-abs(rnorm(h_species,0,1))
 detection= runif(h_species,0.01,0.99)
 beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
 alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
@@ -213,7 +213,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -318,7 +318,7 @@ predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.nume
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -441,7 +441,7 @@ psim2
 
 ##Strip plots
 Plot the posterior mean density
-```{r,fig.width=12}
+```{r,fig.width=12,fig.height=15}
 spars<-parsall %>% filter(par %in% c("alpha","beta1","detect","tauE")) %>% group_by(Model,species,par) %>% summarize(mean=mean(estimate),lower=quantile(estimate,0.05),upper=quantile(estimate,0.95))
 
 tr<-melt(data.frame(species=1:length(detection),detect=detection,alpha=alpha,beta1=beta1,tauE=tauE),id.var='species')
@@ -483,38 +483,14 @@ castdf<-dcast(pars[pars$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,va
 ### Traits
 
 ```{r}
-predy_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources))
-orig<-trajF(alpha=rnorm(2000,alpha_mu,alpha_sigma),beta1=rnorm(2000,beta1_mu,beta1_sigma),trait=as.numeric(traitmatch),resources=as.numeric(resources))
+predy_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=100,trait=as.numeric(traitmatch),resources=as.numeric(resources))
+orig<-trajF(alpha=rnorm(1000,alpha_mu,alpha_sigma),beta1=rnorm(1000,beta1_mu,beta1_sigma),trait=as.numeric(traitmatch),resources=as.numeric(resources),tauE=tauE)
 
 pm<-melt(list(Nmixture=predy_trait,'Poisson GLMM'=predyniave_trait),id.vars=colnames(predy_trait))
 
 tplot<-ggplot(data=pm,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.5)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=mdat,aes(x=traitmatch,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + ggtitle("Simulation: Traits") + geom_line(data=orig,aes(y=mean),col='black',size=.8) + scale_fill_manual(values=c("grey70","Black"))+ scale_color_manual(values=c("grey70","Black"))
 tplot
 ggsave("Figures/SimPredictBoth.jpg",height=5,width=7)
-```
-
-
-```{r}
-predy<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(resources),resources=as.numeric(resources))
-
-orig<-trajF(alpha=rnorm(1000,alpha_mu,alpha_sigma),beta1=rnorm(1000,beta1_mu,beta1_sigma),trait=as.numeric(resources),resources=as.numeric(resources))
-
-pm<-melt(list(Nmixture=predy,'Poisson GLMM'=predyniave_both),id.vars=colnames(predy))
-
-fplot<-ggplot(data=pm,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=L1),alpha=0.5)  + geom_line(aes(y=mean,col=L1),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=mdat,aes(x=Abundance,y=Interactions),size=.5,alpha=.5) + labs(fill="Model",col="Model") + geom_line(data=orig,aes(y=mean),col='black',size=.8) + scale_fill_manual(values=c("grey70","Black"))+ scale_color_manual(values=c("grey70","Black")) + ggtitle("Simulation: Abundance")
-```
-
-```{r,fig.width=10,fig.height=6}
-#grid.arrange(fplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
-
-#jpeg("Figures/SimPredictBoth.jpg",height=6,width=8,units="in",res=300)
-#grid.arrange(fplot,aplot,tplot, layout_matrix = cbind(c(2,1),c(3,1) ))
-#dev.off()
-
-jpeg("Figures/SimPredictBoth.jpg",height=6,width=8,units="in",res=300)
-grid.arrange(fplot,tplot)
-dev.off()
-
 ```
 
 Black line is the true relationship. The red line is the posterior mean with confidible intervals in shaded grey for the proposed bayesian model. The blue line is the same model, but assuming perfect detection rates.
@@ -712,13 +688,6 @@ d<-melt(d)
 colnames(d)<-c("Bird","Plant","value","Iteration","Model")
 
 d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=round(mean(mean),2),mean_sd=round(sd(mean),2),mean_sum=round(mean(sum),2))
-```
-
-#DIC
-
-```{r}
-sim_niave$BUGSoutput$DIC
-sim_detect$BUGSoutput$DIC
 ```
 
 ```{r}
