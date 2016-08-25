@@ -446,7 +446,7 @@ Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
 #Subset if model testing here
-indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
+#indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
 
 #Easiest to work with jags as numeric ordinal values
 indat$Hummingbird<-as.factor(indat$Hummingbird)
@@ -516,7 +516,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-3000
+runs<-20000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -547,7 +547,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
+  nt <- 5   #thinning rate
   nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
@@ -595,7 +595,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-3000
+runs<-20000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -625,7 +625,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
+  nt <- 5   #thinning rate
   nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
@@ -674,7 +674,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-3000
+runs<-20000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -705,7 +705,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 1   #thinning rate
+  nt <- 5   #thinning rate
   nb <- max(0,runs-1000) # number to discard for burn-in
   nc <- 2  # number of chains
 
@@ -807,21 +807,21 @@ ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 
 ## Traits
 
-```{r}
+```{r,eval=F}
 castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
-predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=10000,trait=indat$Traitmatch,resources=indat$scaledR)
+predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=100,trait=indat$Traitmatch,resources=indat$scaledR)
 
 tplot<-ggplot(data=predy_traits,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=1) + ggtitle("Traits")
-tplot + ylim(0,17)
+tplot
 ```
 
 ##Abundance
 
-```{r}
+```{r,eval=F}
 castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
-predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=10000,trait=indat$scaledR)
+predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=100,trait=indat$scaledR)
 
 aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=scaledR,y=Yobs),size=.5,alpha=.9) + ggtitle("Abundance")
 aplot 
@@ -1237,7 +1237,7 @@ simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
 
 simdat<-melt(simdat,measure.vars = c("N-mixture","Poisson GLMM"))
 
-ggplot(simdat[simdat$variable=="N-mixture",],aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted Daily Visitation Rate") + xlab("Observed Daily Visitation Rate") + theme_bw() + scale_color_manual(values=c("grey50","black"))
+ggplot(simdat[,],aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted Daily Visitation Rate") + xlab("Observed Daily Visitation Rate") + theme_bw() 
 ggsave("Figures/DailyDiscrepancy.jpeg",height=4,width=6)
 ```
 
@@ -1368,7 +1368,7 @@ makeN<-function(x){
 }
 
 nstat<-lapply(nsplit,function(x){
-  netstat<-melt(t(sapply(1:50,function(k) makeN(x)))) 
+  netstat<-melt(t(sapply(1:100,function(k) makeN(x)))) 
   colnames(netstat)<-c("Iteration","Metric","value")
   return(netstat)
 })
