@@ -9,7 +9,11 @@ cat("
     for (k in 1:Cameras){
     
     #Process Model
-    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + extra[i]
+    log(lambda[i,j,k])<-alpha[i] + beta1[i] * Traitmatch[i,j] + extra[i,j,k]
+    
+    #dispersion
+    extra[i,j,k] ~ dnorm(0,tauE[i])
+
     }
     }
     }
@@ -37,8 +41,9 @@ cat("
     #Intercept
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
 
-    extra[i] ~ dnorm(0,0.0001)
-    
+    #Poisson variation
+    tauE[i] ~ dunif(0,100)
+    sigmaE[i]<-pow(1/tauE[i],0.5) 
     
     #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
