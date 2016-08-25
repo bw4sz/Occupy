@@ -700,7 +700,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   InitStage <- function() {list(beta1=rep(0,Birds),alpha=rep(0,Birds),alpha_mu=0,N=Ninit,beta1_mu=0)}
   
   #Parameters to track
-  ParsStage <- c("detect","alpha","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew","E")
+  ParsStage <- c("detect","alpha","extra","beta1","alpha_mu","beta1_mu","fit","fitnew","ynew","E")
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
@@ -708,7 +708,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   nb <- max(0,runs-5000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","extra","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
 
     system.time(abundance<-jags.parallel(Dat,InitStage,parameters.to.save=ParsStage,model.file="Bayesian/NmixturePoissonRagged_Abundance.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc))
 ```
