@@ -72,21 +72,21 @@ trajState<-function(alpha,beta,x,observed){
 }
 
 #sample trajectory for a given posterior
-trajF<-function(alpha,beta1,tauE,trait,resources){
-  g<-data.frame(alpha,beta1,tauE)
+trajF<-function(alpha,beta1,tauSigma,trait,resources){
+  g<-data.frame(alpha,beta1,tauSigma)
   
   #label rows
   g$id<-1:nrow(g)
   
-  sampletraj<-g %>% group_by(id) %>% do(traj(.$alpha,.$beta1,tauE=.$tauE,trait=trait,resources=resources)) %>% group_by(trait) %>% summarize(mean=mean(y),lower=quantile(y,0.05),upper=quantile(y,0.95))
+  sampletraj<-g %>% group_by(id) %>% do(traj(.$alpha,.$beta1,tauSigma=.$tauSigma,trait=trait,resources=resources)) %>% group_by(trait) %>% summarize(mean=mean(y),lower=quantile(y,0.05),upper=quantile(y,0.95))
   return(sampletraj)
 }
 
 #sample trajectory for a given posterior using quantile or hdi interval
-traj<-function(alpha,beta1,tauE,trait,resources){
+traj<-function(alpha,beta1,tauSigma,trait,resources){
 
     #fit regression for each input estimate
-    epsilon<-rnorm(1,0,1/sqrt(tauE))
+    epsilon<-rnorm(1,0,tauSigma)
     v=exp(alpha + beta1 * trait + epsilon)
     
     sampletraj<-data.frame(trait=trait,y=as.numeric(v))
