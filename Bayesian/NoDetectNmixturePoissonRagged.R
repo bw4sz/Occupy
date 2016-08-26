@@ -43,8 +43,7 @@ cat("
 
     #Poisson variation
     tauE[i] ~ dunif(0,100)
-    sigmaE[i]<-pow(1/tauE[i],0.5) 
-    
+
     #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
     }
