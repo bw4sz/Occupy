@@ -339,10 +339,11 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   resources=resources
 
   #A blank Y matrix - all present
-  Ninit<-array(dim=c(h_species,plant_species,Times),data=max(obs.state$Yobs)+1)
+  Ninit<-array(dim=c(h_species,plant_species,Times),data=max(obs.state$Yobs)*10)
+
 
   #Inits
-  InitStage <- function() {list(N=Ninit)}
+  InitStage <- function() {list(N=Ninit,epsilon=Ninit/10)}
   
   #Parameters to track
   ParsStage <- c("detect","tauE","alpha","beta1","alpha_mu","alpha_sigma","beta1_sigma","ynew","beta1_mu","fit","fitnew")
@@ -353,7 +354,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","resources","Birds","Nobs","Ninit","Time","Times")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","resources","Birds","Nobs","Ninit","Time","Times","Einit")
 
     system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
 ```

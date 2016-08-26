@@ -516,7 +516,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -547,8 +547,8 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nt <- 6   #thinning rate
+  nb <- max(0,runs-3000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Camera","Cameras","Traitmatch","Birds","Ninit","Nobs","nb","nt","nc","ni")
@@ -595,7 +595,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -625,8 +625,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nt <- 6   #thinning rate
+  nb <- max(0,runs-3000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","nb","nc","ni","nt")
@@ -674,7 +674,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -705,8 +705,8 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
   
   #MCMC options
   ni <- runs  # number of draws from the posterior
-  nt <- 5   #thinning rate
-  nb <- max(0,runs-2000) # number to discard for burn-in
+  nt <- 6   #thinning rate
+  nb <- max(0,runs-3000) # number to discard for burn-in
   nc <- 2  # number of chains
 
   Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","Birds","Nobs","Ninit","Time","Times","resources","nc","nb","ni","nt")
