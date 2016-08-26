@@ -217,7 +217,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-2000
+runs<-30000
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
 
@@ -323,7 +323,7 @@ predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.nume
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-3000
+runs<-30000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
