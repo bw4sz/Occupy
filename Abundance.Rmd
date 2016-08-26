@@ -91,7 +91,7 @@ alpha_mu<- 3
 alpha_sigma<- 0.2
 
 #overdipersion
-tauE<-abs(rnorm(h_species,0,1))
+tauE<-abs(rnorm(h_species,0,0.1))
 detection= runif(h_species,0.01,0.99)
 beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
 alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
@@ -213,7 +213,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-100000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -318,7 +318,7 @@ predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.nume
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-100000
+runs<-50000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
