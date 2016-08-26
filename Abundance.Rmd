@@ -121,7 +121,7 @@ N<-array(dim=c(h_species,plant_species,cameras))
 for(x in 1:h_species){
   for (y in 1:plant_species){
     for (z in 1:cameras){
-      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y] + rnorm(1,0,tauE[x]))
+      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y] + rnorm(1,0,1/sqrt(tauE[x])))
   }
   }
 }
@@ -213,7 +213,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 #Simulated data without detection
 
 ```{r,eval=T}
-runs<-50000
+runs<-40000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -310,15 +310,15 @@ castdf<-group_by(pars_niave,Chain) %>% select(par,estimate) %>% filter(par %in% 
 castdf<-dcast(pars_niave[pars_niave$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
 
 #calculated predicted y
-predyniave_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]),tauE=1)
+predyniave_trait<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]),tauE=100)
 
-predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]),tauE=1)
+predyniave_both<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,trait=as.numeric(traitmatch),resources=as.numeric(resources[,1,]),tauE=100)
 ```
 
 # Simulated data with detection
 
 ```{r,eval=T}
-runs<-50000
+runs<-40000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
