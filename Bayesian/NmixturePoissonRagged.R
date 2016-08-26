@@ -12,8 +12,8 @@ cat("
     #mean intensity
     
     #log transformed variance
-    log(lambda[i,j,k]) <- alpha[i] + beta1[i] * Traitmatch[i,j] + epsilon[i,j,k]
-    epsilon[i,j,k] ~ dnorm(0,tauE[i])
+    log(lambda[i,j,k]) <- alpha[i] + beta1[i] * Traitmatch[i,j] +  epsilon[i,j,k]
+    epsilon[i,j,k] ~ dnorm(0,tauE)
 
     #For each Time - there is a latent count, log transformed intensity
     N[i,j,k] ~ dpois(lambda[i,j,k])
@@ -55,8 +55,6 @@ cat("
     #Intercept
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
 
-    tauE[i] ~ dnorm(tauE_mu,tauE_tau)
-    
     #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
 }
@@ -64,19 +62,18 @@ cat("
     #Group process priors
     
     #Intercept 
-    alpha_mu ~ dnorm(0,0.0001)
+    alpha_mu ~ dnorm(0,0.001)
     alpha_tau ~ dt(0,1,1)I(0,)
     alpha_sigma<-pow(1/alpha_tau,0.5) 
     
     #Trait
-    beta1_mu~dnorm(0,0.0001)
+    beta1_mu~dnorm(0,0.001)
     beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
 
     #Overdispersion
-    tauE_mu~dunif(0,1000)
-    tauE_tau ~ dunif(0,100)
-
+    tauSigma ~ dunif(0,5)
+    tauE <- pow(1/tauSigma,2)
 
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data

@@ -446,7 +446,7 @@ Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
 #Subset if model testing here
-#indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
+indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
 
 #Easiest to work with jags as numeric ordinal values
 indat$Hummingbird<-as.factor(indat$Hummingbird)
@@ -786,7 +786,7 @@ ggplot(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","sigma_alpha","beta1_sig
 
 ## Poisson GLMM versus N-mixture model
 ```{r,fig.height=6,fig.width=10}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu"),], Model+Chain + Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1_mu","alpha_mu","tauE"),], Model+Chain + Draw~par,value.var="estimate")
 
 castdf<-split(castdf,castdf$Model)
 ```
@@ -794,7 +794,7 @@ castdf<-split(castdf,castdf$Model)
 ```{r}
 predy<-rbind_all(lapply(castdf,function(i){
   #calculate trajectory and append model
-  pr<-trajF(alpha=i$alpha_mu,beta1=i$beta1_mu,tauE=100,trait=indat$Traitmatch,resources=indat$scaledR)
+  pr<-trajF(alpha=i$alpha_mu,beta1=i$beta1_mu,tauSigma=1/sqrt(i$tauE),trait=indat$Traitmatch,resources=indat$scaledR)
   pr$Model<-unique(i$Model)
   return(pr)
   }))
@@ -808,9 +808,9 @@ ggsave("Figures/BothObs.jpg",heigh=5,width=7,dpi=300)
 ## Traits
 
 ```{r,eval=F}
-castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","tauE"),], Chain + Draw~par,value.var="estimate")
 
-predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=100,trait=indat$Traitmatch,resources=indat$scaledR)
+predy_traits<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauSigma=1/sqrt(castdf$tauE),trait=indat$Traitmatch,resources=indat$scaledR)
 
 tplot<-ggplot(data=predy_traits,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Difference between Bill and Corolla Length") + geom_point(data=indat,aes(x=Traitmatch,y=Yobs),size=.5,alpha=1) + ggtitle("Traits")
 tplot
@@ -819,9 +819,9 @@ tplot
 ##Abundance
 
 ```{r,eval=F}
-castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu"),], Chain + Draw~par,value.var="estimate")
+castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu","tauE"),], Chain + Draw~par,value.var="estimate")
 
-predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauE=100,trait=indat$scaledR)
+predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauSigma=1/sqrt(castdf$tauE),trait=indat$scaledR)
 
 aplot<-ggplot(data=predy_abundance,aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.5)  + geom_line(aes(y=mean),size=.4,linetype="dashed") + theme_bw() + ylab("Daily Interactions") + xlab("Flowers") + geom_point(data=indat,aes(x=scaledR,y=Yobs),size=.5,alpha=.9) + ggtitle("Abundance")
 aplot 
@@ -871,7 +871,7 @@ for(d in 1:length(species.split)){
   #Range of abundances
   fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
     
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,tauE=x$tauE,trait=tsp,resources=fsp)
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,tauSigma=1/sqrt(x$tauE),trait=tsp,resources=fsp)
 }
 
 names(species.traj)<-names(species.split)
@@ -914,7 +914,7 @@ for(d in 1:length(species.split)){
   #Range of abundances
     fsp<-indat %>% filter(Hummingbird==index) %>% .$scaledR
     
-  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,tauE=x$tauE,trait=tsp,resources=fsp)
+  species.traj[[d]]<-trajF(alpha=x$alpha,beta1=x$beta1,tauSigma=1/sqrt(x$tauE),trait=tsp,resources=fsp)
 }
 
 names(species.traj)<-names(species.split)
@@ -1297,13 +1297,13 @@ species.traj<-lapply(species.split,function(dat){
   #get data for those species
   billd<-indat[indat$jBird %in% index,]
   
-  d<-data.frame(alpha=dat$alpha,beta1=dat$beta1,tauE=dat$tauE)
+  d<-data.frame(alpha=dat$alpha,beta1=dat$beta1,tauSigma=dat$tauE)
   
   #fit regression for each input estimate
   sampletraj<-list()
   
   for (y in 1:nrow(d)){
-    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch + rnorm(1,0,1/sqrt(d$tauE[y])))
+    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch + rnorm(1,0,1/sqrt(d$tauE)))
     
     sampletraj[[y]]<-data.frame(x=as.numeric(billd$Traitmatch),y=as.numeric(v),jBird=billd$jBird,jPlant=billd$jPlant,Model=unique(dat$Model))
   }
