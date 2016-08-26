@@ -516,7 +516,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -595,7 +595,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -674,7 +674,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-100
+runs<-10000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -851,7 +851,11 @@ ggplot(mean_ynewstat,aes(x=Traitmatch,col=Model)) + geom_pointrange(aes(y=mean,y
 ## Prediction intervals
 
 ```{r,fig.height=10,fig.width=11}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha","tauE"),], species +Chain +Model+ Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
+
+tcastdf<-dcast(parsObs[parsObs$par %in% c("tauE"),],  Chain +Model+ Draw~par,value.var="estimate")
+
+castdf<-merge(castdf,tcastdf,by=c("Chain","Model","Draw"))
 
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -895,6 +899,10 @@ ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=10,width=10)
 
 ```{r,fig.height=10,fig.width=11}
 castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha","tauE"),], species +Chain +Model+ Draw~par,value.var="estimate")
+
+tcastdf<-dcast(pars_abundance[pars_abundance$par %in% c("tauE"),],  Chain +Model+ Draw~par,value.var="estimate")
+
+castdf<-merge(castdf,tcastdf,by=c("Chain","Model","Draw"))
 
 #Turn to species level
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
