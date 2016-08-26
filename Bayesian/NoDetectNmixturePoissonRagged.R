@@ -42,7 +42,7 @@ cat("
     alpha[i] ~ dnorm(alpha_mu,alpha_tau)
 
     #Poisson variation
-    tauE[i] ~ dunif(0,100)
+    tauE[i] ~ dnorm(tauE_mu,tauE_tau)
 
     #Traits slope 
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
@@ -60,6 +60,10 @@ cat("
     beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
     
+    #Overdispersion
+    tauE_mu ~ dunif(0,1000)
+    tauE_tau ~ dunif(0,100)
+
     #derived posterior check
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
