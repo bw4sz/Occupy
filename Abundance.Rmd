@@ -91,7 +91,7 @@ alpha_mu<- 3
 alpha_sigma<- 0.2
 
 #overdipersion
-tauE<-abs(rnorm(h_species,0,0.1))
+tauE<-runif(h_species,0,100)
 detection= runif(h_species,0.01,0.99)
 beta1<-rnorm(h_species,beta1_mu,beta1_sigma)
 alpha<-rnorm(h_species,alpha_mu,alpha_sigma)
@@ -354,7 +354,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
   nb <- max(0,runs-2000) # number to discard for burn-in
   nc <- 2  # number of chains
 
-  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","resources","Birds","Nobs","Ninit","Time","Times","Einit")
+  Dat<-list("Yobs","Bird","Plant","Plants","Traitmatch","resources","Birds","Nobs","Ninit","Time","Times")
 
     system.time(sim_detect<-do.call(jags.parallel,list(Dat,InitStage,ParsStage,model.file="Bayesian/NmixturePoissonRagged.jags",n.thin=nt, n.iter=ni,n.burnin=nb,n.chains=nc)))
 ```
