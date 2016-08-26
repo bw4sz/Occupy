@@ -446,7 +446,7 @@ Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
 #Subset if model testing here
-indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
+#indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
 
 #Easiest to work with jags as numeric ordinal values
 indat$Hummingbird<-as.factor(indat$Hummingbird)
@@ -898,7 +898,7 @@ ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=10,width=10)
 ### Abundance Species predictions 
 
 ```{r,fig.height=10,fig.width=11}
-castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha","tauE"),], species +Chain +Model+ Draw~par,value.var="estimate")
+castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
 tcastdf<-dcast(pars_abundance[pars_abundance$par %in% c("tauE"),],  Chain +Model+ Draw~par,value.var="estimate")
 
@@ -1292,7 +1292,11 @@ ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=vari
 ##Generate Networks
 
 ```{r}
-castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha","tauE"),], species +Model+Chain + Draw~par,value.var="estimate")
+castdf<-dcast(parsObs[parsObs$par %in% c("beta1","alpha"),], species +Model+Chain + Draw~par,value.var="estimate")
+
+tcastdf<-dcast(parsObs[parsObs$par %in% c("tauE"),],  Chain +Model+ Draw~par,value.var="estimate")
+
+castdf<-merge(castdf,tcastdf,by=c("Chain","Model","Draw"))
 
 #Turn to 
 castdf$species<-factor(castdf$species,levels=1:max(as.numeric(castdf$species)))
@@ -1305,13 +1309,13 @@ species.traj<-lapply(species.split,function(dat){
   #get data for those species
   billd<-indat[indat$jBird %in% index,]
   
-  d<-data.frame(alpha=dat$alpha,beta1=dat$beta1,tauSigma=dat$tauE)
+  d<-data.frame(alpha=dat$alpha,beta1=dat$beta1,tauSigma=1/sqrt(dat$tauE))
   
   #fit regression for each input estimate
   sampletraj<-list()
   
   for (y in 1:nrow(d)){
-    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch + rnorm(1,0,1/sqrt(d$tauE)))
+    v=exp(d$alpha[y] + d$beta1[y] * billd$Traitmatch + rnorm(1,0,d$tauSigma))
     
     sampletraj[[y]]<-data.frame(x=as.numeric(billd$Traitmatch),y=as.numeric(v),jBird=billd$jBird,jPlant=billd$jPlant,Model=unique(dat$Model))
   }
