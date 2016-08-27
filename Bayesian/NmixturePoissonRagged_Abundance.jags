@@ -60,18 +60,18 @@
     #Group process priors
     
     #Intercept 
-    alpha_mu ~ dnorm(0,0.0001)
+    alpha_mu ~ dnorm(0,0.01)
     alpha_tau ~ dt(0,1,1)I(0,)
     alpha_sigma<-pow(1/alpha_tau,0.5) 
     
     #SLope
-    beta1_mu~dnorm(0,0.0001)
+    beta1_mu~dnorm(0,0.01)
     beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
 
     #Overdispersion
     #Overdispersion
-    tauSigma ~ dunif(0,4)
+    tauSigma ~ dunif(0.01,4)
     tauE <- pow(1/tauSigma,2)
 
     #derived posterior check
