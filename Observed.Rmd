@@ -516,7 +516,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-30000
+runs<-40000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -595,7 +595,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-50000
+runs<-80000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -674,7 +674,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-50000
+runs<-80000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -766,11 +766,25 @@ parsObs<-rbind(pars_detect_traits[pars_detect_traits$par %in% parsk,],pars_dniav
 ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fill=Model)) + geom_histogram(position='identity') + ggtitle("Estimate of parameters") + facet_grid(species~par,scales="free") + theme_bw() 
 ```
 
+### Parameter estimates in the trait and abundance N-mixture.
+
 ```{r,cache=FALSE,fig.width=10,fig.height=5}
 #Detection figure
 
 #N-mixture models
 par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("detect")),trait=pars_detect_traits %>% filter(par %in% c("detect")))
+par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
+par_at<-merge(par_at,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
+
+ggplot(par_at,aes(x=estimate,fill=L1)) + geom_histogram() + ggtitle("Posterior Distribution") + theme_bw() + facet_wrap(~Hummingbird,ncol=5) + xlab("Probability of Detection")
+ggsave("Figures/DetectionProb.jpg",dpi=300,height=7,width=11)
+```
+
+```{r,cache=FALSE,fig.width=12,fig.height=7}
+#Detection figure
+
+#N-mixture models
+par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("tauE")),trait=pars_detect_traits %>% filter(par %in% c("tauE")))
 par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
 par_at<-merge(par_at,jagsIndexBird,by.x="species",by.y="jBird",all.x=T)
 
@@ -818,7 +832,7 @@ tplot
 
 ##Abundance
 
-```{r,eval=F}
+```{r,eval=T}
 castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu","tauE"),], Chain + Draw~par,value.var="estimate")
 
 predy_abundance<-trajF(alpha=castdf$alpha_mu,beta1=castdf$beta1_mu,tauSigma=1/sqrt(castdf$tauE),trait=indat$scaledR)
@@ -833,6 +847,13 @@ ggsave("Figures/AbundanceBothPlot.jpeg",height=4,width=7,dpi=300)
 ## Credible intervals
 
 ### Traits
+
+
+```{r,fig.height=12}
+castdf<-dcast(pars_detect_traits[pars_detect_traits$par %in% c("beta1","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
+
+ggplot(castdf,aes(x=beta1)) + geom_histogram() + facet_wrap(~species,scales="free",ncol=4) + geom_vline(xintercept=0)
+```
 
 ```{r}
 par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("ynew")),trait=pars_detect_traits %>% filter(par %in% c("ynew")))
@@ -947,7 +968,7 @@ ggsave("Figures/SpeciesPredictions_Abundance.jpg",dpi=300,height=10,width=10)
 ```{r,fig.height=12}
 castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha"),], species +Chain +Model+ Draw~par,value.var="estimate")
 
-ggplot(castdf,aes(x=beta1)) + geom_histogram() + facet_wrap(~species,scales="free") + geom_vline(xintercept=0)
+ggplot(castdf,aes(x=beta1)) + geom_histogram() + facet_wrap(~species,scales="free",ncol=4) + geom_vline(xintercept=0)
 ```
 
 #Discrepancy: N-mixture v Poisson GLM
