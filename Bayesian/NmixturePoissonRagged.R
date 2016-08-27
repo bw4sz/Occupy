@@ -71,8 +71,8 @@ cat("
     beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
 
-    #Overdispersion
-    tauSigma ~ dunif(0.01,5)
+    #Overdispersion - can't go too low or log density will wander if into INF
+    tauSigma ~ dunif(0.02,5)
     tauE <- pow(1/tauSigma,2)
 
     #derived posterior check
