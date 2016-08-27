@@ -754,7 +754,9 @@ ggplot(pars_abundance[pars_abundance$par %in% c("beta1_mu","alpha_mu","sigma_alp
 
 ```{r}
 #Bind together the two models
-parsObs<-rbind(pars_detect_traits,pars_dniave)
+parsk<-c("detect","alpha","beta1","tauE","beta1_mu","alpha_mu","sigma_alpha","beta1_sigma","fit","fitnew")
+
+parsObs<-rbind(pars_detect_traits[pars_detect_traits$par %in% parsk,],pars_dniave[pars_dniave$par %in% parsk,])
 ```
 
 ##Posteriors
@@ -766,8 +768,6 @@ ggplot(parsObs[parsObs$par %in% c("detect","alpha","beta1"),],aes(x=estimate,fil
 
 ```{r,cache=FALSE,fig.width=10,fig.height=5}
 #Detection figure
-#trait models
-parsObs<-rbind(pars_detect_traits,pars_dniave)
 
 #N-mixture models
 par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("detect")),trait=pars_detect_traits %>% filter(par %in% c("detect")))
@@ -1222,6 +1222,9 @@ abb<-lapply(abb_matrix,function(r){
 names(abb)<-1:length(abb)
 names(abb_matrix)<-1:length(abb_matrix)
 
+#remove large objects
+rm(bydraw)
+gc()
 ```
 
 ##Compare to observed data
