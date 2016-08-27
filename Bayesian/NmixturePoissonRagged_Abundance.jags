@@ -78,6 +78,5 @@
     fit<-sum(E[]) #Discrepancy for the observed data
     fitnew<-sum(E.new[])
     
-    
     }
     
