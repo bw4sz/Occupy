@@ -123,8 +123,7 @@ N<-array(dim=c(h_species,plant_species,cameras))
 for(x in 1:h_species){
   for (y in 1:plant_species){
     for (z in 1:cameras){
-      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y])
-                         #+ rnorm(1,0,1/sqrt(tauE)))
+      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y] + rnorm(1,0,1/sqrt(tauE)))
   }
   }
 }

@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-26 19:48:05"
+## [1] "Run Completed at 2016-08-27 07:20:28"
 ```
 
 #Simulation   
@@ -37,8 +37,8 @@ gc()
 
 ```
 ##          used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells 496443 26.6     940480 50.3   750400 40.1
-## Vcells 682195  5.3    1308461 10.0   994378  7.6
+## Ncells 509958 27.3     940480 50.3   750400 40.1
+## Vcells 704320  5.4    1308461 10.0  1014801  7.8
 ```
 
 #Simulation Parameters
@@ -108,8 +108,7 @@ N<-array(dim=c(h_species,plant_species,cameras))
 for(x in 1:h_species){
   for (y in 1:plant_species){
     for (z in 1:cameras){
-      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y])
-                         #+ rnorm(1,0,1/sqrt(tauE)))
+      lambda[x,y,z]<-exp(alpha[x] + beta1[x] * traitmatch[x,y] + rnorm(1,0,1/sqrt(tauE)))
   }
   }
 }
@@ -152,7 +151,7 @@ mdat<-merge(mdat,traitmelt,c("Bird","Plant"))
 ggplot(mdat,aes(x=traitmatch,y=Interactions,col=as.factor(Bird))) + geom_point() + geom_smooth(aes(group=1),method="glm",method.args = list(family = "poisson")) + labs(col="Bird") + xlab("Absolute value of Bill Length - Corolla Length ")
 ```
 
-<img src="figure/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-7-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 #Merge resources
@@ -171,7 +170,7 @@ obs.state<-merge(mdat,obs.state,by=c("Bird","Plant","Camera"))
 ggplot(obs.state,aes(x=Interactions,y=Yobs,col=Camera)) + geom_point() + theme_bw() + geom_abline() + coord_equal()
 ```
 
-<img src="figure/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-8-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 # Hierarcichal Nmixture Model
 
@@ -349,14 +348,14 @@ pars_niave$Model<-c("Poisson GLMM")
 ggplot(pars_niave[pars_niave$par %in% c("alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-<img src="figure/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-12-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 
 ```r
 ggplot(pars_niave[pars_niave$par %in% c("beta1_mu","beta1_sigma","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-<img src="figure/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-13-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Posteriors
 
@@ -372,7 +371,7 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='red',linetype='dashed',s
 psim
 ```
 
-<img src="figure/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-14-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/SimulationPosteriorsNoDetect.jpg",dpi=300,height=8,width=8)
@@ -494,7 +493,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [72]     beta1_sigma<-pow(1/beta1_tau,0.5)                                            
 ## [73]                                                                                  
 ## [74]     #Overdispersion                                                              
-## [75]     tauSigma ~ dunif(0,5)                                                        
+## [75]     tauSigma ~ dunif(0.01,5)                                                     
 ## [76]     tauE <- pow(1/tauSigma,2)                                                    
 ## [77]                                                                                  
 ## [78]     #derived posterior check                                                     
@@ -544,7 +543,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##    user  system elapsed 
-##   1.101   0.037 288.874
+##    2.50    0.08 1173.27
 ```
 
 
@@ -569,14 +568,14 @@ pars$Model<-"Nmixture"
 ggplot(pars[pars$par %in% c("detect","alpha","beta1"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + facet_grid(par~species,scale="free") + theme_bw() + labs(col="Chain") + ggtitle("Detection Probability")
 ```
 
-<img src="figure/unnamed-chunk-20-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-20-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 
 ```r
 ggplot(pars[pars$par %in% c("beta1_mu","alpha_sigma","beta1_sigma","tauE"),],aes(x=Draw,y=estimate,col=as.factor(Chain))) + geom_line() + theme_bw() + labs(col="Chain") + ggtitle("Trait-matching regression") + facet_wrap(~par,scales="free")
 ```
 
-<img src="figure/unnamed-chunk-21-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-21-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Posteriors
 
@@ -625,7 +624,7 @@ psim<-p + geom_vline(data=tr,aes(xintercept=value),col='black',linetype='dashed'
 psim
 ```
 
-<img src="figure/unnamed-chunk-24-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-24-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 #ggsave("Figures/SimulationPosteriorsBoth.jpg",dpi=300,height=8,width=8)
@@ -644,7 +643,7 @@ psim2<-p + geom_vline(data=tr,aes(xintercept=value),linetype='dashed',size=1,col
 psim2
 ```
 
-<img src="figure/unnamed-chunk-25-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-25-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 #ggsave("Figures/SimulationHBoth.jpg",dpi=300,height=4,width=10)
@@ -662,7 +661,7 @@ colnames(tr)<-c("species","par","value")
 ggplot(spars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_grid(par~species,scales="free") + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate")
 ```
 
-<img src="figure/unnamed-chunk-26-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-26-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 #Hierarchical posteriors
@@ -674,7 +673,7 @@ colnames(tr)<-c("species","par","value")
 ggplot(hpars,aes(x=Model,ymin=lower,ymax=upper,y=mean,col=Model)) + geom_linerange(size=1.3) + facet_wrap(~par,scales="free",nrow=1) + geom_hline(data=tr,aes(yintercept=value),linetype='dashed',size=1,col="black") + geom_point(aes(y=mean),col='grey50',size=2) + theme_bw() + ylab("Estimate") 
 ```
 
-<img src="figure/unnamed-chunk-26-2.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-26-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 #ggsave("Figures/StripPlots.svg",height=4,width=9)
@@ -689,7 +688,7 @@ castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,
 pairs(castdf[,3:4],main="Correlation in Group-Level Posteriors")
 ```
 
-<img src="figure/unnamed-chunk-27-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-27-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,estimate,Draw,species) %>% filter(par %in% c("alpha","beta1","detect","tauE")) %>% dcast(species+Chain+Draw~par,value.var="estimate")
@@ -697,7 +696,7 @@ castdf<- pars %>% filter(Model =="Nmixture") %>% group_by(Chain) %>% select(par,
 pairs(castdf[,4:7],main="Correlation in Species-Level Posteriors")
 ```
 
-<img src="figure/unnamed-chunk-27-2.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-27-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Predicted Relationship 
 
@@ -721,7 +720,7 @@ tplot<-ggplot(data=pm[,],aes(x=trait)) + geom_ribbon(aes(ymin=lower,ymax=upper,f
 tplot
 ```
 
-<img src="figure/unnamed-chunk-29-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-29-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/SimPredictBoth.jpg",height=5,width=7)
@@ -749,7 +748,7 @@ psim4<-p  + labs(x="Discrepancy of observed data",y="Discrepancy of replicated d
 psim4
 ```
 
-<img src="figure/unnamed-chunk-30-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-30-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/SimulationDisc.jpeg",height=5,width=5)
@@ -785,9 +784,9 @@ gc()
 ```
 
 ```
-##            used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   692651   37    1989908 106.3  3642164 194.6
-## Vcells 39049056  298   67083228 511.9 67082565 511.8
+##            used  (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells   705386  37.7    2487386 132.9  3655006 195.2
+## Vcells 39069935 298.1   73733144 562.6 73686618 562.2
 ```
 
 ```r
@@ -801,8 +800,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   680786  36.4    1989908 106.3  3642164 194.6
-## Vcells 27918104 213.0   67083228 511.9 67082565 511.8
+## Ncells   693521  37.1    2487386 132.9  3655006 195.2
+## Vcells 27938984 213.2   73733144 562.6 73686618 562.2
 ```
 
 ```r
@@ -836,8 +835,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   692713  37.0    1989908 106.3  3642164 194.6
-## Vcells 33656519 256.8   67083228 511.9 67082565 511.8
+## Ncells   705448  37.7    2487386 132.9  3655006 195.2
+## Vcells 33677399 257.0   73733144 562.6 73732686 562.6
 ```
 
 ```r
@@ -851,8 +850,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells   686741  36.7    1989908 106.3  3642164 194.6
-## Vcells 28091056 214.4   67083228 511.9 67082565 511.8
+## Ncells   699476  37.4    2487386 132.9  3655006 195.2
+## Vcells 28111936 214.5   73733144 562.6 73732686 562.6
 ```
 
 ```r
@@ -899,7 +898,7 @@ simdat<-melt(simdat,measure.vars = c("Nmixture","Poisson GLMM"))
 ggplot(simdat,aes(x=True_State,y=value,col=variable),alpha=1) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw() + facet_wrap(~variable)
 ```
 
-<img src="figure/unnamed-chunk-34-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-34-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/PredictedState.jpeg",height=3,width=8)
@@ -907,7 +906,7 @@ ggsave("Figures/PredictedState.jpeg",height=3,width=8)
 ggplot(simdat[simdat$variable %in% c("Nmixture","Poisson GLMM"),],aes(x=True_State,y=value,col=variable)) + geom_point(alpha=.3) + geom_abline() + labs(col="Model") + ylab("Predicted State") + xlab("True State") + theme_bw()
 ```
 
-<img src="figure/unnamed-chunk-34-2.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-34-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/PredictedState_noM.jpeg",height=3,width=8)
@@ -918,7 +917,7 @@ simd$Diff<-simd$Nmixture-simd$`Poisson GLMM`
 ggplot(simd,aes(x=True_State,y=abs(Diff))) + geom_point() + ylab("|Nmixture - Poisson GLMM|") + theme_bw() + labs(x="True State")
 ```
 
-<img src="figure/unnamed-chunk-34-3.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-34-3.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 ggsave("Figures/Difference_Pred.jpeg",height=4,width=6)
@@ -940,7 +939,7 @@ simT<-simdat %>% group_by(variable,traitmatch) %>% summarize(Lower=quantile(valu
 ggplot(simT,aes(x=traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.4) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw()  + geom_point(data=mmat,aes(y=True_State)) + labs(x="Difference in Bill and Corolla Length",y="Total Predicted Visits",fill="Model",col='Model')
 ```
 
-<img src="figure/unnamed-chunk-36-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-36-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 View a couple example data points from across the type of interactions.
 
@@ -952,7 +951,7 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("High Visitation Example")
 ```
 
-<img src="figure/unnamed-chunk-37-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-37-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ```r
 h<-simdat[which.min(simdat$True_State),c("Bird","Plant")]
@@ -961,7 +960,7 @@ d<-simdat[simdat$Bird %in% h$Bird & simdat$Plant %in% h$Plant,]
 ggplot(data=d,aes(x=value,fill=variable))+ geom_histogram(position="identity") + labs(fill="Model") + geom_vline(aes(xintercept=True_State)) + ggtitle("Low Visitation Example")
 ```
 
-<img src="figure/unnamed-chunk-37-2.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-37-2.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Summary of discrepancy of predicted matrices
 
@@ -977,7 +976,7 @@ occ_disc<-sapply(occ,function(x) median(x))
 ggplot() + xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
 ```
 
-<img src="figure/unnamed-chunk-38-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-38-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 ##Comparison of summary statistics
 
@@ -995,8 +994,8 @@ d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=
 ## 
 ##         Model mean_mean mean_sd mean_sum
 ##         (chr)     (dbl)   (dbl)    (dbl)
-## 1    Nmixture      1.16    0.23   115.83
-## 2 Poisson_GLM      2.15    0.33   214.82
+## 1    Nmixture      1.14    0.21   114.29
+## 2 Poisson_GLM      2.06    0.32   205.68
 ```
 
 

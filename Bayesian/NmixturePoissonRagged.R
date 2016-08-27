@@ -72,7 +72,7 @@ cat("
     beta1_sigma<-pow(1/beta1_tau,0.5)
 
     #Overdispersion
-    tauSigma ~ dunif(0,5)
+    tauSigma ~ dunif(0.01,5)
     tauE <- pow(1/tauSigma,2)
 
     #derived posterior check
