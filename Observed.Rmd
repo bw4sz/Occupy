@@ -519,7 +519,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-100
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -598,7 +598,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-100
+runs<-80000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -677,7 +677,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-100
+runs<-80000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
