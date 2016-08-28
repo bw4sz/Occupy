@@ -446,7 +446,7 @@ Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
 #Subset if model testing here
-#indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
+indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
 
 #Easiest to work with jags as numeric ordinal values
 indat$Hummingbird<-as.factor(indat$Hummingbird)
@@ -471,6 +471,9 @@ indat$jID<-as.numeric(as.factor(indat$ID))
 #index resources
 indat$scaledR<-as.numeric(indat$FlowerA)/100
 resourcemat<-indat %>% group_by(jBird,jPlant,jID) %>% summarize(v=max(scaledR))  %>% acast(jBird ~ jPlant ~ jID,value.var='v',fill=0)
+
+#index position
+indat$Index<-1:nrow(indat)
 ```
 
 # Hierarcichal N-mixture Model
@@ -516,7 +519,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-40000
+runs<-100
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -595,7 +598,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-80000
+runs<-100
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -674,7 +677,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-80000
+runs<-100
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -985,6 +988,9 @@ ymax<-round(max(fitstat$fit))
 ab<-data.frame(x=0:ymax,y=0:ymax)
 disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
 disc_obs
+
+fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
+
 ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
 ```
 
@@ -1001,6 +1007,9 @@ ymax<-round(max(fitstat$fit))
 ab<-data.frame(x=0:ymax,y=0:ymax)
 disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
 disc_obs
+
+fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
+
 ggsave("Figures/ATDiscrepancy.jpeg",width = 5,height=10)
 ```
 
@@ -1135,182 +1144,6 @@ m<-max(jTraitmatch)-jTraitmatch
 
 mat<-indat %>% group_by(jBird,jPlant) %>% summarize(n=sum(Yobs))
 true_state<-acast(mat,jBird~jPlant,fill=0)
-```
-
-###Test Statistic
-
-Chisquared statistic is (observed-expected)^2/(expected + 0.5), we add the 0.5 to avoid dividing by 0. For each combination of birds and plants, predicted versus  observed for each data point.
-
-#Compare using true known interactions
-
-## Poisson GLMM
-
-```{r}
-#Discrepancy function
-chisq<-function(o,e){(o-e)^2/(e+0.5)}
-
-N_niave<-pars_dniave[ pars_dniave$par %in% "ynew",]
-
-bydraw<-split(N_niave,list(N_niave$Chain,N_niave$Draw))
-
-#remove large N matrix
-rm(pars_dniave,N_niave)
-gc()
-
-occ_nodetect_matrix<-lapply(bydraw,function(x){
-  r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
-})
-
-#calculate discrep on those deviates
-occ_nodetect<-lapply(occ_nodetect_matrix,function(r){
-    #for each position what is the chisq
-  rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
-  colnames(rmerge)<-colnames(true_state)
-  rownames(rmerge)<-rownames(true_state)
-  for (x in 1:nrow(r)){
-    for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
-      }
-    }
-  return(rmerge)
-})
-
-names(occ_nodetect)<-1:length(occ_nodetect)
-names(occ_nodetect_matrix)<-1:length(occ_nodetect_matrix)
-```
-
-##With Detection
-
-```{r}
-N<-pars_detect_traits[pars_detect_traits$par %in% "ynew",]
-bydraw<-split(N,list(N$Chain,N$Draw))
-
-#remove large N matrix
-rm(N)
-gc()
-
-occ_matrix<-lapply(bydraw,function(x){
-  r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
-  })
-
-#calculate discrep for those aggregated matrices
-occ<-lapply(occ_matrix,function(r){
-    #for each position what is the chisq
-  rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
-  colnames(rmerge)<-colnames(true_state)
-  rownames(rmerge)<-rownames(true_state)
-  for (x in 1:nrow(r)){
-    for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
-      }
-  }
-  return(rmerge)
-})
-
-names(occ)<-1:length(occ)
-names(occ_matrix)<-1:length(occ_matrix)
-
-```
-
-##Abundance
-
-```{r}
-N<- pars_abundance[pars_abundance$par %in% "ynew",]
-bydraw<-split(N,list(N$Chain,N$Draw))
-
-#remove large N matrix
-rm(N)
-gc()
-
-abb_matrix<-lapply(bydraw,function(x){
-  r<-acast(x,species ~ plant,value.var = "estimate",fun.aggregate = sum)
-  })
-
-#calculate discrep for those aggregated matrices
-abb<-lapply(abb_matrix,function(r){
-    #for each position what is the chisq
-  rmerge<-matrix(nrow = nrow(true_state),ncol=ncol(true_state))
-  colnames(rmerge)<-colnames(true_state)
-  rownames(rmerge)<-rownames(true_state)
-  for (x in 1:nrow(r)){
-    for (y in 1:ncol(r)){
-     rmerge[x,y]<-chisq(o=r[x,y],e=true_state[x,y])
-      }
-  }
-  return(rmerge)
-})
-
-names(abb)<-1:length(abb)
-names(abb_matrix)<-1:length(abb_matrix)
-
-#remove large objects
-rm(bydraw)
-gc()
-```
-
-##Compare to observed data
-
-```{r,fig.width=12}
-mmat<-melt(true_state)
-colnames(mmat)<-c("Bird","Plant","True_State")
-
-#append to predicted matrices
-
-#Nmixture with detection
-mocc<-melt(occ_matrix)
-colnames(mocc)<-c("Bird","Plant","N-mixture","Iteration")
-simdat<-merge(mocc,mmat,by=c("Bird","Plant"))
-
-#Nmixture with nodetection
-moccd<-melt(occ_nodetect_matrix)
-colnames(moccd)<-c("Bird","Plant","Poisson GLMM","Iteration")
-
-simdat<-merge(simdat,moccd,by=c("Bird","Plant","Iteration"))
-
-simdat<-melt(simdat,measure.vars = c("N-mixture","Poisson GLMM"))
-
-ggplot(simdat[,],aes(x=True_State,y=value,col=variable)) + geom_point() + geom_abline() + labs(col="Model") + ylab("Predicted Daily Visitation Rate") + xlab("Observed Daily Visitation Rate") + theme_bw() 
-ggsave("Figures/DailyDiscrepancy.jpeg",height=4,width=6)
-```
-
-##Summary of discrepancy of predicted matrices
-
-```{r}
-#Nmixture without detection
-occno_disc<-sapply(occ_nodetect,function(x) mean(x))
-
-#Nmixture with detection
-occ_disc<-sapply(occ,function(x) mean(x))
-
-#compared to bayesian
-ggplot() + xlab("Chi-squared Discrepancy") + geom_histogram(data=data.frame(occ_disc),aes(x=occ_disc),fill="red",alpha=.6) + theme_bw() +geom_vline(aes(xintercept=mean(occ_disc)),linetype="dashed",col="red") + geom_histogram(data=data.frame(occno_disc),aes(x=occno_disc),fill="orange",alpha=.6) + geom_vline(aes(xintercept=mean(occno_disc)),linetype="dashed",col="orange")
-```
-
-##Comparison of summary statistics for all three approaches
-
-```{r}
-d<-list(Nmixture=occ,Poisson_GLM=occ_nodetect,Abundance=abb)
-d<-melt(d)
-colnames(d)<-c("Bird","Plant","value","Iteration","Model")
-
-d %>% group_by(Model,Iteration) %>% summarize(mean=mean(value),sd=sd(value),sum=sum(value)) %>% group_by(Model) %>% summarize(mean_mean=round(mean(mean),2),mean_sd=round(sd(mean),2),mean_sum=round(mean(sum),2))
-```
-
-Merge with morphological data.
-
-```{r}
-jT<-indat %>% group_by(Bird=jBird,Plant=jPlant) %>% summarize(Traitmatch=unique(Traitmatch))
-simdat<-merge(simdat,jT,by=c("Bird","Plant"))
-
-mmat<-merge(mmat,jT,by=c("Bird","Plant"))
-```
-
-#Predicted total number of visits based on morphology
-
-```{r}
-simT<-simdat %>% group_by(variable,Traitmatch) %>% summarize(Lower=quantile(value,0.05),Upper=quantile(value,0.95),y=mean(value))
-
-ggplot(simT,aes(x=Traitmatch)) + geom_ribbon(aes(ymin=Lower,ymax=Upper,fill=variable),alpha=0.6) + geom_line(aes(y=y,col=variable),linetype='dashed') + theme_bw() + facet_wrap(~variable,nrow=3) + geom_point(data=mmat,aes(y=True_State))
 ```
 
 ##Generate Networks
