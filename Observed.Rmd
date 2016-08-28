@@ -519,7 +519,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-40000
+runs<-60000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -598,7 +598,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-50000
+runs<-60000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -677,7 +677,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-50000
+runs<-60000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -1022,8 +1022,10 @@ ynewstat<-dcast(par_at,...~L1,value.var="estimate")
 ggplot(ynewstat,aes(x=trait,y=Abundance)) + geom_point() + geom_abline() + labs(x="Traits",y="Abundance") + ggtitle("Predicted Counts") + theme_bw()
 
 #By species
-ynewstat$Hummingbird<-indat[ynewstat$Index,"Hummingbird"]
-ggplot(ynewstat,aes(x=`ynew_N-mixture`,y=ynew_Abundance)) + geom_point() + geom_abline() + labs(x="Traits",y="Abundance") + ggtitle("Predicted Counts") + theme_bw() + facet_wrap(~Hummingbird,scales="free") + coord_fixed()
+ynewstat<-merge(ynewstat,jagsIndexBird,by.x="species",by.y="jBird")
+ynewstat<-merge(ynewstat,jagsIndexPlants,by.x="plant",by.y="jPlant")
+
+ggplot(ynewstat,aes(x=trait,y=Abundance)) + geom_point() + geom_abline() + labs(x="Traits",y="Abundance") + ggtitle("Predicted Counts") + theme_bw() + facet_wrap(~Hummingbird,scales="free") + coord_fixed()
 
 ```
 
