@@ -480,11 +480,10 @@ label: unnamed-chunk-55 (with options)
 List of 1
  $ eval: symbol T
 
-Quitting from lines 1017-1026 (Observed.Rmd) 
-Error in eval(expr, envir, enclos) : object 'ynew_N-mixture' not found
-Calls: <Anonymous> ... by_layer -> f -> <Anonymous> -> f -> lapply -> FUN -> eval
+Quitting from lines 1017-1028 (Observed.Rmd) 
+Error in `$<-.data.frame`(`*tmp*`, "Hummingbird", value = integer(0)) : 
+  replacement has 0 rows, data has 592
+Calls: <Anonymous> ... withVisible -> eval -> eval -> $<- -> $<-.data.frame
 In addition: There were 19 warnings (use warnings() to see them)
 
 Execution halted
-Warning message:
-system call failed: Cannot allocate memory 
