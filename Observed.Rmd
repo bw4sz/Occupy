@@ -446,7 +446,7 @@ Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
 #Subset if model testing here
-indat<-indat[indat$Hummingbird %in% c("White-whiskered Hermit","Brown Inca"),]
+#indat<-indat[indat$Hummingbird %in% c("White-whiskered Hermit","Brown Inca"),]
 
 #Easiest to work with jags as numeric ordinal values
 indat$Hummingbird<-as.factor(indat$Hummingbird)
