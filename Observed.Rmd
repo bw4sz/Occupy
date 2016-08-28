@@ -1014,10 +1014,12 @@ ggsave("Figures/ATDiscrepancy.jpeg",width = 5,height=10)
 ### Correlation in prediction
 
 ```{r,eval=T}
-par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("ynew")),trait=pars_detect_traits %>% filter(par %in% c("ynew")))
-par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
-ynewstat<-dcast(par_at,Index+Draw+Chain~par+Model,value.var="estimate")
-ggplot(ynewstat,aes(x=`ynew_N-mixture`,y=ynew_Abundance)) + geom_point() + geom_abline() + labs(x="Traits",y="Abundance") + ggtitle("Predicted Counts") + theme_bw()
+par_at<-list(Abundance=pars_abundance %>% filter(par %in% c("ynew")) %>% group_by(species,plant) %>% summarize(estimate=mean(estimate)) ,trait=pars_detect_traits %>% filter(par %in% c("ynew")) %>% group_by(species,plant) %>% summarize(estimate=mean(estimate)))
+par_at<-melt(par_at,id.vars=c("species","plant","estimate"))
+ynewstat<-dcast(par_at,...~L1,value.var="estimate")
+
+#plot
+ggplot(ynewstat,aes(x=trait,y=Abundance)) + geom_point() + geom_abline() + labs(x="Traits",y="Abundance") + ggtitle("Predicted Counts") + theme_bw()
 
 #By species
 ynewstat$Hummingbird<-indat[ynewstat$Index,"Hummingbird"]
