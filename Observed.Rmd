@@ -446,7 +446,7 @@ Jags needs a vector of input species 1:n with no breaks.
 
 ```{r}
 #Subset if model testing here
-indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
+#indat<-indat[indat$Hummingbird %in% c("Tawny-bellied Hermit","White-whiskered Hermit","Brown Inca"),]
 
 #Easiest to work with jags as numeric ordinal values
 indat$Hummingbird<-as.factor(indat$Hummingbird)
@@ -519,7 +519,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 # Poisson GLMM
 
 ```{r,eval=T}
-runs<-50000
+runs<-60000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -598,7 +598,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-80000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -677,7 +677,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-80000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -983,10 +983,9 @@ Better fitting models are smaller values and closer to the 1:1 line. A perfect m
 fitstat<-parsObs[parsObs$par %in% c("fit","fitnew"),]
 fitstat<-dcast(fitstat,Model+Draw+Chain~par,value.var="estimate")
 
-ymin<-round(min(fitstat$fit))
-ymax<-round(max(fitstat$fit))
-ab<-data.frame(x=0:ymax,y=0:ymax)
-disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
+ymin<-min(c(fitstat$fit,fitstat$fitnew)) - min(c(fitstat$fit,fitstat$fitnew)) * .2
+ymax<-max(c(fitstat$fit,fitstat$fitnew)) + max(c(fitstat$fit,fitstat$fitnew)) * .2
+disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_abline() + coord_fixed() + ylim(ymin=ymin,ymax=ymax) + xlim(xmin=ymin,xmax=ymax)
 disc_obs
 
 fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
@@ -1002,10 +1001,9 @@ par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
 
 fitstat<-dcast(par_at,Model+Draw+Chain~par,value.var="estimate")
 
-ymin<-round(min(fitstat$fit))
-ymax<-round(max(fitstat$fit))
-ab<-data.frame(x=0:ymax,y=0:ymax)
-disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_line(data=ab,aes(x=x,y=y)) + coord_fixed() + ylim(ymin=0,ymax=max(max(c(fitstat$fit,fitstat$fitnew)))) + xlim(xmin=0,xmax=max(max(c(fitstat$fit,fitstat$fitnew))))
+ymin<-min(c(fitstat$fit,fitstat$fitnew)) - min(c(fitstat$fit,fitstat$fitnew)) * .2
+ymax<-max(c(fitstat$fit,fitstat$fitnew)) + max(c(fitstat$fit,fitstat$fitnew)) * .2
+disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_abline() + coord_fixed() + ylim(ymin=ymin,ymax=ymax) + xlim(xmin=ymin,xmax=ymax)
 disc_obs
 
 fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
@@ -1050,11 +1048,16 @@ ggplot(dmat,aes(x=Iplant_Double,y=E,col=L1)) + geom_point(size=4) + coord_flip()
 
 ### By Interaction
 
-```{r}
+```{r,fig.height=12}
 dmat<-par_at %>% group_by(species,plant,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexPlants,by.x="plant",by.y="jPlant")
 dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
-ggplot(dmat,aes(x=Iplant_Double,y=Hummingbird,fill=E)) + geom_tile(size=4) + scale_fill_continuous("Discrepancy",low='blue',high='red') + facet_wrap(~L1,nrow=2) + theme_bw()
+ggplot(dmat,aes(x=Iplant_Double,y=Hummingbird,fill=E)) + geom_tile(size=4) + scale_fill_continuous("Discrepancy",low='blue',high='red') + facet_wrap(~L1,nrow=2) + theme_bw() + theme(axis.text.x=element_text(angle=-90))
+```
+
+### Worst twenty fits.
+
+```{r}
 print("Worst 20")
 head(dmat %>% arrange(desc(E),L1),20)
 ```
