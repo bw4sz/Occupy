@@ -59,7 +59,7 @@ cat("
     
     #Overdispersion
     #Overdispersion
-    tauSigma ~ dunif(0,4)
+    tauSigma ~ dunif(0,1)
     tauE <- pow(1/tauSigma,2)
 
     #derived posterior check
