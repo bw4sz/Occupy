@@ -1,0 +1,17 @@
+{
+    "contents" : "\nsink(\"Bayesian/NmixturePoissonRagged.jags\")\n\ncat(\"\n    model {\n    #Compute intensity for each pair of birds and plants\n    for (i in 1:Birds){\n    for (j in 1:Plants){\n    for (k in 1:Times){\n    \n    #Process Model with log normal overdispersion\n    #mean intensity\n    \n    #log transformed variance\n    log(lambda[i,j,k]) <- alpha[i] + beta1[i] * Traitmatch[i,j] +  epsilon[i,j,k]\n    epsilon[i,j,k] ~ dnorm(0,tauE)\n\n    #For each Time - there is a latent count, log transformed intensity\n    N[i,j,k] ~ dpois(lambda[i,j,k])\n    }\n    }\n    }\n    \n    #Observed counts for each day of sampling at that Time\n    for (x in 1:Nobs){\n    \n    #Observation Process\n    Yobs[x] ~ dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])    \n    \n    #Assess Model Fit\n    \n    #Fit discrepancy statistics\n    eval[x]<-detect[Bird[x]]*N[Bird[x],Plant[x],Time[x]]\n    E[x]<-pow((Yobs[x]-eval[x]),2)/(eval[x]+0.5)\n    \n    ynew[x]~dbin(detect[Bird[x]],N[Bird[x],Plant[x],Time[x]])\n    E.new[x]<-pow((ynew[x]-eval[x]),2)/(eval[x]+0.5)\n    \n    }\n    \n    ###Priors###\n    #Observation model\n    #Detect priors, logit transformed - Following lunn 2012 p85\n    \n    for(x in 1:Birds){\n    #For Cameras\n    logit(detect[x])<-dcam[x]\n    dcam[x]~dnorm(omega,omega_tau)\n    }\n    \n    #Process Model\n    #Species level priors\n    for (i in 1:Birds){\n    \n    #Intercept\n    alpha[i] ~ dnorm(alpha_mu,alpha_tau)\n\n    #Traits slope \n    beta1[i] ~ dnorm(beta1_mu,beta1_tau)    \n}\n    \n    #Group Detection Prior\n    omega ~ dnorm(0,0.386)\n    omega_tau ~ dt(0,1,1)I(0,)\n\n    #Group process priors\n    \n    #Intercept \n    alpha_mu ~ dnorm(0,0.01)\n    alpha_tau ~ dt(0,1,1)I(0,)\n    alpha_sigma<-pow(1/alpha_tau,0.5) \n    \n    #Trait\n    beta1_mu~dnorm(0,0.01)\n    beta1_tau ~ dt(0,1,1)I(0,)\n    beta1_sigma<-pow(1/beta1_tau,0.5)\n\n    #Overdispersion - can't go too low or log density will wander if into INF\n    tauSigma ~ dunif(0,0.5)\n    tauE <- pow(1/tauSigma,2)\n\n    #derived posterior check\n    fit<-sum(E[]) #Discrepancy for the observed data\n    fitnew<-sum(E.new[])\n    \n    \n    }\n    \",fill=TRUE)\n\nsink()\n",
+    "created" : 1472396263815.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "878793912",
+    "id" : "6461BE57",
+    "lastKnownWriteTime" : 1472485280,
+    "path" : "~/Occupy/Bayesian/NmixturePoissonRagged.R",
+    "project_path" : "Bayesian/NmixturePoissonRagged.R",
+    "properties" : {
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

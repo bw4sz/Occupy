@@ -1,0 +1,18 @@
+{
+    "contents" : "l1<-rnorm(1e5,5,1/sqrt(10))\nl2<-5 + rnorm(1e5,0,1/sqrt(10))\nl3<-rlnorm(1e5,log(5),1/sqrt(10),log=T)\n\na1<-rpois(1e5,log(l1))\na2<-rpois(1e5,log(l2))\na3<-rpois(1e5,l3)\n\nhist(a1)\nhist(a2,col='red',add=T)\nhist(a3,col='green',add=T)\n\n",
+    "created" : 1471390379523.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "3237847177",
+    "id" : "4DC77AC0",
+    "lastKnownWriteTime" : 7011605692497750387,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
