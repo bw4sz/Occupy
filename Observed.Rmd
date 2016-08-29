@@ -598,7 +598,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-60000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -677,7 +677,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-60000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -732,7 +732,7 @@ rm(abundance)
 gc()
 
 #name
-pars_abundance$Model<-"N-mixture Abundance"
+pars_abundance$Model<-"N-mixture: Plant Abundance"
 #write.csv(pars_abundance,"OutData/Abundance.csv")
 ```
 
