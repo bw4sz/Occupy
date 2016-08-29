@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-29 00:23:46"
+## [1] "Run Completed at 2016-08-29 04:53:28"
 ```
 
 
@@ -88,7 +88,7 @@ missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
-#dath<-dath[!dath$Pierce %in% c("y","Y"),]
+dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
 ##Match Species to Morphology
@@ -204,7 +204,7 @@ paste("Removing ",length(which(datph$Timediff<5))," observations, not enough tim
 ```
 
 ```
-## [1] "Removing 17 observations, not enough time since last observation of the same species"
+## [1] "Removing 11 observations, not enough time since last observation of the same species"
 ```
 
 ```r
@@ -647,7 +647,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    4.456    0.119 1440.443
+##    4.445    0.139 1289.668
 ```
 
 
@@ -668,9 +668,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
-## Ncells  1677869  89.7    5295264 282.8   7433046 397.0
-## Vcells 32811525 250.4   96467134 736.0 120173964 916.9
+##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
+## Ncells  1672914  89.4    6619081 353.5   7087197  378.5
+## Vcells 31261030 238.6  107439895 819.8 133868054 1021.4
 ```
 
 ```r
@@ -707,7 +707,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 
 
 ```r
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -839,7 +839,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    7.719    0.111 4145.066
+##    6.777    0.109 6917.857
 ```
 
 
@@ -862,8 +862,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  1688113  90.2    8623340  460.6  13167332  703.3
-## Vcells 79996597 610.4  240862913 1837.7 240366528 1833.9
+## Ncells  1682874  89.9    8623340  460.6  12480725  666.6
+## Vcells 75893826 579.1  209732584 1600.2 262116915 1999.8
 ```
 
 ```r
@@ -899,7 +899,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 
 
 ```r
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -1033,7 +1033,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 
 ```
 ##     user   system  elapsed 
-##    7.524    0.179 4111.144
+##    6.793    0.187 7099.924
 ```
 
 
@@ -1055,8 +1055,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1688711  90.2   11615843  620.4  13178403  703.9
-## Vcells 128779888 982.6  347018594 2647.6 344863145 2631.1
+## Ncells   1683472  90.0    9292674  496.3  12480725  666.6
+## Vcells 121779749 929.2  302388296 2307.1 301347104 2299.1
 ```
 
 ```r
@@ -1298,7 +1298,7 @@ ggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs
 <img src="figureObserved/unnamed-chunk-50-1.png" style="display: block; margin: auto;" />
 
 ```r
-ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=10,width=10)
+ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=9,width=11)
 ```
 
 ### Abundance Species predictions 
@@ -1389,10 +1389,10 @@ fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
 ```
 ## Source: local data frame [2 x 3]
 ## 
-##               Model mean(fit)  sum(fit)
-##               (chr)     (dbl)     (dbl)
-## 1 N-mixture: Traits  806.8132  484087.9
-## 2      Poisson GLMM 2022.1472 1213288.3
+##               Model mean(fit) sum(fit)
+##               (chr)     (dbl)    (dbl)
+## 1 N-mixture: Traits  726.5583   435935
+## 2      Poisson GLMM 1864.8440  1118906
 ```
 
 ```r
@@ -1425,8 +1425,8 @@ fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
 ## 
 ##                        Model mean(fit) sum(fit)
 ##                        (chr)     (dbl)    (dbl)
-## 1 N-mixture: Plant Abundance  835.6524 501391.4
-## 2          N-mixture: Traits  806.8132 484087.9
+## 1 N-mixture: Plant Abundance  713.4866 428091.9
+## 2          N-mixture: Traits  726.5583 435935.0
 ```
 
 ```r
@@ -1463,15 +1463,19 @@ ggplot(ynewstat,aes(x=trait,y=Abundance)) + geom_point() + geom_abline() + labs(
 
 
 ```r
-par_at<-list(Abundance=pars_abundance %>% filter(par=="E"),trait=pars_detect_traits %>% filter(par=="E"))
+par_at<-list(Abundance=pars_abundance %>% filter(par=="E"),Trait=pars_detect_traits %>% filter(par=="E"))
 par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
 dmat<-par_at %>% group_by(species,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
 
-ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() + labs(color="Model")
+ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() + labs(color="Model",x="Average Discrepancy")
 ```
 
 <img src="figureObserved/unnamed-chunk-56-1.png" style="display: block; margin: auto;" />
+
+```r
+ggsave("Figures/AverageBird.jpeg",dpi=600,height=7,width=6)
+```
 
 ###By plant
 
@@ -1479,10 +1483,14 @@ ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() +
 ```r
 dmat<-par_at %>% group_by(plant,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexPlants,by.x="plant",by.y="jPlant")
-ggplot(dmat,aes(x=Iplant_Double,y=E,col=L1)) + geom_point(size=4) + coord_flip()
+ggplot(dmat,aes(x=Iplant_Double,y=E,col=L1)) + geom_point(size=4) + coord_flip()+ labs(color="Model",x="Average Discrepancy")
 ```
 
 <img src="figureObserved/unnamed-chunk-57-1.png" style="display: block; margin: auto;" />
+
+```r
+ggsave("Figures/AveragePlant.jpeg",dpi=600,height=9,width=6)
+```
 
 ### By Interaction
 
@@ -1513,46 +1521,46 @@ head(dmat %>% arrange(desc(E),L1),20)
 
 ```
 ##    species plant        L1        E             Iplant_Double
-## 1       18    22     trait 2.883669      Heliconia griggsiana
-## 2       18    22 Abundance 2.591516      Heliconia griggsiana
-## 3       19    24     trait 2.043595      Heliconia virginalis
-## 4        4    28 Abundance 1.962403        Meriania tomentosa
-## 5        2    32 Abundance 1.769246        Palicourea demissa
-## 6       19    24 Abundance 1.767808      Heliconia virginalis
-## 7        3     4     trait 1.756328           Bomarea pardina
-## 8        4    28     trait 1.731499        Meriania tomentosa
-## 9        7     4     trait 1.652495           Bomarea pardina
-## 10       2    30 Abundance 1.639263          Norantea anomala
-## 11      19    13     trait 1.527020        Drymonia teuscheri
-## 12      11    36 Abundance 1.497166         Psammisia sodiroi
-## 13       3    29 Abundance 1.487746 Mezobromelia capituligera
-## 14       3    29     trait 1.457031 Mezobromelia capituligera
-## 15       7     4 Abundance 1.432131           Bomarea pardina
-## 16       3    23     trait 1.325336        Heliconia impudica
-## 17       5    34 Abundance 1.289619        Pitcairnia sodiroi
-## 18      19    13 Abundance 1.273082        Drymonia teuscheri
-## 19      12    30 Abundance 1.227109          Norantea anomala
-## 20       2    32     trait 1.204794        Palicourea demissa
+## 1       18    22     Trait 3.272620      Heliconia griggsiana
+## 2       18    22 Abundance 3.171770      Heliconia griggsiana
+## 3        4    28 Abundance 2.801942        Meriania tomentosa
+## 4        7     4     Trait 2.100812           Bomarea pardina
+## 5       12    30     Trait 2.059833          Norantea anomala
+## 6       17    34     Trait 1.852475        Pitcairnia sodiroi
+## 7       19    24     Trait 1.780109      Heliconia virginalis
+## 8        4    28     Trait 1.739044        Meriania tomentosa
+## 9       19    24 Abundance 1.711121      Heliconia virginalis
+## 10       2    32 Abundance 1.681643        Palicourea demissa
+## 11       2    30 Abundance 1.544079          Norantea anomala
+## 12       3    29 Abundance 1.381924 Mezobromelia capituligera
+## 13      19    13     Trait 1.358679        Drymonia teuscheri
+## 14       7     4 Abundance 1.351728           Bomarea pardina
+## 15       3     4     Trait 1.291173           Bomarea pardina
+## 16      19    13 Abundance 1.255070        Drymonia teuscheri
+## 17      17    29     Trait 1.206553 Mezobromelia capituligera
+## 18      12    30 Abundance 1.185804          Norantea anomala
+## 19       3    29     Trait 1.180037 Mezobromelia capituligera
+## 20       2    32     Trait 1.158166        Palicourea demissa
 ##                 Hummingbird
 ## 1  Wedge-billed Hummingbird
 ## 2  Wedge-billed Hummingbird
-## 3    White-whiskered Hermit
-## 4       Buff-tailed Coronet
-## 5        Booted Racket-tail
-## 6    White-whiskered Hermit
-## 7                Brown Inca
+## 3       Buff-tailed Coronet
+## 4   Fawn-breasted Brilliant
+## 5    Purple-bibbed Whitetip
+## 6       Violet-tailed Sylph
+## 7    White-whiskered Hermit
 ## 8       Buff-tailed Coronet
-## 9   Fawn-breasted Brilliant
+## 9    White-whiskered Hermit
 ## 10       Booted Racket-tail
-## 11   White-whiskered Hermit
-## 12            Hoary Puffleg
-## 13               Brown Inca
-## 14               Brown Inca
-## 15  Fawn-breasted Brilliant
-## 16               Brown Inca
-## 17            Collared Inca
-## 18   White-whiskered Hermit
-## 19   Purple-bibbed Whitetip
+## 11       Booted Racket-tail
+## 12               Brown Inca
+## 13   White-whiskered Hermit
+## 14  Fawn-breasted Brilliant
+## 15               Brown Inca
+## 16   White-whiskered Hermit
+## 17      Violet-tailed Sylph
+## 18   Purple-bibbed Whitetip
+## 19               Brown Inca
 ## 20       Booted Racket-tail
 ```
 
@@ -1578,25 +1586,25 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                  Hummingbird mean lower upper
-## 1             Andean Emerald 49.1  16.8  82.2
-## 2         Booted Racket-tail 23.2  10.2  39.4
-## 3                 Brown Inca 35.0  14.6  60.4
-## 4        Buff-tailed Coronet 37.3  12.7  65.7
-## 5              Collared Inca 53.1  24.5  78.4
-## 6          Crowned Woodnymph 24.2   8.9  45.4
-## 7    Fawn-breasted Brilliant 37.9   5.5  87.3
-## 8          Gorgeted Sunangel 79.9  63.5  92.6
-## 9    Green-crowned Brilliant 20.5   2.1  72.6
-## 10   Green-fronted Lancebill 40.4  14.5  67.6
-## 11             Hoary Puffleg 47.0  15.5  85.7
-## 12    Purple-bibbed Whitetip 42.5   9.1  78.1
-## 13 Rufous-tailed Hummingbird 28.3   2.0  92.2
-## 14      Speckled Hummingbird 67.1  27.4  93.8
-## 15    Stripe-throated Hermit 20.7   9.2  36.4
-## 16      Tawny-bellied Hermit 39.9  24.2  55.7
-## 17       Violet-tailed Sylph 42.6  23.5  58.6
-## 18  Wedge-billed Hummingbird 10.9   1.9  34.8
-## 19    White-whiskered Hermit 19.3   8.3  34.9
+## 1             Andean Emerald 47.0  14.3  79.6
+## 2         Booted Racket-tail 24.9  10.1  39.4
+## 3                 Brown Inca 40.1  25.0  58.5
+## 4        Buff-tailed Coronet 34.3  14.0  61.3
+## 5              Collared Inca 50.0  16.6  81.8
+## 6          Crowned Woodnymph 31.6  16.4  55.9
+## 7    Fawn-breasted Brilliant 29.2   4.7  83.6
+## 8          Gorgeted Sunangel 79.6  59.4  91.9
+## 9    Green-crowned Brilliant 11.4   2.4  39.6
+## 10   Green-fronted Lancebill 43.6  24.5  65.7
+## 11             Hoary Puffleg 34.3   5.4  82.0
+## 12    Purple-bibbed Whitetip 27.9   6.9  68.2
+## 13 Rufous-tailed Hummingbird 20.3   0.4  83.0
+## 14      Speckled Hummingbird 67.7  34.7  94.4
+## 15    Stripe-throated Hermit 37.0  19.5  57.7
+## 16      Tawny-bellied Hermit 36.2  20.1  50.4
+## 17       Violet-tailed Sylph 37.2  12.6  56.8
+## 18  Wedge-billed Hummingbird 13.8   2.8  47.9
+## 19    White-whiskered Hermit 23.4   8.5  42.2
 ```
 
 ```r
@@ -1804,8 +1812,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1785302   95.4    5947311  317.7  13178403  703.9
-## Vcells 215329514 1642.9  347018594 2647.6 347018594 2647.6
+## Ncells   1780135   95.1    5947311  317.7  12480725  666.6
+## Vcells 203215842 1550.5  362945955 2769.1 362941021 2769.1
 ```
 
 ```r
