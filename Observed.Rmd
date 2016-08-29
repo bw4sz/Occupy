@@ -1039,7 +1039,7 @@ par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
 dmat<-par_at %>% group_by(species,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
 
-ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() + labs(color="Model",x="Average Discrepancy")
+ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() + labs(color="N-mixture Model",y="Average Discrepancy")
 
 ggsave("Figures/AverageBird.jpeg",dpi=600,height=7,width=6)
 
@@ -1051,7 +1051,7 @@ ggsave("Figures/AverageBird.jpeg",dpi=600,height=7,width=6)
 ```{r}
 dmat<-par_at %>% group_by(plant,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexPlants,by.x="plant",by.y="jPlant")
-ggplot(dmat,aes(x=Iplant_Double,y=E,col=L1)) + geom_point(size=4) + coord_flip()+ labs(color="Model",x="Average Discrepancy")
+ggplot(dmat,aes(x=Iplant_Double,y=E,col=L1)) + geom_point(size=4) + coord_flip()+ labs(color="Model",y="Average Discrepancy")
 ggsave("Figures/AveragePlant.jpeg",dpi=600,height=9,width=6)
 
 ```
