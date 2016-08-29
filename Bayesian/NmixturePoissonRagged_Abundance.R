@@ -45,7 +45,7 @@ cat("
     for(x in 1:Birds){
     #For Cameras
     logit(detect[x])<-dcam[x]
-    dcam[x]~dnorm(0,0.386)
+    dcam[x]~dnorm(omega,omega_tau)
     }
     
 
@@ -60,6 +60,10 @@ cat("
     beta1[i] ~ dnorm(beta1_mu,beta1_tau)    
     }
     
+    #Group Detection Prior
+    omega<-dnorm(0,0.386)
+    omega_tau ~ dt(0,1,1)I(0,)
+
     #Group process priors
     
     #Intercept 
@@ -72,7 +76,6 @@ cat("
     beta1_tau ~ dt(0,1,1)I(0,)
     beta1_sigma<-pow(1/beta1_tau,0.5)
 
-    #Overdispersion
     #Overdispersion
     tauSigma ~ dunif(0,0.5)
     tauE <- pow(1/tauSigma,2)
