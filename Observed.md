@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-29 04:53:28"
+## [1] "Run Completed at 2016-08-29 15:45:42"
 ```
 
 
@@ -88,7 +88,7 @@ missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
-dath<-dath[!dath$Pierce %in% c("y","Y"),]
+#dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
 ##Match Species to Morphology
@@ -204,7 +204,7 @@ paste("Removing ",length(which(datph$Timediff<5))," observations, not enough tim
 ```
 
 ```
-## [1] "Removing 11 observations, not enough time since last observation of the same species"
+## [1] "Removing 17 observations, not enough time since last observation of the same species"
 ```
 
 ```r
@@ -527,7 +527,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 
 ```r
-runs<-60000
+runs<-50000
 
 #Source model
 source("Bayesian/NoDetectNmixturePoissonRagged.R")
@@ -647,7 +647,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    4.445    0.139 1289.668
+##    5.097    0.207 1210.048
 ```
 
 
@@ -668,9 +668,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
-## Ncells  1672914  89.4    6619081 353.5   7087197  378.5
-## Vcells 31261030 238.6  107439895 819.8 133868054 1021.4
+##            used  (Mb) gc trigger  (Mb)  max used  (Mb)
+## Ncells  1677871  89.7    5295264 282.8   7433048 397.0
+## Vcells 32811567 250.4   96467192 736.0 120174006 916.9
 ```
 
 ```r
@@ -707,7 +707,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 
 
 ```r
-runs<-200000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -764,7 +764,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [45]     for(x in 1:Birds){                                                           
 ## [46]     #For Cameras                                                                 
 ## [47]     logit(detect[x])<-dcam[x]                                                    
-## [48]     dcam[x]~dnorm(0,0.386)                                                       
+## [48]     dcam[x]~dnorm(omega,omega_tau)                                               
 ## [49]     }                                                                            
 ## [50]                                                                                  
 ## [51]     #Process Model                                                               
@@ -778,31 +778,35 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 ## [59]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                                         
 ## [60] }                                                                                
 ## [61]                                                                                  
-## [62]     #Group process priors                                                        
-## [63]                                                                                  
-## [64]     #Intercept                                                                   
-## [65]     alpha_mu ~ dnorm(0,0.01)                                                     
-## [66]     alpha_tau ~ dt(0,1,1)I(0,)                                                   
-## [67]     alpha_sigma<-pow(1/alpha_tau,0.5)                                            
-## [68]                                                                                  
-## [69]     #Trait                                                                       
-## [70]     beta1_mu~dnorm(0,0.01)                                                       
-## [71]     beta1_tau ~ dt(0,1,1)I(0,)                                                   
-## [72]     beta1_sigma<-pow(1/beta1_tau,0.5)                                            
-## [73]                                                                                  
-## [74]     #Overdispersion - can't go too low or log density will wander if into INF    
-## [75]     tauSigma ~ dunif(0,0.5)                                                      
-## [76]     tauE <- pow(1/tauSigma,2)                                                    
+## [62]     #Group Detection Prior                                                       
+## [63]     omega ~ dnorm(0,0.386)                                                       
+## [64]     omega_tau ~ dt(0,1,1)I(0,)                                                   
+## [65]                                                                                  
+## [66]     #Group process priors                                                        
+## [67]                                                                                  
+## [68]     #Intercept                                                                   
+## [69]     alpha_mu ~ dnorm(0,0.01)                                                     
+## [70]     alpha_tau ~ dt(0,1,1)I(0,)                                                   
+## [71]     alpha_sigma<-pow(1/alpha_tau,0.5)                                            
+## [72]                                                                                  
+## [73]     #Trait                                                                       
+## [74]     beta1_mu~dnorm(0,0.01)                                                       
+## [75]     beta1_tau ~ dt(0,1,1)I(0,)                                                   
+## [76]     beta1_sigma<-pow(1/beta1_tau,0.5)                                            
 ## [77]                                                                                  
-## [78]     #derived posterior check                                                     
-## [79]     fit<-sum(E[]) #Discrepancy for the observed data                             
-## [80]     fitnew<-sum(E.new[])                                                         
+## [78]     #Overdispersion - can't go too low or log density will wander if into INF    
+## [79]     tauSigma ~ dunif(0,0.5)                                                      
+## [80]     tauE <- pow(1/tauSigma,2)                                                    
 ## [81]                                                                                  
-## [82]                                                                                  
-## [83]     }                                                                            
-## [84]     ",fill=TRUE)                                                                 
+## [82]     #derived posterior check                                                     
+## [83]     fit<-sum(E[]) #Discrepancy for the observed data                             
+## [84]     fitnew<-sum(E.new[])                                                         
 ## [85]                                                                                  
-## [86] sink()
+## [86]                                                                                  
+## [87]     }                                                                            
+## [88]     ",fill=TRUE)                                                                 
+## [89]                                                                                  
+## [90] sink()
 ```
 
 ```r
@@ -839,7 +843,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    6.777    0.109 6917.857
+##    8.594    0.168 3898.762
 ```
 
 
@@ -862,8 +866,8 @@ gc()
 
 ```
 ##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  1682874  89.9    8623340  460.6  12480725  666.6
-## Vcells 75893826 579.1  209732584 1600.2 262116915 1999.8
+## Ncells  1688115  90.2    8623340  460.6  13167343  703.3
+## Vcells 79996684 610.4  240863060 1837.7 240366650 1833.9
 ```
 
 ```r
@@ -899,7 +903,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 
 
 ```r
-runs<-200000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -956,7 +960,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 ## [45]     for(x in 1:Birds){                                                         
 ## [46]     #For Cameras                                                               
 ## [47]     logit(detect[x])<-dcam[x]                                                  
-## [48]     dcam[x]~dnorm(0,0.386)                                                     
+## [48]     dcam[x]~dnorm(omega,omega_tau)                                             
 ## [49]     }                                                                          
 ## [50]                                                                                
 ## [51]                                                                                
@@ -971,31 +975,34 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 ## [60]     beta1[i] ~ dnorm(beta1_mu,beta1_tau)                                       
 ## [61]     }                                                                          
 ## [62]                                                                                
-## [63]     #Group process priors                                                      
-## [64]                                                                                
-## [65]     #Intercept                                                                 
-## [66]     alpha_mu ~ dnorm(0,0.01)                                                   
-## [67]     alpha_tau ~ dt(0,1,1)I(0,)                                                 
-## [68]     alpha_sigma<-pow(1/alpha_tau,0.5)                                          
-## [69]                                                                                
-## [70]     #SLope                                                                     
-## [71]     beta1_mu~dnorm(0,0.01)                                                     
-## [72]     beta1_tau ~ dt(0,1,1)I(0,)                                                 
-## [73]     beta1_sigma<-pow(1/beta1_tau,0.5)                                          
-## [74]                                                                                
-## [75]     #Overdispersion                                                            
-## [76]     #Overdispersion                                                            
-## [77]     tauSigma ~ dunif(0,0.5)                                                    
-## [78]     tauE <- pow(1/tauSigma,2)                                                  
-## [79]                                                                                
-## [80]     #derived posterior check                                                   
-## [81]     fit<-sum(E[]) #Discrepancy for the observed data                           
-## [82]     fitnew<-sum(E.new[])                                                       
-## [83]                                                                                
-## [84]     }                                                                          
-## [85]     ",fill=TRUE)                                                               
+## [63]     #Group Detection Prior                                                     
+## [64]     omega ~ dnorm(0,0.386)                                                     
+## [65]     omega_tau ~ dt(0,1,1)I(0,)                                                 
+## [66]                                                                                
+## [67]     #Group process priors                                                      
+## [68]                                                                                
+## [69]     #Intercept                                                                 
+## [70]     alpha_mu ~ dnorm(0,0.01)                                                   
+## [71]     alpha_tau ~ dt(0,1,1)I(0,)                                                 
+## [72]     alpha_sigma<-pow(1/alpha_tau,0.5)                                          
+## [73]                                                                                
+## [74]     #SLope                                                                     
+## [75]     beta1_mu~dnorm(0,0.01)                                                     
+## [76]     beta1_tau ~ dt(0,1,1)I(0,)                                                 
+## [77]     beta1_sigma<-pow(1/beta1_tau,0.5)                                          
+## [78]                                                                                
+## [79]     #Overdispersion                                                            
+## [80]     tauSigma ~ dunif(0,0.5)                                                    
+## [81]     tauE <- pow(1/tauSigma,2)                                                  
+## [82]                                                                                
+## [83]     #derived posterior check                                                   
+## [84]     fit<-sum(E[]) #Discrepancy for the observed data                           
+## [85]     fitnew<-sum(E.new[])                                                       
 ## [86]                                                                                
-## [87] sink()
+## [87]     }                                                                          
+## [88]     ",fill=TRUE)                                                               
+## [89]                                                                                
+## [90] sink()
 ```
 
 ```r
@@ -1033,7 +1040,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 
 ```
 ##     user   system  elapsed 
-##    6.793    0.187 7099.924
+##    7.899    0.179 4029.018
 ```
 
 
@@ -1055,8 +1062,8 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1683472  90.0    9292674  496.3  12480725  666.6
-## Vcells 121779749 929.2  302388296 2307.1 301347104 2299.1
+## Ncells   1688713  90.2   11615843  620.4  13178414  703.9
+## Vcells 128780008 982.6  347018806 2647.6 344863298 2631.1
 ```
 
 ```r
@@ -1389,10 +1396,10 @@ fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
 ```
 ## Source: local data frame [2 x 3]
 ## 
-##               Model mean(fit) sum(fit)
-##               (chr)     (dbl)    (dbl)
-## 1 N-mixture: Traits  726.5583   435935
-## 2      Poisson GLMM 1864.8440  1118906
+##               Model mean(fit)  sum(fit)
+##               (chr)     (dbl)     (dbl)
+## 1 N-mixture: Traits  816.5002  489900.1
+## 2      Poisson GLMM 2022.9839 1213790.3
 ```
 
 ```r
@@ -1425,8 +1432,8 @@ fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
 ## 
 ##                        Model mean(fit) sum(fit)
 ##                        (chr)     (dbl)    (dbl)
-## 1 N-mixture: Plant Abundance  713.4866 428091.9
-## 2          N-mixture: Traits  726.5583 435935.0
+## 1 N-mixture: Plant Abundance  858.0223 514813.4
+## 2          N-mixture: Traits  816.5002 489900.1
 ```
 
 ```r
@@ -1521,47 +1528,47 @@ head(dmat %>% arrange(desc(E),L1),20)
 
 ```
 ##    species plant        L1        E             Iplant_Double
-## 1       18    22     Trait 3.272620      Heliconia griggsiana
-## 2       18    22 Abundance 3.171770      Heliconia griggsiana
-## 3        4    28 Abundance 2.801942        Meriania tomentosa
-## 4        7     4     Trait 2.100812           Bomarea pardina
-## 5       12    30     Trait 2.059833          Norantea anomala
-## 6       17    34     Trait 1.852475        Pitcairnia sodiroi
-## 7       19    24     Trait 1.780109      Heliconia virginalis
-## 8        4    28     Trait 1.739044        Meriania tomentosa
-## 9       19    24 Abundance 1.711121      Heliconia virginalis
-## 10       2    32 Abundance 1.681643        Palicourea demissa
-## 11       2    30 Abundance 1.544079          Norantea anomala
-## 12       3    29 Abundance 1.381924 Mezobromelia capituligera
-## 13      19    13     Trait 1.358679        Drymonia teuscheri
-## 14       7     4 Abundance 1.351728           Bomarea pardina
-## 15       3     4     Trait 1.291173           Bomarea pardina
-## 16      19    13 Abundance 1.255070        Drymonia teuscheri
-## 17      17    29     Trait 1.206553 Mezobromelia capituligera
-## 18      12    30 Abundance 1.185804          Norantea anomala
-## 19       3    29     Trait 1.180037 Mezobromelia capituligera
-## 20       2    32     Trait 1.158166        Palicourea demissa
+## 1       18    22     Trait 2.202544      Heliconia griggsiana
+## 2        4    28 Abundance 2.165750        Meriania tomentosa
+## 3       12    30 Abundance 2.003808          Norantea anomala
+## 4       19    24     Trait 1.866510      Heliconia virginalis
+## 5        7     4     Trait 1.736597           Bomarea pardina
+## 6        4    28     Trait 1.707924        Meriania tomentosa
+## 7        2    32 Abundance 1.673497        Palicourea demissa
+## 8       18    22 Abundance 1.605085      Heliconia griggsiana
+## 9        7     4 Abundance 1.596219           Bomarea pardina
+## 10       2    30 Abundance 1.585374          Norantea anomala
+## 11       3     4     Trait 1.582965           Bomarea pardina
+## 12      19    24 Abundance 1.555214      Heliconia virginalis
+## 13       3    29 Abundance 1.482977 Mezobromelia capituligera
+## 14      19    13     Trait 1.434850        Drymonia teuscheri
+## 15      14    27 Abundance 1.394203         Macleania stricta
+## 16       3    29     Trait 1.387999 Mezobromelia capituligera
+## 17      17    34 Abundance 1.303876        Pitcairnia sodiroi
+## 18      17    34     Trait 1.266689        Pitcairnia sodiroi
+## 19      14    28 Abundance 1.256513        Meriania tomentosa
+## 20       3    23     Trait 1.246382        Heliconia impudica
 ##                 Hummingbird
 ## 1  Wedge-billed Hummingbird
-## 2  Wedge-billed Hummingbird
-## 3       Buff-tailed Coronet
-## 4   Fawn-breasted Brilliant
-## 5    Purple-bibbed Whitetip
-## 6       Violet-tailed Sylph
-## 7    White-whiskered Hermit
-## 8       Buff-tailed Coronet
-## 9    White-whiskered Hermit
+## 2       Buff-tailed Coronet
+## 3    Purple-bibbed Whitetip
+## 4    White-whiskered Hermit
+## 5   Fawn-breasted Brilliant
+## 6       Buff-tailed Coronet
+## 7        Booted Racket-tail
+## 8  Wedge-billed Hummingbird
+## 9   Fawn-breasted Brilliant
 ## 10       Booted Racket-tail
-## 11       Booted Racket-tail
-## 12               Brown Inca
-## 13   White-whiskered Hermit
-## 14  Fawn-breasted Brilliant
-## 15               Brown Inca
-## 16   White-whiskered Hermit
+## 11               Brown Inca
+## 12   White-whiskered Hermit
+## 13               Brown Inca
+## 14   White-whiskered Hermit
+## 15     Speckled Hummingbird
+## 16               Brown Inca
 ## 17      Violet-tailed Sylph
-## 18   Purple-bibbed Whitetip
-## 19               Brown Inca
-## 20       Booted Racket-tail
+## 18      Violet-tailed Sylph
+## 19     Speckled Hummingbird
+## 20               Brown Inca
 ```
 
 ###By Intensity
@@ -1586,25 +1593,25 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                  Hummingbird mean lower upper
-## 1             Andean Emerald 47.0  14.3  79.6
-## 2         Booted Racket-tail 24.9  10.1  39.4
-## 3                 Brown Inca 40.1  25.0  58.5
-## 4        Buff-tailed Coronet 34.3  14.0  61.3
-## 5              Collared Inca 50.0  16.6  81.8
-## 6          Crowned Woodnymph 31.6  16.4  55.9
-## 7    Fawn-breasted Brilliant 29.2   4.7  83.6
-## 8          Gorgeted Sunangel 79.6  59.4  91.9
-## 9    Green-crowned Brilliant 11.4   2.4  39.6
-## 10   Green-fronted Lancebill 43.6  24.5  65.7
-## 11             Hoary Puffleg 34.3   5.4  82.0
-## 12    Purple-bibbed Whitetip 27.9   6.9  68.2
-## 13 Rufous-tailed Hummingbird 20.3   0.4  83.0
-## 14      Speckled Hummingbird 67.7  34.7  94.4
-## 15    Stripe-throated Hermit 37.0  19.5  57.7
-## 16      Tawny-bellied Hermit 36.2  20.1  50.4
-## 17       Violet-tailed Sylph 37.2  12.6  56.8
-## 18  Wedge-billed Hummingbird 13.8   2.8  47.9
-## 19    White-whiskered Hermit 23.4   8.5  42.2
+## 1             Andean Emerald 42.3  14.2  72.9
+## 2         Booted Racket-tail 24.0   9.6  43.7
+## 3                 Brown Inca 35.7  22.0  52.6
+## 4        Buff-tailed Coronet 36.1  16.0  59.8
+## 5              Collared Inca 50.0  25.4  73.4
+## 6          Crowned Woodnymph 27.8   9.8  46.7
+## 7    Fawn-breasted Brilliant 30.4   9.6  63.9
+## 8          Gorgeted Sunangel 70.0  47.4  87.1
+## 9    Green-crowned Brilliant 28.1   5.9  60.7
+## 10   Green-fronted Lancebill 44.7  23.7  65.7
+## 11             Hoary Puffleg 36.4  14.6  68.1
+## 12    Purple-bibbed Whitetip 38.4  14.1  68.4
+## 13 Rufous-tailed Hummingbird 28.7   2.9  66.5
+## 14      Speckled Hummingbird 50.0  14.4  87.7
+## 15    Stripe-throated Hermit 26.1  13.6  42.0
+## 16      Tawny-bellied Hermit 33.8  22.5  50.6
+## 17       Violet-tailed Sylph 40.3  29.4  54.8
+## 18  Wedge-billed Hummingbird 17.7   3.1  47.1
+## 19    White-whiskered Hermit 21.7   8.8  35.9
 ```
 
 ```r
@@ -1812,8 +1819,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1780135   95.1    5947311  317.7  12480725  666.6
-## Vcells 203215842 1550.5  362945955 2769.1 362941021 2769.1
+## Ncells   1785379   95.4    5947311  317.7  13178414  703.9
+## Vcells 215329709 1642.9  347018806 2647.6 347018805 2647.6
 ```
 
 ```r
