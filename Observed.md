@@ -5,7 +5,7 @@ Ben Weinstein - Stony Brook University
 
 
 ```
-## [1] "Run Completed at 2016-08-28 21:35:58"
+## [1] "Run Completed at 2016-08-29 00:23:46"
 ```
 
 
@@ -647,7 +647,7 @@ print.noquote(readLines("Bayesian//NoDetectNmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    4.535    0.159 1434.355
+##    4.456    0.119 1440.443
 ```
 
 
@@ -707,7 +707,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 
 
 ```r
-runs<-60000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -839,7 +839,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged.R"))
 
 ```
 ##     user   system  elapsed 
-##    7.669    0.176 2527.283
+##    7.719    0.111 4145.066
 ```
 
 
@@ -899,7 +899,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 
 
 ```r
-runs<-60000
+runs<-100000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -1033,7 +1033,7 @@ print.noquote(readLines("Bayesian//NmixturePoissonRagged_Abundance.R"))
 
 ```
 ##     user   system  elapsed 
-##    7.371    0.179 2580.178
+##    7.524    0.179 4111.144
 ```
 
 
@@ -1055,13 +1055,13 @@ gc()
 
 ```
 ##             used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1688711  90.2   11615843  620.4  13178397  703.9
-## Vcells 128779888 982.6  347018594 2647.6 344863135 2631.1
+## Ncells   1688711  90.2   11615843  620.4  13178403  703.9
+## Vcells 128779888 982.6  347018594 2647.6 344863145 2631.1
 ```
 
 ```r
 #name
-pars_abundance$Model<-"N-mixture Abundance"
+pars_abundance$Model<-"N-mixture: Plant Abundance"
 #write.csv(pars_abundance,"OutData/Abundance.csv")
 ```
 
@@ -1391,7 +1391,7 @@ fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
 ## 
 ##               Model mean(fit)  sum(fit)
 ##               (chr)     (dbl)     (dbl)
-## 1 N-mixture: Traits  741.1456  444687.3
+## 1 N-mixture: Traits  806.8132  484087.9
 ## 2      Poisson GLMM 2022.1472 1213288.3
 ```
 
@@ -1423,10 +1423,10 @@ fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
 ```
 ## Source: local data frame [2 x 3]
 ## 
-##                 Model mean(fit) sum(fit)
-##                 (chr)     (dbl)    (dbl)
-## 1 N-mixture Abundance  797.2886 478373.1
-## 2   N-mixture: Traits  741.1456 444687.3
+##                        Model mean(fit) sum(fit)
+##                        (chr)     (dbl)    (dbl)
+## 1 N-mixture: Plant Abundance  835.6524 501391.4
+## 2          N-mixture: Traits  806.8132 484087.9
 ```
 
 ```r
@@ -1513,47 +1513,47 @@ head(dmat %>% arrange(desc(E),L1),20)
 
 ```
 ##    species plant        L1        E             Iplant_Double
-## 1       18    22     trait 2.288890      Heliconia griggsiana
-## 2        2    32 Abundance 1.972293        Palicourea demissa
-## 3        4    28 Abundance 1.885878        Meriania tomentosa
-## 4       18    22 Abundance 1.801678      Heliconia griggsiana
-## 5        2    30 Abundance 1.770604          Norantea anomala
-## 6       19    24     trait 1.719225      Heliconia virginalis
-## 7       19    24 Abundance 1.682546      Heliconia virginalis
-## 8        7     4 Abundance 1.367224           Bomarea pardina
-## 9       12    30 Abundance 1.359000          Norantea anomala
-## 10       3    29 Abundance 1.358275 Mezobromelia capituligera
-## 11       7     4     trait 1.346702           Bomarea pardina
-## 12      19    13     trait 1.318472        Drymonia teuscheri
-## 13       3     4     trait 1.201913           Bomarea pardina
-## 14      15    24     trait 1.156573      Heliconia virginalis
-## 15      17    34     trait 1.111739        Pitcairnia sodiroi
-## 16      19    13 Abundance 1.107272        Drymonia teuscheri
-## 17       2    32     trait 1.100584        Palicourea demissa
-## 18       4    28     trait 1.097775        Meriania tomentosa
-## 19      11    36 Abundance 1.059418         Psammisia sodiroi
-## 20      15    24 Abundance 1.057993      Heliconia virginalis
+## 1       18    22     trait 2.883669      Heliconia griggsiana
+## 2       18    22 Abundance 2.591516      Heliconia griggsiana
+## 3       19    24     trait 2.043595      Heliconia virginalis
+## 4        4    28 Abundance 1.962403        Meriania tomentosa
+## 5        2    32 Abundance 1.769246        Palicourea demissa
+## 6       19    24 Abundance 1.767808      Heliconia virginalis
+## 7        3     4     trait 1.756328           Bomarea pardina
+## 8        4    28     trait 1.731499        Meriania tomentosa
+## 9        7     4     trait 1.652495           Bomarea pardina
+## 10       2    30 Abundance 1.639263          Norantea anomala
+## 11      19    13     trait 1.527020        Drymonia teuscheri
+## 12      11    36 Abundance 1.497166         Psammisia sodiroi
+## 13       3    29 Abundance 1.487746 Mezobromelia capituligera
+## 14       3    29     trait 1.457031 Mezobromelia capituligera
+## 15       7     4 Abundance 1.432131           Bomarea pardina
+## 16       3    23     trait 1.325336        Heliconia impudica
+## 17       5    34 Abundance 1.289619        Pitcairnia sodiroi
+## 18      19    13 Abundance 1.273082        Drymonia teuscheri
+## 19      12    30 Abundance 1.227109          Norantea anomala
+## 20       2    32     trait 1.204794        Palicourea demissa
 ##                 Hummingbird
 ## 1  Wedge-billed Hummingbird
-## 2        Booted Racket-tail
-## 3       Buff-tailed Coronet
-## 4  Wedge-billed Hummingbird
+## 2  Wedge-billed Hummingbird
+## 3    White-whiskered Hermit
+## 4       Buff-tailed Coronet
 ## 5        Booted Racket-tail
 ## 6    White-whiskered Hermit
-## 7    White-whiskered Hermit
-## 8   Fawn-breasted Brilliant
-## 9    Purple-bibbed Whitetip
-## 10               Brown Inca
-## 11  Fawn-breasted Brilliant
-## 12   White-whiskered Hermit
+## 7                Brown Inca
+## 8       Buff-tailed Coronet
+## 9   Fawn-breasted Brilliant
+## 10       Booted Racket-tail
+## 11   White-whiskered Hermit
+## 12            Hoary Puffleg
 ## 13               Brown Inca
-## 14   Stripe-throated Hermit
-## 15      Violet-tailed Sylph
-## 16   White-whiskered Hermit
-## 17       Booted Racket-tail
-## 18      Buff-tailed Coronet
-## 19            Hoary Puffleg
-## 20   Stripe-throated Hermit
+## 14               Brown Inca
+## 15  Fawn-breasted Brilliant
+## 16               Brown Inca
+## 17            Collared Inca
+## 18   White-whiskered Hermit
+## 19   Purple-bibbed Whitetip
+## 20       Booted Racket-tail
 ```
 
 ###By Intensity
@@ -1578,25 +1578,25 @@ tab[,c(4,1,2,3)]
 
 ```
 ##                  Hummingbird mean lower upper
-## 1             Andean Emerald 51.2  21.7  82.5
-## 2         Booted Racket-tail 26.4  16.6  39.4
-## 3                 Brown Inca 42.6  23.0  59.5
-## 4        Buff-tailed Coronet 45.3  21.9  69.8
-## 5              Collared Inca 47.8  23.3  73.1
-## 6          Crowned Woodnymph 30.6  12.3  52.1
-## 7    Fawn-breasted Brilliant 40.2  11.4  82.3
-## 8          Gorgeted Sunangel 80.3  64.2  91.9
-## 9    Green-crowned Brilliant 22.8   6.1  59.2
-## 10   Green-fronted Lancebill 51.1  30.6  73.5
-## 11             Hoary Puffleg 42.8   9.8  89.6
-## 12    Purple-bibbed Whitetip 48.4  15.9  83.4
-## 13 Rufous-tailed Hummingbird 32.9   1.6  93.1
-## 14      Speckled Hummingbird 68.9  35.4  94.6
-## 15    Stripe-throated Hermit 23.3   9.1  39.8
-## 16      Tawny-bellied Hermit 35.8  23.1  48.9
-## 17       Violet-tailed Sylph 43.9  29.7  58.2
-## 18  Wedge-billed Hummingbird 16.1   3.7  46.8
-## 19    White-whiskered Hermit 25.8  14.4  40.6
+## 1             Andean Emerald 49.1  16.8  82.2
+## 2         Booted Racket-tail 23.2  10.2  39.4
+## 3                 Brown Inca 35.0  14.6  60.4
+## 4        Buff-tailed Coronet 37.3  12.7  65.7
+## 5              Collared Inca 53.1  24.5  78.4
+## 6          Crowned Woodnymph 24.2   8.9  45.4
+## 7    Fawn-breasted Brilliant 37.9   5.5  87.3
+## 8          Gorgeted Sunangel 79.9  63.5  92.6
+## 9    Green-crowned Brilliant 20.5   2.1  72.6
+## 10   Green-fronted Lancebill 40.4  14.5  67.6
+## 11             Hoary Puffleg 47.0  15.5  85.7
+## 12    Purple-bibbed Whitetip 42.5   9.1  78.1
+## 13 Rufous-tailed Hummingbird 28.3   2.0  92.2
+## 14      Speckled Hummingbird 67.1  27.4  93.8
+## 15    Stripe-throated Hermit 20.7   9.2  36.4
+## 16      Tawny-bellied Hermit 39.9  24.2  55.7
+## 17       Violet-tailed Sylph 42.6  23.5  58.6
+## 18  Wedge-billed Hummingbird 10.9   1.9  34.8
+## 19    White-whiskered Hermit 19.3   8.3  34.9
 ```
 
 ```r
@@ -1804,8 +1804,8 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   1785302   95.4    5947311  317.7  13178397  703.9
-## Vcells 215329509 1642.9  347018594 2647.6 347018587 2647.6
+## Ncells   1785302   95.4    5947311  317.7  13178403  703.9
+## Vcells 215329514 1642.9  347018594 2647.6 347018594 2647.6
 ```
 
 ```r
