@@ -108,7 +108,7 @@ missingTraits<-int.FLlevels[!int.FLlevels %in% fl.morph$X]
 dath<-merge(dath,fl.morph, by.x="Iplant_Double",by.y="X")
 
 #Drop piercing events, since they don't represent correlation
-#dath<-dath[!dath$Pierce %in% c("y","Y"),]
+dath<-dath[!dath$Pierce %in% c("y","Y"),]
 ```
 
 ##Match Species to Morphology
@@ -598,7 +598,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 ## Traits
 
 ```{r,eval=T}
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged.R")
@@ -677,7 +677,7 @@ ggplot(pars_detect_traits[pars_detect_traits$par %in% c("beta1_mu","alpha_mu","s
 ## Abundance
 
 ```{r,eval=T}
-runs<-100000
+runs<-200000
 
 #Source model
 source("Bayesian/NmixturePoissonRagged_Abundance.R")
@@ -916,7 +916,7 @@ spe<-merge(species.traj,jagsIndexBird,by.x="Index",by.y="jBird")
 #plot and compare to original data
 ggplot(data=spe[,],aes(x=trait)) + geom_point(data=indat,aes(x=Traitmatch,y=Yobs)) + geom_ribbon(aes(ymin=lower,ymax=upper,fill=Model),alpha=0.6)  + geom_line(aes(y=mean,col=Model),size=1) + theme_bw() + ylab("Interactions") + xlab("Difference between Bill and Corolla Length (cm)") + facet_wrap(~Hummingbird,scales="free",ncol=4)+ labs(fill="Model")  + ylab("Interactions per day") + scale_color_manual(values=c("grey70","black")) + scale_fill_manual(values=c("grey70","black"))
 
-ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=10,width=10)
+ggsave("Figures/SpeciesPredictionsBoth.jpg",dpi=300,height=9,width=11)
 ```
 
 ### Abundance Species predictions 
@@ -1034,12 +1034,16 @@ ggplot(ynewstat,aes(x=trait,y=Abundance)) + geom_point() + geom_abline() + labs(
 ### By Bird
 
 ```{r}
-par_at<-list(Abundance=pars_abundance %>% filter(par=="E"),trait=pars_detect_traits %>% filter(par=="E"))
+par_at<-list(Abundance=pars_abundance %>% filter(par=="E"),Trait=pars_detect_traits %>% filter(par=="E"))
 par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
 dmat<-par_at %>% group_by(species,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
 
-ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() + labs(color="Model")
+ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() + labs(color="Model",x="Average Discrepancy")
+
+ggsave("Figures/AverageBird.jpeg",dpi=600,height=7,width=6)
+
+
 ```
 
 ###By plant
@@ -1047,7 +1051,9 @@ ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() +
 ```{r}
 dmat<-par_at %>% group_by(plant,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexPlants,by.x="plant",by.y="jPlant")
-ggplot(dmat,aes(x=Iplant_Double,y=E,col=L1)) + geom_point(size=4) + coord_flip()
+ggplot(dmat,aes(x=Iplant_Double,y=E,col=L1)) + geom_point(size=4) + coord_flip()+ labs(color="Model",x="Average Discrepancy")
+ggsave("Figures/AveragePlant.jpeg",dpi=600,height=9,width=6)
+
 ```
 
 ### By Interaction
