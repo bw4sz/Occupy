@@ -60,7 +60,7 @@ cat("
 }
     
     #Group Detection Prior
-    omega<-dnorm(0,0.386)
+    omega ~ dnorm(0,0.386)
     omega_tau ~ dt(0,1,1)I(0,)
 
     #Group process priors
