@@ -974,6 +974,17 @@ castdf<-dcast(pars_abundance[pars_abundance$par %in% c("beta1","alpha"),], speci
 ggplot(castdf,aes(x=beta1)) + geom_histogram() + facet_wrap(~species,scales="free",ncol=4) + geom_vline(xintercept=0)
 ```
 
+# Which covariate estimates do not overlap with 0?
+```{r}
+par_zero<-list(Abundance=pars_abundance %>% filter(par %in% c("beta1")),Trait=pars_detect_traits %>% filter(par %in% c("beta1")))
+par_zero<-melt(par_zero,id.vars=colnames(pars_detect_traits))
+cz<-par_zero %>% group_by(L1,species) %>% summarize(min=quantile(estimate,0.05),max=quantile(estimate,0.95),Significant=!findInterval(0,sort(c(min,max)))==1)
+
+cz<-merge(cz,jagsIndexBird,by.x="species",by.y="jBird")
+
+```
+
+
 #Discrepancy: N-mixture v Poisson GLM
 
 The goodness of fit is a measured as chi-squared. The expected value for each day is the detection rate * the estimate intensity of interactions. The expected value is compared to the observed value of the actual data. In addition, a replicate dataset is generated from the posterior predicted intensity. Better fitting models will have lower discrepancy values and be 
@@ -1039,7 +1050,10 @@ par_at<-melt(par_at,id.vars=colnames(pars_detect_traits))
 dmat<-par_at %>% group_by(species,L1) %>% summarize(E=mean(estimate))
 dmat<-merge(dmat,jagsIndexBird,by.x="species",by.y="jBird")
 
-ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=4) + coord_flip() + labs(color="N-mixture Model",y="Average Discrepancy")
+#merge with range overlap
+dmat<-merge(dmat,cz,by=c("L1","Hummingbird"))
+
+ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=5,aes(shape=Significant)) + coord_flip() + labs(color="N-mixture Model",y="Mean Discrepancy") + scale_shape_manual("Significant Predictor",values=c(1,19)) + theme_bw()
 
 ggsave("Figures/AverageBird.jpeg",dpi=600,height=7,width=6)
 
