@@ -24,15 +24,16 @@ library(bipartite)
 
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=10,fig.height=7,echo=TRUE,cache=F,fig.align='center',fig.path="figureObserved/")
 source("Bayesian/BayesFunctions.R")
+newModel<-F
 ```
 
 ```{r,echo=F,cache=FALSE}
 paste("Run Completed at",Sys.time())
 ```
 
-```{r}
+```{r,eval=newModel}
 #reload if needed
-#load("Observed.Rdata")
+load("Observed.Rdata")
 ```
 
 #Load in data
@@ -244,7 +245,7 @@ colnames(traitmelt)<-c("Hummingbird","Iplant_Double","Traitmatch")
 #dummy presence variable
 indatraw$Yobs<-1
 
-#prune columsn to make more readable
+#prune columns to make more readable
 indatraw<-indatraw[,c("Hummingbird","Iplant_Double","ID","Time","Month","Year","Transect_R","ele","DateP","Yobs","Day","Survey_Type","Pierce")]
 
 ```
@@ -518,7 +519,7 @@ $$\sigma_{\beta_2} \sim Half-T(0,1)$$
 
 # Poisson GLMM
 
-```{r,eval=T}
+```{r,eval=newModel}
 runs<-50000
 
 #Source model
@@ -567,7 +568,7 @@ recompile(m2_niave)
 m2_niave<-update(m2_niave,n.iter=runs,n.burnin=runs*.9,n.thin = 5)
 ```
 
-```{r,eval=T}
+```{r,eval=newModel}
 pars_dniave<-extract_par(m2_niave,data=indat,Bird="jBird",Plant="jPlant")
 pars_dniave$Model<-"Poisson GLMM"
 rm(m2_niave)
@@ -597,7 +598,7 @@ ggplot(pars_dniave[pars_dniave$par %in% c("beta1_mu","sigma_alpha","beta1_sigma"
 
 ## Traits
 
-```{r,eval=T}
+```{r,eval=newModel}
 runs<-100000
 
 #Source model
@@ -646,7 +647,7 @@ recompile(traits)
 traits<-update(traits,n.iter=runs,n.burnin=runs*.9,n.thin=5)
 ```
 
-```{r,eval=T}
+```{r,eval=newModel}
 #extract par to data.frame
 pars_detect_traits<-extract_par(traits,data=indat,Bird="jBird",Plant="jPlant")
 
@@ -999,7 +1000,7 @@ ymax<-max(c(fitstat$fit,fitstat$fitnew)) + max(c(fitstat$fit,fitstat$fitnew)) * 
 disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_abline() + coord_fixed() + ylim(ymin=ymin,ymax=ymax) + xlim(xmin=ymin,xmax=ymax)
 disc_obs
 
-fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
+fitstat %>% group_by(Model) %>% summarize(mean(fit),var(fit))
 
 ggsave("Figures/ObservedDiscrepancy.jpeg",width = 5,height=10)
 ```
@@ -1017,7 +1018,7 @@ ymax<-max(c(fitstat$fit,fitstat$fitnew)) + max(c(fitstat$fit,fitstat$fitnew)) * 
 disc_obs<-ggplot(fitstat,aes(x=fit,y=fitnew)) + geom_point(aes(col=Model)) + theme_bw() + labs(x="Discrepancy of observed data",y="Discrepancy of replicated data",col="Model")  + ggtitle("Empirical Data") + geom_abline() + coord_fixed() + ylim(ymin=ymin,ymax=ymax) + xlim(xmin=ymin,xmax=ymax)
 disc_obs
 
-fitstat %>% group_by(Model) %>% summarize(mean(fit),sum(fit))
+fitstat %>% group_by(Model) %>% summarize(mean(fit),var(fit))
 
 ggsave("Figures/ATDiscrepancy.jpeg",width = 5,height=10)
 ```
@@ -1055,7 +1056,7 @@ dmat<-merge(dmat,cz,by=c("L1","Hummingbird"))
 
 #reorder
 dmat$Hummingbird<-factor(dmat$Hummingbird,levels=rev(levels(dmat$Hummingbird)))
-ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=5,aes(shape=Significant)) + coord_flip() + labs(color="N-mixture Model",y="Mean Discrepancy") + scale_shape_manual("Significant Predictor",values=c(1,19)) + theme_bw()
+ggplot(dmat,aes(x=Hummingbird,y=E,col=L1)) + geom_point(size=5,aes(shape=Significant),stroke=2.5) + coord_flip() + labs(color="N-mixture Model",y="Mean Discrepancy") + scale_shape_manual("Significant Predictor",values=c(1,19)) + theme_bw() + scale_color_manual(values=c("grey70","black"))
 
 ggsave("Figures/AverageBird.jpeg",dpi=600,height=5,width=8)
 
@@ -1273,7 +1274,10 @@ nstat<-lapply(nsplit,function(x){
 
 nstat<-melt(nstat,colnames(nstat[[1]]))
 
-ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2)  + scale_fill_manual("Model",values=c("purple","orange")) + theme_bw()
+#capitalize levels
+levels(nstat$Metric)<-c("Weighted NODF","Weighted Connectance")
+
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2)  + scale_fill_manual("Model",values=c("purple","orange")) + theme_bw() + labs(x="Value",y="Density")
 ggsave("Figures/NetworkStats.jpeg",height = 5,width=6) 
 ```
 
@@ -1283,11 +1287,14 @@ mean_net<-indat %>% group_by(Hummingbird,Iplant_Double) %>% summarize(n=mean(Yob
 mean_net<-acast(mean_net,Hummingbird~Iplant_Double,fill=0)
 meanvals<-networklevel(mean_net,c("weighted NODF","weighted connectance"))
 meanvals<-data.frame(Metric=names(meanvals),melt(meanvals))
-ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2)  + scale_fill_manual("Model",values=c("purple","orange")) + theme_bw() + geom_vline(data=meanvals,linetype="dashed",aes(col="Mean Daily Matrix",xintercept=value),size=1) + labs(col="")
+
+levels(meanvals$Metric)<-c("Weighted Connectance","Weighted NODF")
+
+ggplot(nstat,aes(x=value,fill=L1)) + geom_density(alpha=0.6) + facet_wrap(~Metric,scales='free',nrow=2)  + scale_fill_manual("Model",values=c("purple","orange")) + theme_bw() + geom_vline(data=meanvals,linetype="dashed",aes(col="Mean Daily Matrix",xintercept=value),size=1) + labs(col="") + labs(x="Value",y="Density")
 ggsave("Figures/NetworkStats_withbenchmark.jpeg",height = 5,width=6) 
 ```
 
-```{r}
+```{r,eval=newModel}
 gc()
 save.image("Observed.RData")
 ```
